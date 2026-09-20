@@ -134,8 +134,50 @@ export function craftSpend(recipeId) {
 }
 
 // ------------------------------------------------------------
-// inventory entry: what the search box offers
+// inventory entry
+//
+// Both of these report `qty` at one location, because the
+// stepper on a row writes to the location you have selected.
 // ------------------------------------------------------------
 export function locations() {
-  return db.all('SELECT id, name FROM locations ORDER BY name');
+  // Insertion order, not alphabetical: build_db.py writes them as
+  // Satchel, Trapper, Pearson, and the Satchel — what you carry —
+  // is the one that should lead and be the default.
+  return db.all('SELECT id, name FROM locations ORDER BY rowid');
+}
+
+const STOCK_AT = `
+  SELECT     ing.id          AS ingredient_id,
+             ing.name        AS name,
+             ing.source_type AS source_type,
+             ing.quality     AS quality,
+             COALESCE(inv.qty, 0) AS qty
+  FROM       ingredients ing
+  LEFT JOIN  inventory   inv ON inv.ingredient_id = ing.id
+                            AND inv.location_id   = :location_id`;
+
+/** Materials whose name matches, for the search box. */
+export function searchMaterials(term, locationId, limit = 40) {
+  return db.all(`${STOCK_AT}
+    WHERE     ing.name LIKE :term
+    ORDER BY  ing.name
+    LIMIT     :limit`,
+    { location_id: locationId, term: `%${term}%`, limit });
+}
+
+/**
+ * What the empty search box shows: the materials you touched
+ * last, anywhere.  You hunt the same handful of animals over and
+ * over, so after a week the row you want is usually already here
+ * and search is the fallback rather than the default.
+ */
+export function recentMaterials(locationId, limit = 12) {
+  return db.all(`${STOCK_AT}
+    JOIN      (SELECT ingredient_id, MAX(id) AS last
+               FROM   ledger
+               GROUP BY ingredient_id) touched
+                ON touched.ingredient_id = ing.id
+    ORDER BY  touched.last DESC
+    LIMIT     :limit`,
+    { location_id: locationId, limit });
 }

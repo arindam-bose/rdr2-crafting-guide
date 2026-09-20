@@ -11,11 +11,12 @@ import * as store from './store.js';
 import { errorBox, placeholder } from './render.js';
 import { toast } from './toast.js';
 import * as materials from './views/materials.js';
+import * as inventory from './views/inventory.js';
 
 const ROUTES = {
   materials: () => materials,
   recipes:   () => stub('Recipes', 'All 165 recipes, with the ingredient markers.'),
-  inventory: () => stub('Inventory', 'Search a material, tap + or −, per location.'),
+  inventory: () => inventory,
   settings:  () => stub('Settings', 'Export, import, reset.'),
 };
 

@@ -44,7 +44,9 @@ derived from names (`ing-perfect-beaver-pelt`), so they survive rows being
 added, removed or reordered — which matters, because the personal layer stores
 those strings.
 
-After a rebuild, bump `CACHE` in `sw.js` so browsers drop the old copy.
+After a rebuild, bump `CACHE` in `sw.js`. The database and the wasm runtime are
+cached hard — they are big and only ever replaced wholesale — while app code is
+served network-first, so edits show up on reload without a cache bump.
 
 ## Layout
 
@@ -59,6 +61,7 @@ After a rebuild, bump `CACHE` in `sw.js` so browsers drop the old copy.
       queries.js          the four queries as functions
       render.js           card templates
       views/materials.js  "Where to go if you have these items"
+      views/inventory.js  entry: pick a location, search, tap +/-
       toast.js            the undo toast
       main.js             boot and hash routing
     vendor/               sql.js, vendored so nothing is fetched from a CDN
@@ -66,5 +69,10 @@ After a rebuild, bump `CACHE` in `sw.js` so browsers drop the old copy.
 
 ## State
 
-Materials works end to end. Recipes, Inventory and Settings are stubs that say
+Materials and Inventory work end to end. Recipes and Settings are stubs that say
 so — the queries behind them are written and tested, the screens are not.
+
+Inventory has no save button: every tap on a stepper is a ledger row the moment
+you make it, with an undo toast. A plus is recorded as the thing that most
+likely caused it (`kill` for an animal material, `loot` otherwise); a minus is
+recorded as a `correction`, since that is nearly always what it is.

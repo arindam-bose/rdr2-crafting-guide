@@ -253,6 +253,95 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .bar.short > i { background: var(--accent); }
 
+/* ---------- inventory: entry, one location at a time ---------- */
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  margin-bottom: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.segmented button {
+  flex: 1;
+  padding: 10px 6px;
+  font: inherit;
+  font-size: .88rem;
+  color: var(--ink-dim);
+  background: none;
+  border: 0;
+  border-radius: calc(var(--radius) - 3px);
+  cursor: pointer;
+}
+.segmented button[aria-selected="true"] {
+  color: var(--bg);
+  background: var(--ink);
+  font-weight: 600;
+}
+
+.list-label {
+  margin: 0 0 8px;
+  font-size: .76rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px 8px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.row:last-child { border-bottom: 0; }
+
+.row .name { flex: 1; min-width: 0; font-size: .92rem; }
+
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+/* 40px of target: comfortable with a thumb, unobtrusive with a mouse */
+.stepper button {
+  width: 40px;
+  height: 40px;
+  font: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.stepper button:hover:not(:disabled) { border-color: var(--ink-faint); }
+.stepper button:active:not(:disabled) { background: var(--line); }
+.stepper button:disabled { opacity: .3; cursor: default; }
+
+.stepper output {
+  min-width: 2.2ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-faint);
+}
+.stepper output.held { color: var(--ok); font-weight: 600; }
+
 /* ---------- misc ---------- */
 
 .loading, .empty {
