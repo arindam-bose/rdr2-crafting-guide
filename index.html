@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a1613">
+<title>RDR2 Crafting Guide</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <h1>Crafting Guide</h1>
+  <label class="mode" title="Personal mode tracks what you have; general mode is the plain reference.">
+    <input type="checkbox" id="mode-toggle">
+    <span>Personal</span>
+  </label>
+</header>
+
+<main id="view" aria-live="polite">
+  <!-- first-load skeleton; replaced once the database is open -->
+  <div class="skeleton">
+    <p class="loading">Opening the database…</p>
+    <div class="gallery">
+      <div class="card ghost"></div><div class="card ghost"></div>
+      <div class="card ghost"></div><div class="card ghost"></div>
+    </div>
+  </div>
+</main>
+
+<nav class="tabs">
+  <a href="#/materials" data-route="materials">Materials</a>
+  <a href="#/recipes"   data-route="recipes">Recipes</a>
+  <a href="#/inventory" data-route="inventory">Inventory</a>
+  <a href="#/settings"  data-route="settings">Settings</a>
+</nav>
+
+<div id="toast" class="toast" hidden></div>
+
+<!-- sql.js ships as a classic script that defines window.initSqlJs -->
+<script src="vendor/sql-wasm.js"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

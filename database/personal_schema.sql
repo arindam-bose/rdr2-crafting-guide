@@ -107,7 +107,7 @@ CREATE TABLE targets (
 -- JOIN       stations           st  ON st.id = r.station_id
 -- JOIN       recipe_ingredients ri  ON ri.recipe_id = r.id
 -- LEFT JOIN  targets            t   ON t.recipe_id = r.id
--- LEFT JOIN  inventory          inv ON inv.ingredient_id = ing.id
+-- LEFT JOIN  inventory          inv ON inv.ingredient_id = ri.ingredient_id
 --                                  AND inv.location_id   = st.location_id
 -- WHERE      COALESCE(t.state, 'wanted') = 'wanted'
 -- GROUP BY   r.id

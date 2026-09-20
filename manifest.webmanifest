@@ -1,0 +1,14 @@
+{
+  "name": "RDR2 Crafting Guide",
+  "short_name": "Crafting",
+  "description": "What to craft, what it needs, and what you already have.",
+  "start_url": "./#/materials",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#17130f",
+  "theme_color": "#1a1613",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
