@@ -381,8 +381,11 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   color: var(--ink-faint);
 }
 
+/* A disabled button swallows pointer events, so the tooltip lives
+   on a wrapper that can still be hovered. */
+.craft-wrap { flex: 0 0 auto; display: inline-flex; }
+
 .craft-btn {
-  flex: 1;
   padding: 9px 14px;
   font: inherit;
   font-size: .86rem;
@@ -392,6 +395,12 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border: 1px solid var(--accent);
   border-radius: 8px;
   cursor: pointer;
+}
+.craft-btn:disabled {
+  color: var(--ink-faint);
+  background: none;
+  border-color: var(--line);
+  cursor: not-allowed;
 }
 
 .ghost-btn {

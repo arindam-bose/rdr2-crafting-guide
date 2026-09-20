@@ -74,7 +74,13 @@ Materials, Recipes and Inventory work end to end. Settings is a stub that says s
 
 Crafting spends a recipe's ingredients from its station's own stock and marks it
 done, as one commit — the same path Inventory saves through, so undo works the
-same way. A recipe can also be skipped, which retires it without crafting it.
+same way. A recipe can also be skipped, which retires it without spending
+anything: nothing is written to the ledger, only the target's state.
+
+The Craft button is always present and disabled when it cannot be used, so its
+absence never has to be interpreted; its tooltip says why — what is still
+missing, or that the recipe is already made or skipped. Recipes you have made or
+skipped sort to the bottom of the list.
 
 A recipe that is done or skipped stops asking for its materials, so it drops out
 of the Materials screen. Demand is per station, so that only removes the demand

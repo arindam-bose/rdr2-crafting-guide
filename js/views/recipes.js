@@ -18,6 +18,12 @@ import { toast } from '../toast.js';
 
 const STATE_LABEL = { wanted: '', done: 'Made', skipped: 'Skipped' };
 
+// What you are still working on comes first; what you have made
+// next; what you have retired last.  A skipped recipe keeping its
+// alphabetical slot was the thing that made Skip feel like it had
+// not done anything.
+const RANK = { wanted: 0, done: 1, skipped: 2 };
+
 export function mount(root) {
   const state = { search: '', station: null, category: '', show: 'all' };
   const stations = queries.stations();
@@ -116,6 +122,10 @@ export function mount(root) {
       .map((r) => ({ ...r, ingredients: ingredients.get(r.id) ?? [] }));
 
     const list = all.filter((r) => matches(r, state, personal));
+    if (personal) {
+      list.sort((a, b) => RANK[a.state] - RANK[b.state]
+                       || a.name.localeCompare(b.name));
+    }
 
     gallery.innerHTML = list.length
       ? list.map((r) => card(r, personal)).join('')
@@ -210,27 +220,52 @@ function ingredient(i, personal) {
 }
 
 function actions(r, ready) {
-  if (r.state === 'done') {
-    return `
-      <div class="actions">
-        <span class="state-label">${STATE_LABEL.done}</span>
-        <button type="button" class="ghost-btn" data-act="uncraft">Put back</button>
-      </div>`;
-  }
-  if (r.state === 'skipped') {
-    return `
-      <div class="actions">
-        <span class="state-label">${STATE_LABEL.skipped}</span>
-        <button type="button" class="ghost-btn" data-act="unskip">Want it</button>
-      </div>`;
-  }
+  const craftable = r.state === 'wanted' && ready;
+
+  const label = r.state === 'wanted'
+    ? `${r.satisfied} of ${r.needs} ready`
+    : STATE_LABEL[r.state];
+
+  // The button is always there, so its absence never has to be
+  // interpreted; the tooltip carries why it is off.
+  const why = craftable
+    ? `Spend these ingredients from ${r.station}'s stock and mark it made`
+    : r.state === 'done'
+      ? 'Already made — put it back first'
+      : r.state === 'skipped'
+        ? 'Skipped — want it again first'
+        : `Still need ${shortfall(r)}`;
+
+  const second = r.state === 'done'
+    ? { act: 'uncraft', text: 'Put back',
+        why: `Refund the ingredients to ${r.station} and want it again` }
+    : r.state === 'skipped'
+      ? { act: 'unskip', text: 'Want it',
+          why: 'Put it back on your list' }
+      : { act: 'skip', text: 'Skip',
+          why: 'Not making this — stop asking for its materials' };
+
   return `
     <div class="actions">
-      ${ready
-        ? '<button type="button" class="craft-btn" data-act="craft">Craft</button>'
-        : `<span class="state-label">${r.satisfied} of ${r.needs} ready</span>`}
-      <button type="button" class="ghost-btn" data-act="skip">Skip</button>
+      <span class="state-label">${esc(label)}</span>
+      <span class="craft-wrap" title="${esc(why)}">
+        <button type="button" class="craft-btn" data-act="craft"
+                ${craftable ? '' : 'disabled'}>Craft</button>
+      </span>
+      <button type="button" class="ghost-btn" data-act="${second.act}"
+              title="${esc(second.why)}">${esc(second.text)}</button>
     </div>`;
+}
+
+/** "1x Perfect Deer Pelt, 2x Perfect Ox Hide" — what is still missing. */
+function shortfall(r) {
+  const missing = r.ingredients
+    .filter((i) => !i.satisfied)
+    .map((i) => `${i.qty - i.have}\u00d7 ${i.name}`);
+
+  return missing.length > 2
+    ? `${missing.slice(0, 2).join(', ')} and ${missing.length - 2} more`
+    : missing.join(', ');
 }
 
 function money(cents) {
