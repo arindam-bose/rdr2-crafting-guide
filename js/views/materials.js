@@ -16,7 +16,7 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { materialCard, empty, esc } from '../render.js';
+import { materialCard, empty, esc, pager, PAGE } from '../render.js';
 
 const GROUPS = [
   { id: 'animal', title: 'Animal Materials' },
@@ -30,22 +30,36 @@ const rank = (c) => QUALITY_RANK[c.quality] ?? 2;
 const byName = (a, b) => a.material.localeCompare(b.material);
 const shortfall = (c) => c.demands.reduce(
   (total, d) => total + Math.max(0, d.needed - d.have), 0);
-const demanded = (c) => c.demands.reduce((total, d) => total + d.needed, 0);
 
+// Each field is written ascending once; the direction toggle
+// negates it.  `ways` names what each direction actually does, so
+// the button can say "Most first" rather than an arrow you have to
+// interpret.
 const SORTS = {
-  short:   { label: 'Most still needed',
-             fn: (a, b) => shortfall(b) - shortfall(a) || byName(a, b) },
-  needed:  { label: 'Amount needed',
-             fn: (a, b) => demanded(b) - demanded(a) || byName(a, b) },
-  quality: { label: 'Quality',
-             fn: (a, b) => rank(a) - rank(b)
-                        || shortfall(b) - shortfall(a) || byName(a, b) },
-  name:    { label: 'Name (A\u2013Z)', fn: byName },
+  needed:  {
+    label: 'Still needed',
+    fn: (a, b) => shortfall(a) - shortfall(b) || byName(a, b),
+    ways: { asc: 'Least first', desc: 'Most first' },
+    start: 'desc',
+  },
+  quality: {
+    label: 'Quality',
+    fn: (a, b) => rank(a) - rank(b) || shortfall(b) - shortfall(a) || byName(a, b),
+    ways: { asc: 'Legendary first', desc: 'Legendary last' },
+    start: 'asc',
+  },
+  name: {
+    label: 'Name',
+    fn: byName,
+    ways: { asc: 'A\u2013Z', desc: 'Z\u2013A' },
+    start: 'asc',
+  },
 };
 
 export function mount(root) {
   const state = { search: '', station: null, show: 'all',
-                  group: GROUPS[0].id, sort: 'short' };
+                  group: GROUPS[0].id, sort: 'needed', dir: 'desc',
+                  shown: PAGE };
 
   const stations = queries.stations();
 
@@ -64,12 +78,13 @@ export function mount(root) {
         <button class="chip" data-show="short" aria-pressed="false">Still needed</button>
         <button class="chip" data-show="done" aria-pressed="false">Done</button>
       </div>
-      <label class="sort">Sort
-        <select class="select" id="m-sort" aria-label="Sort materials">
+      <div class="sort">Sort
+        <select class="select" id="m-sort" aria-label="Sort materials by">
           ${Object.entries(SORTS).map(([id, s]) => `
             <option value="${id}">${esc(s.label)}</option>`).join('')}
         </select>
-      </label>
+        <button type="button" class="sort-dir" id="m-dir"></button>
+      </div>
       <span class="count" id="m-count"></span>
     </div>
     <div class="segmented" role="tablist" id="m-groups">
@@ -78,12 +93,36 @@ export function mount(root) {
           ${esc(g.title)}<span class="tab-count"></span></button>`).join('')}
     </div>
     <div class="gallery" id="m-gallery"></div>
+    <div id="m-pager"></div>
     <div id="m-empty"></div>`;
 
   const searchBox = root.querySelector('#m-search');
   const showChips = root.querySelector('#m-show');
   const count = root.querySelector('#m-count');
   const emptyBox = root.querySelector('#m-empty');
+  const pagerBox = root.querySelector('#m-pager');
+
+  // Anything that changes what is in the list starts it over at the
+  // first page; a store change — crafting something — does not, so
+  // you keep your place.
+  function refilter() {
+    state.shown = PAGE;
+    update();
+  }
+
+  pagerBox.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-page]');
+    if (!button) return;
+
+    if (button.dataset.page === 'more') {
+      state.shown += PAGE;
+      update();
+    } else {
+      state.shown = PAGE;
+      update();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  });
   const gallery = root.querySelector('#m-gallery');
   const groupTabs = root.querySelector('#m-groups');
 
@@ -94,17 +133,26 @@ export function mount(root) {
     for (const t of groupTabs.children) {
       t.setAttribute('aria-selected', String(t === tab));
     }
-    update();
+    refilter();
   });
+
+  const dirButton = root.querySelector('#m-dir');
 
   root.querySelector('#m-sort').addEventListener('change', (event) => {
     state.sort = event.target.value;
-    update();
+    // Each field has the direction you nearly always want it in.
+    state.dir = SORTS[state.sort].start;
+    refilter();
+  });
+
+  dirButton.addEventListener('click', () => {
+    state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+    refilter();
   });
 
   searchBox.addEventListener('input', () => {
     state.search = searchBox.value.trim().toLowerCase();
-    update();
+    refilter();
   });
 
   root.querySelector('#m-stations').addEventListener('click', (event) => {
@@ -114,7 +162,7 @@ export function mount(root) {
     for (const c of event.currentTarget.children) {
       c.setAttribute('aria-pressed', String(c === chip));
     }
-    update();
+    refilter();
   });
 
   // One choice, and tapping the pressed chip goes back to everything.
@@ -125,7 +173,7 @@ export function mount(root) {
     for (const c of showChips.children) {
       c.setAttribute('aria-pressed', String(c.dataset.show === state.show));
     }
-    update();
+    refilter();
   });
 
   function update() {
@@ -145,9 +193,16 @@ export function mount(root) {
     }
 
     const cards = matched.filter((m) => m.source_type === state.group);
-    cards.sort(SORTS[state.sort].fn);
+    const { fn, ways } = SORTS[state.sort];
+    const flip = state.dir === 'asc' ? 1 : -1;
+    cards.sort((a, b) => flip * fn(a, b));
 
-    gallery.innerHTML = cards.map((m) => materialCard(m, { personal })).join('');
+    dirButton.textContent = `${state.dir === 'asc' ? '\u2191' : '\u2193'} ${ways[state.dir]}`;
+    dirButton.title = `Sorted ${ways[state.dir].toLowerCase()} — click to reverse`;
+
+    gallery.innerHTML = cards.slice(0, state.shown)
+      .map((m) => materialCard(m, { personal })).join('');
+    pagerBox.innerHTML = pager(state.shown, cards.length);
     emptyBox.innerHTML = cards.length
       ? ''
       : empty(emptyMessage(state, personal, counts));

@@ -188,15 +188,22 @@ export function locations() {
   return db.all('SELECT id, name FROM locations ORDER BY rowid');
 }
 
+// `inventory` is the balance, `inventory_totals` the history: how
+// many have passed through your hands here, and how many of those
+// went into something.  Both are the same ledger, read differently.
 const STOCK_AT = `
   SELECT     ing.id          AS ingredient_id,
              ing.name        AS name,
              ing.source_type AS source_type,
              ing.quality     AS quality,
-             COALESCE(inv.qty, 0) AS qty
+             COALESCE(inv.qty, 0)            AS qty,
+             COALESCE(tot.gathered, 0)       AS gathered,
+             COALESCE(tot.used_crafting, 0)  AS used_crafting
   FROM       ingredients ing
-  LEFT JOIN  inventory   inv ON inv.ingredient_id = ing.id
-                            AND inv.location_id   = :location_id`;
+  LEFT JOIN  inventory        inv ON inv.ingredient_id = ing.id
+                                 AND inv.location_id   = :location_id
+  LEFT JOIN  inventory_totals tot ON tot.ingredient_id = ing.id
+                                 AND tot.location_id   = :location_id`;
 
 /** Materials whose name matches, for the search box. */
 export function searchMaterials(term, locationId, limit = 40) {

@@ -528,6 +528,14 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 .row .name { flex: 1; min-width: 0; font-size: .92rem; }
 
+.row .history {
+  display: block;
+  margin-top: 1px;
+  font-size: .74rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
 .stepper {
   display: flex;
   align-items: center;
@@ -632,6 +640,52 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   color: var(--ink-faint);
 }
 .sort .select { font-size: .82rem; padding: 7px 10px; }
+
+/* The direction says what it does, rather than an arrow you have
+   to work out: "Most first", "A-Z", "Legendary first". */
+.sort-dir {
+  padding: 7px 11px;
+  font: inherit;
+  font-size: .82rem;
+  color: var(--ink-dim);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sort-dir:hover { color: var(--ink); border-color: var(--ink-faint); }
+
+/* ---------- show more ---------- */
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.pager-count {
+  flex: 1;
+  font-size: .8rem;
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.more-btn {
+  padding: 9px 16px;
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.more-btn:hover { border-color: var(--ink-faint); }
 
 /* ---------- misc ---------- */
 

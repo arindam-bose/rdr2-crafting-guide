@@ -117,6 +117,32 @@ function demandRow(d, personal) {
     </div>`;
 }
 
+/**
+ * How many cards a gallery shows before you ask for more.  Both
+ * galleries run to three figures, and a phone rendering 165 cards
+ * to show you the first four is work nobody asked for.
+ */
+export const PAGE = 20;
+
+/** The control under a gallery.  Absent when everything fits. */
+export function pager(shown, total) {
+  if (total <= PAGE) return '';
+
+  const next = Math.min(PAGE, total - shown);
+
+  return `
+    <div class="pager">
+      <span class="pager-count">${Math.min(shown, total)} of ${total}</span>
+      ${next > 0
+        ? `<button type="button" class="more-btn" data-page="more"
+             >Show ${next} more</button>`
+        : ''}
+      ${shown > PAGE
+        ? '<button type="button" class="ghost-btn" data-page="less">Show less</button>'
+        : ''}
+    </div>`;
+}
+
 export function empty(message) {
   return `<p class="empty">${esc(message)}</p>`;
 }

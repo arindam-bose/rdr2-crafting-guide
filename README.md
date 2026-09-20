@@ -76,14 +76,26 @@ Material cards list the recipes each material goes into, ticked off as you make
 them, and split into two tabs, Animal Materials and Misc. Items — one is a
 hunting trip, the other a detour. Each tab carries the count matching the
 current filters, so a search that landed on the other tab is visible rather than
-lost. Materials sort by what is still needed, amount needed, quality (Legendary,
-Perfect, then the rest) or name; recipes by name or by how many items they
-swallow, with made and skipped ones still sinking to the bottom. The **Still needed** and **Done** filters divide them by
+lost. Both galleries show 20 cards at a time, with Show more adding another 20 and
+Show less returning to the first 20. Changing a filter, a tab or the sort starts
+the list over at 20; a store change — crafting something — does not, so you keep
+your place.
+
+Sorting is a field and a direction rather than a list of every combination:
+Materials by what is still needed, quality or name; Recipes by name or by how
+many items they swallow, with made and skipped ones still sinking to the bottom.
+The direction button says what it does — "Most first", "Legendary first", "A-Z"
+— and each field starts in the direction you nearly always want it in. The **Still needed** and **Done** filters divide them by
 whether anything is still outstanding; a material whose recipes are all made or
 skipped moves to Done and says nothing wants it any more, rather than vanishing.
 
 Inventory lists what you are holding at the selected location first, then what
 you logged recently, so it reads as a stock list rather than only a search box.
+Each row also reports how many have passed through your hands there and how many
+went into crafting, read from `inventory_totals` — the same ledger as
+`inventory`, without the balance's habit of dropping rows that netted to zero.
+`qty <= gathered` holds by construction, since one sums every delta and the
+other only the positive ones.
 
 Crafting spends a recipe's ingredients from its station's own stock and marks it
 done, as one commit — the same path Inventory saves through, so undo works the

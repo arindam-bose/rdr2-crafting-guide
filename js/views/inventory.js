@@ -2,8 +2,8 @@
 // Inventory — entry, not reporting.
 //
 // Three locations with a stepper each is too much width on a
-// phone, so the location is a segmented control at the top and
-// each row carries one stepper that writes to it.  You are
+// phone, so the location is a segmented control under the search
+// box and each row carries one stepper that writes to it.  You are
 // almost always entering a batch for one place at a time,
 // because you just walked out of the Trapper.
 //
@@ -46,15 +46,15 @@ export function mount(root) {
   }
 
   root.innerHTML = `
+    <div class="toolbar">
+      <input type="search" class="search" id="i-search"
+             placeholder="Search a material…" autocomplete="off" spellcheck="false">
+    </div>
     <div class="segmented" role="tablist" id="i-locations">
       ${locations.map((l) => `
         <button role="tab" data-location="${esc(l.id)}"
                 aria-selected="${l.id === state.location}">${esc(l.name)}</button>`)
         .join('')}
-    </div>
-    <div class="toolbar">
-      <input type="search" class="search" id="i-search"
-             placeholder="Search a material…" autocomplete="off" spellcheck="false">
     </div>
     <div id="i-sections"></div>
     <div class="savebar" id="i-savebar" hidden>
@@ -210,7 +210,22 @@ function asRow(e) {
     source_type: e.source_type,
     quality: null,
     qty: 0,
+    gathered: 0,
+    used_crafting: 0,
   };
+}
+
+/**
+ * What has passed through your hands here.  Only worth saying once
+ * there is a history to report — on a row you have never touched it
+ * would be three zeroes and no information.
+ */
+function history(m) {
+  if (!m.gathered) return '';
+
+  const parts = [`${m.gathered} gathered`];
+  if (m.used_crafting) parts.push(`${m.used_crafting} crafted`);
+  return `<small class="history">${parts.join(' · ')}</small>`;
 }
 
 function row(m, pending) {
@@ -228,7 +243,7 @@ function row(m, pending) {
   return `
     <div class="row${delta ? ' staged' : ''}" data-ingredient="${esc(m.ingredient_id)}"
          data-name="${esc(m.name)}" data-source="${esc(m.source_type)}">
-      <span class="name">${esc(m.name)}${badge}</span>
+      <span class="name">${esc(m.name)}${badge}${history(m)}</span>
       <span class="stepper">
         <button type="button" data-delta="-1" ${shown <= 0 ? 'disabled' : ''}
                 aria-label="One fewer ${esc(m.name)}">&minus;</button>

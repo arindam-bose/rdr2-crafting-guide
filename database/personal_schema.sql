@@ -41,6 +41,31 @@ CREATE VIEW inventory AS
     HAVING SUM(delta) <> 0;
 
 -- ------------------------------------------------------------
+-- The same ledger read as a lifetime total rather than a balance.
+--
+-- Nothing new is recorded for this: a gain is any row with a
+-- positive delta, and crafting is the rows the craft transaction
+-- below writes, so both numbers were already in the history.
+--
+-- Unlike `inventory` this keeps rows that have netted to zero --
+-- a pelt you gathered and then spent is exactly the case these
+-- totals exist to describe.
+--
+-- qty <= gathered holds by construction: qty is the sum of every
+-- delta, gathered only the positive ones.
+-- ------------------------------------------------------------
+CREATE VIEW inventory_totals AS
+    SELECT ingredient_id,
+           location_id,
+           SUM(delta)                                            AS qty,
+           SUM(CASE WHEN delta > 0 THEN delta ELSE 0 END)        AS gathered,
+           -SUM(CASE WHEN reason = 'craft' THEN delta ELSE 0 END) AS used_crafting,
+           -SUM(CASE WHEN reason <> 'craft' AND delta < 0
+                     THEN delta ELSE 0 END)                      AS given_back
+    FROM   ledger
+    GROUP BY ingredient_id, location_id;
+
+-- ------------------------------------------------------------
 -- What you're working toward.  Absent = 'wanted'.
 -- ------------------------------------------------------------
 CREATE TABLE targets (
