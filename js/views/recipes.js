@@ -24,8 +24,22 @@ const STATE_LABEL = { wanted: '', done: 'Made', skipped: 'Skipped' };
 // not done anything.
 const RANK = { wanted: 0, done: 1, skipped: 2 };
 
+// `total_qty` is how many items the recipe swallows, not how many
+// kinds: one recipe wanting 15 snake skins is a bigger errand than
+// three wanting one pelt each.
+const byName = (a, b) => a.name.localeCompare(b.name);
+
+const SORTS = {
+  name:    { label: 'Name (A\u2013Z)', fn: byName },
+  fewest:  { label: 'Fewest materials',
+             fn: (a, b) => a.total_qty - b.total_qty || byName(a, b) },
+  most:    { label: 'Most materials',
+             fn: (a, b) => b.total_qty - a.total_qty || byName(a, b) },
+};
+
 export function mount(root) {
-  const state = { search: '', station: null, category: '', show: 'all' };
+  const state = { search: '', station: null, category: '',
+                  show: 'all', sort: 'name' };
   const stations = queries.stations();
   const categories = queries.categories();
 
@@ -48,6 +62,12 @@ export function mount(root) {
         <button class="chip" data-show="ready" aria-pressed="false">Ready to craft</button>
         <button class="chip" data-show="done" aria-pressed="false">Made</button>
       </div>
+      <label class="sort">Sort
+        <select class="select" id="r-sort" aria-label="Sort recipes">
+          ${Object.entries(SORTS).map(([id, s]) => `
+            <option value="${id}">${esc(s.label)}</option>`).join('')}
+        </select>
+      </label>
       <span class="count" id="r-count"></span>
     </div>
     <div class="gallery" id="r-gallery"></div>`;
@@ -59,6 +79,11 @@ export function mount(root) {
 
   searchBox.addEventListener('input', () => {
     state.search = searchBox.value.trim().toLowerCase();
+    update();
+  });
+
+  root.querySelector('#r-sort').addEventListener('change', (event) => {
+    state.sort = event.target.value;
     update();
   });
 
@@ -122,10 +147,11 @@ export function mount(root) {
       .map((r) => ({ ...r, ingredients: ingredients.get(r.id) ?? [] }));
 
     const list = all.filter((r) => matches(r, state, personal));
-    if (personal) {
-      list.sort((a, b) => RANK[a.state] - RANK[b.state]
-                       || a.name.localeCompare(b.name));
-    }
+
+    const chosen = SORTS[state.sort].fn;
+    list.sort(personal
+      ? (a, b) => RANK[a.state] - RANK[b.state] || chosen(a, b)
+      : chosen);
 
     gallery.innerHTML = list.length
       ? list.map((r) => card(r, personal)).join('')

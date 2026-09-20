@@ -73,8 +73,12 @@ served network-first, so edits show up on reload without a cache bump.
 Materials, Recipes and Inventory work end to end. Settings is a stub that says so.
 
 Material cards list the recipes each material goes into, ticked off as you make
-them, and split into Animal Materials and Misc. Items — one is a hunting trip,
-the other a detour. The **Still needed** and **Done** filters divide them by
+them, and split into two tabs, Animal Materials and Misc. Items — one is a
+hunting trip, the other a detour. Each tab carries the count matching the
+current filters, so a search that landed on the other tab is visible rather than
+lost. Materials sort by what is still needed, amount needed, quality (Legendary,
+Perfect, then the rest) or name; recipes by name or by how many items they
+swallow, with made and skipped ones still sinking to the bottom. The **Still needed** and **Done** filters divide them by
 whether anything is still outstanding; a material whose recipes are all made or
 skipped moves to Done and says nothing wants it any more, rather than vanishing.
 

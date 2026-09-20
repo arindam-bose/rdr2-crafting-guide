@@ -3,9 +3,11 @@
 //
 // One card per material, carrying a row for every station that
 // still wants it, and the list of recipes it goes into.  Two
-// groups, because the 100 animal materials and the 9 things you
+// tabs, because the 100 animal materials and the 9 things you
 // pick up off the ground are collected in completely different
-// ways: one is a hunting trip, the other is a detour.
+// ways: one is a hunting trip, the other is a detour.  Each tab
+// carries the count that matches the current filters, so what is
+// on the other one is never a surprise.
 //
 // A view exports mount(root) and gets back { update, destroy }.
 // The chrome is built once; a store change refills the groups
@@ -21,8 +23,29 @@ const GROUPS = [
   { id: 'misc',   title: 'Misc. Items' },
 ];
 
+// Legendary first: it is the rarest and the most annoying to go get.
+const QUALITY_RANK = { Legendary: 0, Perfect: 1 };
+const rank = (c) => QUALITY_RANK[c.quality] ?? 2;
+
+const byName = (a, b) => a.material.localeCompare(b.material);
+const shortfall = (c) => c.demands.reduce(
+  (total, d) => total + Math.max(0, d.needed - d.have), 0);
+const demanded = (c) => c.demands.reduce((total, d) => total + d.needed, 0);
+
+const SORTS = {
+  short:   { label: 'Most still needed',
+             fn: (a, b) => shortfall(b) - shortfall(a) || byName(a, b) },
+  needed:  { label: 'Amount needed',
+             fn: (a, b) => demanded(b) - demanded(a) || byName(a, b) },
+  quality: { label: 'Quality',
+             fn: (a, b) => rank(a) - rank(b)
+                        || shortfall(b) - shortfall(a) || byName(a, b) },
+  name:    { label: 'Name (A\u2013Z)', fn: byName },
+};
+
 export function mount(root) {
-  const state = { search: '', station: null, show: 'all' };
+  const state = { search: '', station: null, show: 'all',
+                  group: GROUPS[0].id, sort: 'short' };
 
   const stations = queries.stations();
 
@@ -41,20 +64,43 @@ export function mount(root) {
         <button class="chip" data-show="short" aria-pressed="false">Still needed</button>
         <button class="chip" data-show="done" aria-pressed="false">Done</button>
       </div>
+      <label class="sort">Sort
+        <select class="select" id="m-sort" aria-label="Sort materials">
+          ${Object.entries(SORTS).map(([id, s]) => `
+            <option value="${id}">${esc(s.label)}</option>`).join('')}
+        </select>
+      </label>
       <span class="count" id="m-count"></span>
     </div>
-    ${GROUPS.map((g) => `
-      <section class="group" id="m-group-${g.id}">
-        <h3 class="group-title">${esc(g.title)}
-          <span class="group-count"></span></h3>
-        <div class="gallery"></div>
-      </section>`).join('')}
+    <div class="segmented" role="tablist" id="m-groups">
+      ${GROUPS.map((g, i) => `
+        <button role="tab" data-group="${g.id}" aria-selected="${i === 0}">
+          ${esc(g.title)}<span class="tab-count"></span></button>`).join('')}
+    </div>
+    <div class="gallery" id="m-gallery"></div>
     <div id="m-empty"></div>`;
 
   const searchBox = root.querySelector('#m-search');
   const showChips = root.querySelector('#m-show');
   const count = root.querySelector('#m-count');
   const emptyBox = root.querySelector('#m-empty');
+  const gallery = root.querySelector('#m-gallery');
+  const groupTabs = root.querySelector('#m-groups');
+
+  groupTabs.addEventListener('click', (event) => {
+    const tab = event.target.closest('[data-group]');
+    if (!tab) return;
+    state.group = tab.dataset.group;
+    for (const t of groupTabs.children) {
+      t.setAttribute('aria-selected', String(t === tab));
+    }
+    update();
+  });
+
+  root.querySelector('#m-sort').addEventListener('change', (event) => {
+    state.sort = event.target.value;
+    update();
+  });
 
   searchBox.addEventListener('input', () => {
     state.search = searchBox.value.trim().toLowerCase();
@@ -86,32 +132,38 @@ export function mount(root) {
     const personal = store.isPersonal();
     showChips.hidden = !personal;
 
-    const cards = group(queries.materials({ personal }), queries.materialUsage())
+    const matched = group(queries.materials({ personal }), queries.materialUsage())
       .filter((m) => matches(m, state, personal));
 
-    sort(cards, personal);
-
-    let total = 0;
+    // Every tab shows how many of the current matches it holds, so
+    // a search that landed on the other tab is visible, not lost.
+    const counts = {};
     for (const g of GROUPS) {
-      const section = root.querySelector(`#m-group-${g.id}`);
-      const mine = cards.filter((m) => m.source_type === g.id);
-      total += mine.length;
-
-      section.hidden = mine.length === 0;
-      section.querySelector('.group-count').textContent = mine.length;
-      section.querySelector('.gallery').innerHTML =
-        mine.map((m) => materialCard(m, { personal })).join('');
+      counts[g.id] = matched.filter((m) => m.source_type === g.id).length;
+      groupTabs.querySelector(`[data-group="${g.id}"] .tab-count`).textContent =
+        counts[g.id];
     }
 
-    emptyBox.innerHTML = total ? '' : empty(emptyMessage(state, personal));
-    count.textContent = `${total} material${total === 1 ? '' : 's'}`;
+    const cards = matched.filter((m) => m.source_type === state.group);
+    cards.sort(SORTS[state.sort].fn);
+
+    gallery.innerHTML = cards.map((m) => materialCard(m, { personal })).join('');
+    emptyBox.innerHTML = cards.length
+      ? ''
+      : empty(emptyMessage(state, personal, counts));
+
+    count.textContent = `${cards.length} material${cards.length === 1 ? '' : 's'}`;
   }
 
   update();
   return { update, destroy() {} };
 }
 
-function emptyMessage(state, personal) {
+function emptyMessage(state, personal, counts) {
+  const other = GROUPS.find((g) => g.id !== state.group);
+  if (counts[other.id]) {
+    return `Nothing here — ${counts[other.id]} under ${other.title}.`;
+  }
   if (state.show === 'done' && personal) return 'Nothing is finished with yet.';
   if (state.search || state.station || state.show !== 'all') {
     return 'Nothing matches those filters.';
@@ -189,17 +241,4 @@ function matches(card, state, personal) {
     if (!haystack.includes(state.search)) return false;
   }
   return true;
-}
-
-// Short of the most, first — that is the answer to "where to go".
-function sort(cards, personal) {
-  if (!personal) {
-    cards.sort((a, b) => a.material.localeCompare(b.material));
-    return;
-  }
-  const shortfall = (c) => c.demands.reduce(
-    (total, d) => total + Math.max(0, d.needed - d.have), 0);
-
-  cards.sort((a, b) => shortfall(b) - shortfall(a)
-                    || a.material.localeCompare(b.material));
 }

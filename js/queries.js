@@ -100,6 +100,7 @@ export function recipeList() {
                s.set_type,
                COALESCE(t.state, 'wanted')             AS state,
                COUNT(ri.ingredient_id)                 AS needs,
+               COALESCE(SUM(ri.qty), 0)                AS total_qty,
                SUM(COALESCE(inv.qty, 0) >= ri.qty)     AS satisfied
     FROM       recipes  r
     LEFT JOIN  stations st ON st.id = r.station_id

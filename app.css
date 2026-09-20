@@ -294,31 +294,13 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .bar.short > i { background: var(--accent); }
 
-/* ---------- material groups ---------- */
+/* ---------- a count riding along on a tab ---------- */
 
-.group + .group { margin-top: 26px; }
-
-.group-title {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin: 0 0 10px;
+.tab-count {
+  margin-left: 6px;
   font-size: .78rem;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  color: var(--ink-faint);
-}
-.group-title::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--line);
-}
-.group-count {
-  order: 1;
-  font-size: .78rem;
-  letter-spacing: 0;
-  text-transform: none;
+  font-variant-numeric: tabular-nums;
+  opacity: .6;
 }
 
 /* ---------- "used in" ---------- */
@@ -639,6 +621,17 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border-radius: 50%;
   background: var(--accent);
 }
+
+/* A sort control sits at the end of the toolbar, after the filters. */
+.sort {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  font-size: .8rem;
+  color: var(--ink-faint);
+}
+.sort .select { font-size: .82rem; padding: 7px 10px; }
 
 /* ---------- misc ---------- */
 
