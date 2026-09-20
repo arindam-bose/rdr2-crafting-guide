@@ -13,13 +13,17 @@ export function esc(value) {
 }
 
 /**
- * One material, with a row per station that wants it.
+ * One material: where it comes from, which stations still want it,
+ * and what it goes into.
  *
  *   material = { ingredient_id, material, quality, source_type,
- *                animal, weapon, body_part, demands: [...] }
+ *                animal, weapon, body_part, demands: [...],
+ *                usage: [...] }
  *
  * `personal` decides whether the card talks about what you have.
  */
+const USAGE_SHOWN = 6;
+
 export function materialCard(material, { personal }) {
   const { material: name, quality, source_type, animal, weapon, body_part } = material;
 
@@ -34,7 +38,9 @@ export function materialCard(material, { personal }) {
         .filter(Boolean).join(' ')
     : 'Found out in the world';
 
-  const short = personal && material.demands.some((d) => d.have < d.needed);
+  const open = material.demands.filter((d) => d.needed > 0);
+  const short = personal && open.some((d) => d.have < d.needed);
+
   const hint = short
     ? `<p class="sub hint">${source_type === 'animal'
         ? 'You need to go hunting!'
@@ -46,19 +52,50 @@ export function materialCard(material, { personal }) {
       <h3>${esc(name)}${badge}</h3>
       <p class="sub">${origin || '&nbsp;'}${
         body_part ? ` · ${esc(body_part)}` : ''}</p>
-      <div class="demands">
-        ${material.demands.map((d) => demandRow(d, personal)).join('')}
-      </div>
+
+      ${open.length
+        ? `<div class="demands">${open.map((d) => demandRow(d, personal)).join('')}</div>`
+        : '<p class="retired-note">Nothing wants this any more.</p>'}
+
+      ${usedIn(material.usage, personal)}
       ${hint}
     </article>`;
 }
 
+/** The recipes a material goes into, each with its tick or cross. */
+function usedIn(usage = [], personal) {
+  if (!usage.length) return '';
+
+  const shown = usage.slice(0, USAGE_SHOWN);
+  const rest = usage.length - shown.length;
+
+  const line = (u) => {
+    const state = !personal ? 'plain'
+      : u.state === 'done' ? 'made'
+      : u.state === 'skipped' ? 'retired'
+      : 'open';
+    const mark = { made: '&check;', retired: '&minus;', open: '&times;', plain: '&middot;' }[state];
+
+    return `<li class="${state}">
+      <span class="mark" aria-hidden="true">${mark}</span>
+      <span class="what">${u.qty > 1 ? `${u.qty}&times; ` : ''}${esc(u.recipe)}</span>
+    </li>`;
+  };
+
+  return `
+    <ul class="used-in">
+      ${shown.map(line).join('')}
+      ${rest ? `<li class="more">and ${rest} more</li>` : ''}
+    </ul>`;
+}
+
+/** One station's demand for this material, and how close you are. */
 function demandRow(d, personal) {
-  const color = ['blue', 'yellow', 'pink'].includes(d.color) ? d.color : '';
+  const colour = ['blue', 'yellow', 'pink'].includes(d.color) ? d.color : '';
 
   if (!personal) {
     return `
-      <div class="demand ${color}">
+      <div class="demand ${colour}">
         <span class="qty">${d.needed}&times;</span>
         <span class="station">${esc(d.station)}</span>
         <span></span>
@@ -69,7 +106,7 @@ function demandRow(d, personal) {
   const pct = d.needed ? Math.min(100, Math.round((d.have / d.needed) * 100)) : 100;
 
   return `
-    <div class="demand ${color}">
+    <div class="demand ${colour}">
       <span class="qty">
         <span class="${enough ? 'have' : 'short'}">${d.have}</span>/${d.needed}
       </span>

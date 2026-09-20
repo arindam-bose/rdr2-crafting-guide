@@ -72,6 +72,15 @@ served network-first, so edits show up on reload without a cache bump.
 
 Materials, Recipes and Inventory work end to end. Settings is a stub that says so.
 
+Material cards list the recipes each material goes into, ticked off as you make
+them, and split into Animal Materials and Misc. Items — one is a hunting trip,
+the other a detour. The **Still needed** and **Done** filters divide them by
+whether anything is still outstanding; a material whose recipes are all made or
+skipped moves to Done and says nothing wants it any more, rather than vanishing.
+
+Inventory lists what you are holding at the selected location first, then what
+you logged recently, so it reads as a stock list rather than only a search box.
+
 Crafting spends a recipe's ingredients from its station's own stock and marks it
 done, as one commit — the same path Inventory saves through, so undo works the
 same way. A recipe can also be skipped, which retires it without spending

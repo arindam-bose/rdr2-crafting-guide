@@ -20,13 +20,13 @@ import * as db from './db.js';
 // (material, station) pair.
 // ------------------------------------------------------------
 export function materials({ personal = true } = {}) {
-  // In general mode there are no targets, so nothing is filtered
-  // out and the view shows the reference data whole.
-  // 'wanted' rather than "not done": a recipe you skipped should
-  // stop asking you for its materials, same as one you finished.
-  const unfinished = personal
-    ? "COALESCE(t.state, 'wanted') = 'wanted'"
-    : '1';
+  // Open demand is what wanted recipes still ask for; the total is
+  // what every recipe asks for, done and skipped included.  Keeping
+  // both means a material whose recipes are all finished can still
+  // be listed — as retired, rather than vanishing.
+  const open = personal
+    ? "SUM(CASE WHEN COALESCE(t.state, 'wanted') = 'wanted' THEN ri.qty ELSE 0 END)"
+    : 'SUM(ri.qty)';
 
   return db.all(`
     SELECT     ing.id               AS ingredient_id,
@@ -39,7 +39,8 @@ export function materials({ personal = true } = {}) {
                st.id                AS station_id,
                st.name              AS station,
                st.color             AS color,
-               SUM(ri.qty)          AS needed,
+               ${open}              AS needed,
+               SUM(ri.qty)          AS needed_total,
                COALESCE(inv.qty, 0) AS have
     FROM       recipe_ingredients ri
     JOIN       recipes      r   ON r.id   = ri.recipe_id
@@ -50,9 +51,29 @@ export function materials({ personal = true } = {}) {
     LEFT JOIN  targets      t   ON t.recipe_id = r.id
     LEFT JOIN  inventory    inv ON inv.ingredient_id = ing.id
                                AND inv.location_id   = st.location_id
-    WHERE      ${unfinished}
     GROUP BY   ing.id, st.id
     ORDER BY   ing.name, st.name
+  `);
+}
+
+/**
+ * What each material is used in: every recipe that calls for it,
+ * with the state that decides its tick or cross.  One query for
+ * the whole screen, grouped by material in the view.
+ */
+export function materialUsage() {
+  return db.all(`
+    SELECT     ri.ingredient_id,
+               r.id                        AS recipe_id,
+               r.name                      AS recipe,
+               ri.qty                      AS qty,
+               st.name                     AS station,
+               COALESCE(t.state, 'wanted') AS state
+    FROM       recipe_ingredients ri
+    JOIN       recipes  r  ON r.id  = ri.recipe_id
+    JOIN       stations st ON st.id = r.station_id
+    LEFT JOIN  targets  t  ON t.recipe_id = r.id
+    ORDER BY   r.name
   `);
 }
 
@@ -183,6 +204,14 @@ export function searchMaterials(term, locationId, limit = 40) {
     ORDER BY  ing.name
     LIMIT     :limit`,
     { location_id: locationId, term: `%${term}%`, limit });
+}
+
+/** What you are holding at one location, most of it first. */
+export function stockAt(locationId) {
+  return db.all(`${STOCK_AT}
+    WHERE     COALESCE(inv.qty, 0) > 0
+    ORDER BY  ing.name`,
+    { location_id: locationId });
 }
 
 /**

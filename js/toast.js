@@ -20,10 +20,15 @@ export function toast(message, action = null) {
   element ??= document.getElementById('toast');
   clearTimeout(timer);
 
-  element.textContent = message;
+  const text = document.createElement('span');
+  text.className = 'toast-text';
+  text.textContent = message;
+  element.replaceChildren(text);
+
   if (action) {
     const button = document.createElement('button');
     button.type = 'button';
+    button.className = 'action';
     button.textContent = action.label;
     button.addEventListener('click', () => {
       dismiss();
@@ -31,6 +36,15 @@ export function toast(message, action = null) {
     });
     element.append(button);
   }
+
+  // A way out that does not depend on waiting.
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'toast-close';
+  close.setAttribute('aria-label', 'Dismiss');
+  close.textContent = '\u00d7';
+  close.addEventListener('click', dismiss);
+  element.append(close);
 
   element.hidden = false;
   timer = setTimeout(dismiss, action?.duration ?? DURATION);

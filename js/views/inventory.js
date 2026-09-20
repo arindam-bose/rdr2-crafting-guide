@@ -56,8 +56,7 @@ export function mount(root) {
       <input type="search" class="search" id="i-search"
              placeholder="Search a material…" autocomplete="off" spellcheck="false">
     </div>
-    <p class="list-label" id="i-label"></p>
-    <div class="rows" id="i-rows"></div>
+    <div id="i-sections"></div>
     <div class="savebar" id="i-savebar" hidden>
       <span class="pending-count" id="i-pending"></span>
       <button type="button" class="discard" id="i-discard">Discard</button>
@@ -66,8 +65,7 @@ export function mount(root) {
 
   const segmented = root.querySelector('#i-locations');
   const searchBox = root.querySelector('#i-search');
-  const label = root.querySelector('#i-label');
-  const rows = root.querySelector('#i-rows');
+  const sections = root.querySelector('#i-sections');
   const savebar = root.querySelector('#i-savebar');
   const pending = root.querySelector('#i-pending');
 
@@ -89,7 +87,7 @@ export function mount(root) {
 
   // One listener for every stepper: the rows are replaced on each
   // change, so per-row listeners would not survive anyway.
-  rows.addEventListener('click', (event) => {
+  sections.addEventListener('click', (event) => {
     const button = event.target.closest('[data-delta]');
     if (!button) return;
     stage(button.closest('.row').dataset, Number(button.dataset.delta));
@@ -136,20 +134,21 @@ export function mount(root) {
 
   function update() {
     const searching = state.search.length > 0;
-    const list = searching
-      ? queries.searchMaterials(state.search, state.location)
-      : recentAndStaged(state.location);
+    const place = locations.find((l) => l.id === state.location).name;
 
-    label.textContent = searching
-      ? `${list.length} match${list.length === 1 ? '' : 'es'}`
-      : 'Recently touched';
-    label.hidden = searching && list.length === 0;
-
-    rows.innerHTML = list.length
-      ? list.map((m) => row(m, staged.get(key(state.location, m.ingredient_id)))).join('')
-      : empty(searching
-          ? 'No material by that name.'
-          : 'Nothing logged yet. Search for what you just picked up.');
+    if (searching) {
+      const hits = queries.searchMaterials(state.search, state.location);
+      sections.innerHTML = section(
+        `${hits.length} match${hits.length === 1 ? '' : 'es'}`,
+        hits, 'No material by that name.');
+    } else {
+      // What you are holding here first, then the quick way back to
+      // whatever you were logging lately.
+      sections.innerHTML =
+        section(`In the ${place}`, held(state.location),
+                `Nothing in the ${place} yet.`)
+        + section('Recently touched', recent(state.location), '');
+    }
 
     savebar.hidden = staged.size === 0;
     pending.textContent =
@@ -163,30 +162,55 @@ export function mount(root) {
     }
   }
 
+  function section(title, list, emptyText) {
+    if (!list.length && !emptyText) return '';
+    return `
+      <section class="stock-section">
+        <p class="list-label">${esc(title)}</p>
+        ${list.length
+          ? `<div class="rows">${list
+               .map((m) => row(m, staged.get(key(state.location, m.ingredient_id))))
+               .join('')}</div>`
+          : empty(emptyText)}
+      </section>`;
+  }
+
   update();
   return { update, destroy() {} };
 }
 
 /**
- * The empty-search list: what you touched last, plus anything you
- * have staged — a material you just added has no ledger history
- * yet, so it would otherwise vanish the moment you stopped typing.
+ * What you are holding here, plus anything staged for it — a
+ * material you just added has no stock yet, but it is about to,
+ * so it belongs in this list rather than vanishing from view.
  */
-function recentAndStaged(location) {
-  const recent = queries.recentMaterials(location);
-  const seen = new Set(recent.map((m) => m.ingredient_id));
+function held(location) {
+  const stock = queries.stockAt(location);
+  const seen = new Set(stock.map((m) => m.ingredient_id));
 
-  const extra = [...staged.values()]
+  const incoming = [...staged.values()]
     .filter((e) => e.location_id === location && !seen.has(e.ingredient_id))
-    .map((e) => ({
-      ingredient_id: e.ingredient_id,
-      name: e.name,
-      source_type: e.source_type,
-      quality: null,
-      qty: 0,
-    }));
+    .map(asRow);
 
-  return [...extra, ...recent];
+  return [...stock, ...incoming]
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Touched lately but not currently held — the quick way back. */
+function recent(location) {
+  const holding = new Set(held(location).map((m) => m.ingredient_id));
+  return queries.recentMaterials(location)
+    .filter((m) => !holding.has(m.ingredient_id));
+}
+
+function asRow(e) {
+  return {
+    ingredient_id: e.ingredient_id,
+    name: e.name,
+    source_type: e.source_type,
+    quality: null,
+    qty: 0,
+  };
 }
 
 function row(m, pending) {
