@@ -11,13 +11,26 @@
 </head>
 <body>
 
-<header class="topbar">
-  <h1>Crafting Guide</h1>
-  <label class="mode" title="Personal mode tracks what you have; general mode is the plain reference.">
-    <input type="checkbox" id="mode-toggle">
-    <span>Personal</span>
-  </label>
-</header>
+<!-- Top bar and tabs travel together, so on a wide screen the tabs
+     stick under the bar instead of below the content. -->
+<div class="chrome">
+  <header class="topbar">
+    <h1>Crafting Guide</h1>
+    <label class="mode" title="Personal mode tracks what you have; general mode is the plain reference.">
+      <input type="checkbox" id="mode-toggle">
+      <span>Personal</span>
+    </label>
+  </header>
+
+  <nav class="tabs">
+    <a href="#/materials" data-route="materials">Materials</a>
+    <a href="#/recipes"   data-route="recipes">Recipes</a>
+    <a href="#/inventory" data-route="inventory">Inventory</a>
+    <a href="#/settings"  data-route="settings">Settings</a>
+  </nav>
+</div>
+
+<h2 class="page-title" id="page-title"></h2>
 
 <main id="view" aria-live="polite">
   <!-- first-load skeleton; replaced once the database is open -->
@@ -29,13 +42,6 @@
     </div>
   </div>
 </main>
-
-<nav class="tabs">
-  <a href="#/materials" data-route="materials">Materials</a>
-  <a href="#/recipes"   data-route="recipes">Recipes</a>
-  <a href="#/inventory" data-route="inventory">Inventory</a>
-  <a href="#/settings"  data-route="settings">Settings</a>
-</nav>
 
 <div id="toast" class="toast" hidden></div>
 

@@ -12,17 +12,24 @@ import { errorBox, placeholder } from './render.js';
 import { toast } from './toast.js';
 import * as materials from './views/materials.js';
 import * as inventory from './views/inventory.js';
+import * as recipes from './views/recipes.js';
 
+// Each route names itself: the tab label, and the heading under it.
 const ROUTES = {
-  materials: () => materials,
-  recipes:   () => stub('Recipes', 'All 165 recipes, with the ingredient markers.'),
-  inventory: () => inventory,
-  settings:  () => stub('Settings', 'Export, import, reset.'),
+  materials: { title: 'Materials',
+               view: () => materials },
+  recipes:   { title: 'Recipes',
+               view: () => recipes },
+  inventory: { title: 'Inventory',
+               view: () => inventory },
+  settings:  { title: 'Settings',
+               view: () => stub('Settings', 'Export, import, reset.') },
 };
 
 const DEFAULT_ROUTE = 'materials';
 
 const view = document.getElementById('view');
+const pageTitle = document.getElementById('page-title');
 const tabs = document.querySelector('.tabs');
 const modeToggle = document.getElementById('mode-toggle');
 
@@ -49,8 +56,11 @@ function show(name) {
     else tab.removeAttribute('aria-current');
   }
 
+  pageTitle.textContent = ROUTES[name].title;
+  document.title = `${ROUTES[name].title} · RDR2 Crafting Guide`;
+
   try {
-    current = ROUTES[name]().mount(view);
+    current = ROUTES[name].view().mount(view);
   } catch (err) {
     console.error(err);
     view.innerHTML = errorBox(err);

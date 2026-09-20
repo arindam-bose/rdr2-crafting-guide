@@ -62,6 +62,7 @@ served network-first, so edits show up on reload without a cache bump.
       render.js           card templates
       views/materials.js  "Where to go if you have these items"
       views/inventory.js  entry: pick a location, search, tap +/-
+      views/recipes.js    the catalogue, and where you craft
       toast.js            the undo toast
       main.js             boot and hash routing
     vendor/               sql.js, vendored so nothing is fetched from a CDN
@@ -69,10 +70,23 @@ served network-first, so edits show up on reload without a cache bump.
 
 ## State
 
-Materials and Inventory work end to end. Recipes and Settings are stubs that say
-so — the queries behind them are written and tested, the screens are not.
+Materials, Recipes and Inventory work end to end. Settings is a stub that says so.
 
-Inventory has no save button: every tap on a stepper is a ledger row the moment
-you make it, with an undo toast. A plus is recorded as the thing that most
-likely caused it (`kill` for an animal material, `loot` otherwise); a minus is
-recorded as a `correction`, since that is nearly always what it is.
+Crafting spends a recipe's ingredients from its station's own stock and marks it
+done, as one commit — the same path Inventory saves through, so undo works the
+same way. A recipe can also be skipped, which retires it without crafting it.
+
+A recipe that is done or skipped stops asking for its materials, so it drops out
+of the Materials screen. Demand is per station, so that only removes the demand
+at *that* station: a material two recipes want still shows for the other one.
+
+Inventory stages rather than writes. Steppers adjust a pending batch; Save
+commits the lot as one SQLite transaction and one IndexedDB transaction, one
+ledger row per material and location however many taps went into it. Undo works
+at the level of the commit. Staged edits survive a tab switch — a dot appears on
+the Inventory tab — and the browser warns before you close the page with any
+outstanding.
+
+A plus is recorded as the thing that most likely caused it (`kill` for an animal
+material, `loot` otherwise); a minus as a `correction`, since that is nearly
+always what it is.

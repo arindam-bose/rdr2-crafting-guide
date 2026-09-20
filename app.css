@@ -19,6 +19,10 @@
   --ok:         #7a9a5c;
   --warn:       #c9a13b;
 
+  /* material quality */
+  --perfect:    #e8e8e6;   /* light grey / white */
+  --legendary:  #d4af37;   /* gold */
+
   /* station colours, carried from stations.color in the database */
   --station-blue:   #6d94b8;
   --station-yellow: #c9a13b;
@@ -42,22 +46,41 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .01em; }
 
 /* ---------- top bar ---------- */
 
-.topbar {
+/* No backdrop-filter here while the tabs are fixed inside it: a
+   filtered ancestor becomes the containing block for its fixed
+   descendants, which would pin the tab bar under the header
+   instead of to the bottom of the screen.  The wide layout, where
+   the tabs are static, puts it back. */
+.chrome {
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+.topbar {
   display: flex;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
   padding-top: calc(12px + env(safe-area-inset-top, 0px));
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--line);
 }
 
 .topbar h1 { margin: 0; font-size: 1.05rem; }
+
+/* The page's own name, under the menu. */
+.page-title {
+  margin: 0;
+  padding: 18px 16px 0;
+  max-width: 1400px;
+  margin-inline: auto;
+  font-size: 1.35rem;
+  letter-spacing: -.01em;
+}
+.page-title:empty { display: none; }
 
 .mode {
   display: flex;
@@ -86,8 +109,10 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .01em; }
   flex: 1;
   padding: 0 4px;
   height: var(--tabs-h);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   color: var(--ink-dim);
   text-decoration: none;
   font-size: .8rem;
@@ -102,9 +127,20 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .01em; }
 
 @media (min-width: 720px) {
   body { padding-bottom: 0; }
+
+  /* Now that the tabs are in normal flow, the whole bar can blur. */
+  .chrome {
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+  }
+  .topbar {
+    background: transparent;
+    backdrop-filter: none;
+  }
+
   .tabs {
-    position: sticky;
-    top: 0;
+    position: static;       /* .chrome is what sticks */
+    background: transparent;
     border-top: 0;
     border-bottom: 1px solid var(--line);
     padding: 0 16px;
@@ -213,10 +249,10 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   text-transform: uppercase;
   border-radius: 999px;
   border: 1px solid currentColor;
-  color: var(--warn);
+  color: var(--perfect);
   vertical-align: 1px;
 }
-.badge.legendary { color: var(--accent); }
+.badge.legendary { color: var(--legendary); }
 
 /* demand rows, one per station that wants this material */
 
@@ -252,6 +288,123 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   background: var(--ok);
 }
 .bar.short > i { background: var(--accent); }
+
+/* ---------- recipe card ---------- */
+
+.select {
+  flex: 0 1 auto;
+  min-width: 0;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: .86rem;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+/* The station's colour runs down the edge, as on a material card. */
+.card.recipe { border-left-width: 3px; }
+.card.recipe.blue   { border-left-color: var(--station-blue); }
+.card.recipe.yellow { border-left-color: var(--station-yellow); }
+.card.recipe.pink   { border-left-color: var(--station-pink); }
+.card.recipe.settled { opacity: .62; }
+
+.recipe-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.recipe-head h3 { flex: 1; }
+
+.price {
+  flex: 0 0 auto;
+  font-size: .82rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+}
+
+/* Buff text is sometimes a bullet list in the source data. */
+.buff {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: .8rem;
+  line-height: 1.45;
+  white-space: pre-line;
+  color: var(--ink-dim);
+  background: var(--surface-2);
+  border-radius: 7px;
+}
+
+.ingredients {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: .85rem;
+}
+
+.ingredients li {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: baseline;
+  gap: 7px;
+}
+.ingredients li:not(.have):not(.short) { grid-template-columns: auto 1fr; }
+
+.ingredients .mark { font-size: .9rem; line-height: 1; }
+.ingredients li.have  .mark  { color: var(--ok); }
+.ingredients li.short .mark  { color: var(--accent); }
+.ingredients li.short .what  { color: var(--ink-dim); }
+
+.ingredients .qty { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+.ingredients .tally {
+  color: var(--ink-faint);
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 4px;
+}
+
+.state-label {
+  flex: 1;
+  font-size: .8rem;
+  color: var(--ink-faint);
+}
+
+.craft-btn {
+  flex: 1;
+  padding: 9px 14px;
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 600;
+  color: var(--bg);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ghost-btn {
+  padding: 9px 12px;
+  font: inherit;
+  font-size: .82rem;
+  color: var(--ink-dim);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.ghost-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
 
 /* ---------- inventory: entry, one location at a time ---------- */
 
@@ -341,6 +494,68 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   color: var(--ink-faint);
 }
 .stepper output.held { color: var(--ok); font-weight: 600; }
+
+/* pending, unsaved changes */
+
+.row.staged { background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+
+.stepper output.pending { color: var(--accent); font-weight: 600; }
+.stepper output small {
+  margin-left: 3px;
+  font-size: .72rem;
+  font-weight: 500;
+  opacity: .85;
+}
+
+/* The commit bar: within a thumb's reach, above the tabs. */
+.savebar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tabs-h) + 12px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: calc(100% - 32px);
+  max-width: 520px;
+  padding: 10px 10px 10px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgb(0 0 0 / .45);
+}
+@media (min-width: 720px) { .savebar { bottom: 20px; } }
+
+.savebar .pending-count { flex: 1; font-size: .86rem; }
+
+.savebar button {
+  font: inherit;
+  font-size: .86rem;
+  padding: 9px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.savebar .discard {
+  color: var(--ink-dim);
+  background: none;
+  border: 1px solid var(--line);
+}
+.savebar .save {
+  color: var(--bg);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  font-weight: 600;
+}
+
+/* a dot beside the tab label while changes are uncommitted */
+.tabs a[data-pending]::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
 
 /* ---------- misc ---------- */
 

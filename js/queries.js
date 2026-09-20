@@ -22,8 +22,10 @@ import * as db from './db.js';
 export function materials({ personal = true } = {}) {
   // In general mode there are no targets, so nothing is filtered
   // out and the view shows the reference data whole.
+  // 'wanted' rather than "not done": a recipe you skipped should
+  // stop asking you for its materials, same as one you finished.
   const unfinished = personal
-    ? "COALESCE(t.state, 'wanted') <> 'done'"
+    ? "COALESCE(t.state, 'wanted') = 'wanted'"
     : '1';
 
   return db.all(`
@@ -61,43 +63,61 @@ export function stations() {
 
 // ------------------------------------------------------------
 // 2. Recipe card — ingredients with the inline marker.
+//
+// Two queries for the whole screen rather than two per card:
+// the list, and every ingredient row in one go, grouped by
+// recipe in the view.  165 recipes and 261 ingredient rows.
 // ------------------------------------------------------------
-export function recipe(recipeId) {
-  const head = db.one(`
+export function recipeList() {
+  return db.all(`
     SELECT     r.id, r.name, r.category, r.price_cents, r.description,
                r.warmth_rank,
                st.id   AS station_id,
                st.name AS station,
                st.color,
                s.name  AS set_name,
-               COALESCE(t.state, 'wanted') AS state
+               s.set_type,
+               COALESCE(t.state, 'wanted')             AS state,
+               COUNT(ri.ingredient_id)                 AS needs,
+               SUM(COALESCE(inv.qty, 0) >= ri.qty)     AS satisfied
     FROM       recipes  r
     LEFT JOIN  stations st ON st.id = r.station_id
     LEFT JOIN  sets     s  ON s.id  = r.set_id
     LEFT JOIN  targets  t  ON t.recipe_id = r.id
-    WHERE      r.id = :recipe_id
-  `, { recipe_id: recipeId });
-
-  if (!head) return null;
-
-  head.ingredients = db.all(`
-    SELECT     ing.id                          AS ingredient_id,
-               ing.name                        AS name,
-               ing.source_type                 AS source_type,
-               ri.qty                          AS qty,
-               COALESCE(inv.qty, 0)            AS have,
-               COALESCE(inv.qty, 0) >= ri.qty  AS satisfied
-    FROM       recipes r
-    JOIN       stations           st  ON st.id  = r.station_id
-    JOIN       recipe_ingredients ri  ON ri.recipe_id = r.id
-    JOIN       ingredients        ing ON ing.id = ri.ingredient_id
-    LEFT JOIN  inventory          inv ON inv.ingredient_id = ing.id
+    LEFT JOIN  recipe_ingredients ri ON ri.recipe_id = r.id
+    LEFT JOIN  inventory          inv ON inv.ingredient_id = ri.ingredient_id
                                      AND inv.location_id   = st.location_id
-    WHERE      r.id = :recipe_id
-    ORDER BY   ing.name
-  `, { recipe_id: recipeId });
+    GROUP BY   r.id
+    ORDER BY   r.name
+  `);
+}
 
-  return head;
+/** Every ingredient of every recipe, with the marker's two numbers. */
+export function recipeIngredients() {
+  return db.all(`
+    SELECT     ri.recipe_id,
+               ing.id          AS ingredient_id,
+               ing.name        AS name,
+               ing.source_type AS source_type,
+               ing.quality     AS quality,
+               ri.qty          AS qty,
+               COALESCE(inv.qty, 0)           AS have,
+               COALESCE(inv.qty, 0) >= ri.qty AS satisfied
+    FROM       recipe_ingredients ri
+    JOIN       recipes     r   ON r.id   = ri.recipe_id
+    JOIN       stations    st  ON st.id  = r.station_id
+    JOIN       ingredients ing ON ing.id = ri.ingredient_id
+    LEFT JOIN  inventory   inv ON inv.ingredient_id = ing.id
+                              AND inv.location_id   = st.location_id
+    ORDER BY   ing.name
+  `);
+}
+
+/** The categories in use, for the filter. */
+export function categories() {
+  return db.all(`SELECT DISTINCT category FROM recipes
+                 WHERE category IS NOT NULL ORDER BY category`)
+           .map((r) => r.category);
 }
 
 // ------------------------------------------------------------

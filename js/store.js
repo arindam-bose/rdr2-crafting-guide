@@ -135,6 +135,39 @@ export async function record({ ingredient_id, location_id, delta, reason,
   return row;
 }
 
+/**
+ * Append a whole batch as one commit: one SQLite transaction and
+ * one IndexedDB transaction, however many rows.  Returns the rows,
+ * whose ids `undoBatch` takes.
+ */
+export async function recordBatch(entries) {
+  if (!entries.length) return [];
+
+  const rows = db.transaction(() => entries.map(
+    ({ ingredient_id, location_id, delta, reason, recipe_id = null, note = null }) => {
+      db.run(
+        `INSERT INTO ledger (ingredient_id, location_id, delta, reason, recipe_id, note)
+         VALUES (:ingredient_id, :location_id, :delta, :reason, :recipe_id, :note)`,
+        { ingredient_id, location_id, delta, reason, recipe_id, note });
+      return db.one('SELECT * FROM ledger WHERE id = :id', { id: db.lastInsertId() });
+    }));
+
+  await tx([LEDGER], 'readwrite', (s) => { for (const r of rows) s.put(r); });
+  changed();
+  return rows;
+}
+
+/** Take a whole commit back. */
+export async function undoBatch(ids) {
+  if (!ids.length) return;
+
+  db.transaction(() => {
+    for (const id of ids) db.run('DELETE FROM ledger WHERE id = :id', { id });
+  });
+  await tx([LEDGER], 'readwrite', (s) => { for (const id of ids) s.delete(id); });
+  changed();
+}
+
 /** Remove one ledger row — the undo behind the toast. */
 export async function undo(id) {
   db.run('DELETE FROM ledger WHERE id = :id', { id });
