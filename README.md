@@ -1,0 +1,1 @@
+# rdr2-crafting-guide
