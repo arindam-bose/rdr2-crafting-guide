@@ -262,7 +262,7 @@ function card(r, personal) {
       <p class="sub">${[r.station, r.category, r.set_name]
         .filter(Boolean).map(esc).join(' - ')}</p>
 
-      ${r.description ? `<p class="buff">${esc(r.description)}</p>` : ''}
+      ${buff(r.description)}
 
       <ul class="ingredients">
         ${r.ingredients.map((i) => ingredient(i, personal)).join('')}
@@ -271,6 +271,22 @@ function card(r, personal) {
       ${personal ? actions(r, ready) : ''}
     </article>`;
 }
+
+/**
+ * The buff text.  Most recipes have one line of it; the saddles have five,
+ * stored one per line since the build stopped keeping Notion's bullets.
+ * A list is what that always was, so it is marked up as one -- and the
+ * marker becomes a CSS hyphen, which the page's typewriter face can draw.
+ */
+function buff(description) {
+  if (!description) return '';
+
+  const lines = description.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (lines.length < 2) return `<p class="buff">${esc(description)}</p>`;
+
+  return `<ul class="buff">${lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>`;
+}
+
 
 function ingredient(i, personal) {
   const badge = i.quality

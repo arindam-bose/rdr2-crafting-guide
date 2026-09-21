@@ -138,10 +138,10 @@ That is the right trade here rather than a compromise: a real Remington had one
 weight too, and emphasis was struck twice over the same spot.
 
 Its character set is a typewriter's, which is to say 152 codepoints. It has no
-`×`, `✓`, `·`, `−` or `—`. A browser fills a gap like that from the next font
-in the stack, which puts a second typeface inside `2× Oregano` at a different
-width and weight — so nothing here asks for one. The app types what the machine
-could type:
+`×`, `✓`, `·`, `−`, `—` or `•`. A browser fills a gap like that from the next
+font in the stack, which puts a second typeface inside `2× Oregano` at a
+different width and weight — so nothing here asks for one. The app types what
+the machine could type:
 
 | was | is | where |
 |---|---|---|
@@ -155,6 +155,14 @@ could type:
 The marks are `aria-hidden`, and the colour beside them was already carrying
 the meaning, so this costs nothing but reads as one face throughout. The one
 `·` left is in `document.title`, which the browser draws in its own font.
+
+The last `•` was not the app's to type: seven saddles carried their five stat
+lines as a Notion bulleted list, bullet characters and all, inside a single
+`description`. That was a list pretending to be a paragraph. `build_db.py` now
+strips the markers and stores one item per line, and the Recipes card renders a
+multi-line description as a real `<ul>` whose marker is a CSS hyphen. The
+reference data is ASCII throughout apart from two non-breaking spaces, which
+the font has.
 
 The rule that assigns the two faces is the last thing in `app.css` on purpose:
 every control in the file sets `font: inherit` to match the page rather than

@@ -166,16 +166,34 @@ def parse_price(cell):
     return int(round(float(digits) * 100)) if digits else 0
 
 
+def unbullet(text):
+    """
+    Notion writes a multi-line buff as a bulleted list, indenting every item
+    after the first: '\u2022 A\n  \u2022 B'.  Keep the list and drop the
+    typography, one item per line with no marker.
+
+    The bullet is a character the app cannot set -- the page is typed in a
+    typewriter face with a typewriter's 152 glyphs -- and it was never
+    content in the first place.  The Recipes page puts markers back as a
+    <ul>, which is what this always was.
+    """
+    if "\u2022" not in text:
+        return text
+    return "\n".join(part for part in
+                     (p.strip() for p in text.split("\u2022")) if part)
+
+
 def parse_description(buff):
     """
-    Keep the Notion 'Buff' text verbatim, and derive an ordinal warmth rank
-    where one applies.  The text stays the single source of truth; the rank
-    is recomputed on every build.
+    Keep the Notion 'Buff' text, less its bullet characters, and derive an
+    ordinal warmth rank where one applies.  The text stays the single source
+    of truth; the rank is recomputed on every build.
     """
     if pd.isna(buff) or not str(buff).strip():
         return None, None
     text = str(buff).strip()
     text = TEXT_FIXES.get(text, text)
+    text = unbullet(text)
     return text, WARMTH.get(text.lower())
 
 

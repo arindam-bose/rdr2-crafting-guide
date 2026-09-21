@@ -471,7 +471,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .used-in .mark { font-size: .85rem; line-height: 1; }
 .used-in li.made          { color: var(--ink-faint); }
 .used-in li.made .mark    { color: var(--ok); }
-.used-in li.open .mark    { color: var(--accent-text); }
+.used-in li.open .mark    { color: var(--danger-text); }
 .used-in li.retired       { color: var(--ink-faint); }
 .used-in li.made .what    { text-decoration: line-through; }
 .used-in li.retired .what { text-decoration: line-through; }
@@ -525,7 +525,8 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   color: var(--ink-dim);
 }
 
-/* Buff text is sometimes a bullet list in the source data. */
+/* Buff text is one line for most recipes.  The saddles list five stats,
+   which the data stores one per line, and the card marks up as a <ul>. */
 .buff {
   margin: 0;
   padding: 8px 10px;
@@ -535,6 +536,24 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   color: var(--ink-dim);
   background: var(--surface-2);
   border-radius: 7px;
+}
+
+/* The marker is a hyphen rather than a disc: it is the one the typewriter
+   has, and a disc would be drawn by some other font. */
+ul.buff {
+  white-space: normal;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+ul.buff li {
+  padding-left: 1.1em;
+  text-indent: -1.1em;
+}
+ul.buff li::before {
+  content: "- ";
+  color: var(--ink-faint);
 }
 
 .ingredients {
