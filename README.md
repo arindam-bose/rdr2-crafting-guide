@@ -101,6 +101,13 @@ asks for a press — buttons, the lit tab, anything staged — and **red** only
 ever means trouble, a material you are short of or data about to be thrown
 away.
 
+The line that keeps this working is that **red and amber are never decoration**.
+Everything else warm on the page — `--ink-name` for the name of a material or a
+recipe, `--ink-label` for the USED IN / STILL NEEDED / PICKED UP captions, the
+station stripes, the hover edge — is chrome, and chrome never carries status. A
+name is a name whether or not you own the thing. Spend red on a heading and the
+red `✗` on the card below it stops meaning *you are short of this*.
+
 Each signal is two tokens, because a colour that fills a shape and a colour
 that draws a word are not the same colour:
 
@@ -116,6 +123,13 @@ keeps the amber for button fills, where near-black sits on it at 8.9:1. The red
 runs the other way: the raw palette red reads fine on paper and is 2.9:1 on
 leather, so only leather needs a lit variant. Every colour that sets text
 clears 4.5:1 against the surface it sits on, in both themes.
+
+The station stripes are the one place colour is asked to identify rather than
+to signal, and three warm hues at 3px are harder to tell apart than the blue,
+yellow and pink they replaced. They are picked to separate in lightness as well
+as hue — no two are closer than 1.26:1 — and, more to the point, the station is
+always named in words beside its stripe. The colour reinforces the label; it is
+never the only thing carrying it.
 
 The theme is a preference rather than data, so it lives in `localStorage` and
 is per device — the same person reads this on a bright phone outdoors and a

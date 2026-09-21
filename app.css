@@ -80,6 +80,8 @@
   --accent:      var(--rdr-amber);   /* fills */
   --on-accent:   var(--rdr-black);   /* what sits on a fill */
   --accent-text: #8a5600;            /* ochre: 4.6:1 on paper */
+  --ink-name:    #7a2e18;            /* oxblood: the name of a thing */
+  --ink-label:   #7a4c00;            /* ochre, dark enough for a ledger row */
   --danger:      var(--rdr-red);
   --danger-text: var(--rdr-blood);
   --ok:          #46621f;
@@ -88,9 +90,12 @@
   --perfect:    #3f3a33;
   --legendary:  #8a6a12;
 
-  --station-blue:   #3f6389;
+  /* Trapper, Pearson, Fence.  Two warm, one cool -- three warm stripes
+     at 3px are hard to tell apart, so the Trapper keeps a blue, pulled
+     towards slate so it sits in the same world as the other two. */
+  --station-blue:   #4e6a82;
   --station-yellow: #9a7519;
-  --station-pink:   #964f68;
+  --station-pink:   #8f3f2a;
 
   --shadow: 0 8px 24px rgb(64 44 20 / .22);
 }
@@ -115,6 +120,10 @@
   --accent:      var(--rdr-amber);
   --on-accent:   var(--rdr-black);
   --accent-text: var(--rdr-amber);   /* 8.9:1 on leather, so it draws too */
+  --ink-name:    #dcb578;            /* gold-tan: warm without reading as
+                                        the amber that means "press this" */
+  --ink-label:   #c9932f;   /* clears 4.5:1 on a ledger row, the darkest
+                                ground any of these labels sits on */
   --danger:      var(--rdr-red);
   --danger-text: #ec6a5a;            /* the raw red is 2.9:1 here */
   --ok:          #9cb86c;
@@ -123,9 +132,9 @@
   --perfect:    #e8e8e6;
   --legendary:  #e0bb45;
 
-  --station-blue:   #8fb2d4;
+  --station-blue:   #93a8b8;
   --station-yellow: #ddb455;
-  --station-pink:   #d193ab;
+  --station-pink:   #c26a45;
 
   --shadow: 0 8px 24px rgb(0 0 0 / .45);
 }
@@ -236,7 +245,7 @@ body {
   max-width: 1400px;
   margin-inline: auto;
   font-size: 1.5rem;
-  color: var(--ink);
+  color: var(--ink-name);
 }
 .page-title:empty { display: none; }
 
@@ -381,6 +390,18 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   gap: 10px;
 }
 
+/* Cards had no hover state at all.  Hover is transient and never means
+   status, so the accent can be spent here for free.  Guarded, so a touch
+   screen does not leave one card stuck looking live. */
+@media (hover: hover) {
+  .card:hover { border-color: var(--accent-text); }
+
+  /* the station stripe outranks the hover edge */
+  .card.recipe.blue:hover   { border-left-color: var(--station-blue); }
+  .card.recipe.yellow:hover { border-left-color: var(--station-yellow); }
+  .card.recipe.pink:hover   { border-left-color: var(--station-pink); }
+}
+
 .card.ghost {
   height: 150px;
   border-style: dashed;
@@ -389,7 +410,9 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 @keyframes pulse { 50% { opacity: .15; } }
 
-.card h3 { margin: 0; font-size: 1.08rem; line-height: 1.25; }
+/* A name is never a status, so it can take colour without spending any
+   of the meaning that amber and red carry elsewhere. */
+.card h3 { margin: 0; font-size: 1.08rem; line-height: 1.25; color: var(--ink-name); }
 
 .card .sub {
   margin: 0;
@@ -707,12 +730,14 @@ ul.buff li::before {
   background: var(--ink);
 }
 
+/* USED IN, STILL NEEDED, YOUR DATA, PICKED UP: already a family by
+   shape, now one by colour too. */
 .list-label {
   margin: 0 0 8px;
   font-size: .76rem;
   letter-spacing: .06em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-label);
 }
 
 .stock-section + .stock-section { margin-top: 18px; }
@@ -838,7 +863,8 @@ ul.buff li::before {
   background: var(--accent);
 }
 
-/* A sort control sits at the end of the toolbar, after the filters. */
+/* A sort control sits at the end of the toolbar, after the filters.
+   Both galleries use this, so the rule serves Materials and Recipes. */
 .sort {
   display: flex;
   align-items: center;
@@ -848,6 +874,26 @@ ul.buff li::before {
   color: var(--ink-faint);
 }
 .sort .select { font-size: .82rem; padding: 7px 10px; }
+
+/* A rule between the filter chips and the sort, so the two groups read
+   as two groups rather than one long row of controls.  Drawn rather
+   than typed: a 1px box sits at a fixed height and centres itself on
+   the row, where a glyph would ride the text baseline and change size
+   with the font.
+
+   Below the wide breakpoint the toolbar wraps and the sort starts its
+   own line, where a leading divider would separate nothing. */
+.sort::before {
+  content: "";
+  flex: 0 0 auto;
+  width: 1px;
+  height: 22px;
+  background: var(--line);
+  margin-right: 4px;
+}
+@media (max-width: 719px) {
+  .sort::before { display: none; }
+}
 
 /* The direction says what it does, rather than an arrow you have
    to work out: "Most first", "A-Z", "Legendary first". */
@@ -941,7 +987,7 @@ ul.buff li::before {
   font-size: .74rem;
   letter-spacing: .04em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-label);
   white-space: nowrap;
 }
 
@@ -952,7 +998,7 @@ ul.buff li::before {
   font-size: .78rem;
   letter-spacing: .07em;
   text-transform: uppercase;
-  color: var(--ink-faint);
+  color: var(--ink-label);
 }
 
 .note {
