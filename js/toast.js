@@ -42,7 +42,7 @@ export function toast(message, action = null) {
   close.type = 'button';
   close.className = 'toast-close';
   close.setAttribute('aria-label', 'Dismiss');
-  close.textContent = '\u00d7';
+  close.textContent = 'x';
   close.addEventListener('click', dismiss);
   element.append(close);
 

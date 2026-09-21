@@ -51,7 +51,7 @@ export function materialCard(material, { personal }) {
     <article class="card" data-ingredient="${esc(material.ingredient_id)}">
       <h3>${esc(name)}${badge}</h3>
       <p class="sub">${origin || '&nbsp;'}${
-        body_part ? ` · ${esc(body_part)}` : ''}</p>
+        body_part ? ` - ${esc(body_part)}` : ''}</p>
 
       ${open.length
         ? `<div class="demands">${open.map((d) => demandRow(d, personal)).join('')}</div>`
@@ -74,11 +74,14 @@ function usedIn(usage = [], personal) {
       : u.state === 'done' ? 'made'
       : u.state === 'skipped' ? 'retired'
       : 'open';
-    const mark = { made: '&check;', retired: '&minus;', open: '&times;', plain: '&middot;' }[state];
+    // The face this is set in is a typewriter's: no tick, no cross, no
+    // middle dot.  These are what you would have typed instead, and the
+    // colour beside them is doing most of the work anyway.
+    const mark = { made: '+', retired: '-', open: 'x', plain: '.' }[state];
 
     return `<li class="${state}">
       <span class="mark" aria-hidden="true">${mark}</span>
-      <span class="what">${u.qty > 1 ? `${u.qty}&times; ` : ''}${esc(u.recipe)}</span>
+      <span class="what">${u.qty > 1 ? `${u.qty}x ` : ''}${esc(u.recipe)}</span>
     </li>`;
   };
 
@@ -96,7 +99,7 @@ function demandRow(d, personal) {
   if (!personal) {
     return `
       <div class="demand ${colour}">
-        <span class="qty">${d.needed}&times;</span>
+        <span class="qty">${d.needed}x</span>
         <span class="station">${esc(d.station)}</span>
         <span></span>
       </div>`;

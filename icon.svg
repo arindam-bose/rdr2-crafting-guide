@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img"
-     aria-label="RDR2 Crafting Guide">
-  <rect width="64" height="64" rx="12" fill="#17130f"/>
-  <!-- a pelt on a stretcher: the thing every recipe starts with -->
-  <path d="M32 12c7 0 12 5 12 11 0 4-2 6-2 10s3 5 3 10c0 5-5 9-13 9s-13-4-13-9c0-5 3-6 3-10s-2-6-2-10c0-6 5-11 12-11z"
-        fill="none" stroke="#c96a3b" stroke-width="3" stroke-linejoin="round"/>
-  <circle cx="32" cy="30" r="3.5" fill="#ede4d3"/>
-</svg>

@@ -198,7 +198,7 @@ export function mount(root) {
     cards.sort((a, b) => flip * fn(a, b));
 
     dirButton.textContent = `${state.dir === 'asc' ? '\u2191' : '\u2193'} ${ways[state.dir]}`;
-    dirButton.title = `Sorted ${ways[state.dir].toLowerCase()} — click to reverse`;
+    dirButton.title = `Sorted ${ways[state.dir].toLowerCase()} -- click to reverse`;
 
     gallery.innerHTML = cards.slice(0, state.shown)
       .map((m) => materialCard(m, { personal })).join('');
@@ -217,7 +217,7 @@ export function mount(root) {
 function emptyMessage(state, personal, counts) {
   const other = GROUPS.find((g) => g.id !== state.group);
   if (counts[other.id]) {
-    return `Nothing here — ${counts[other.id]} under ${other.title}.`;
+    return `Nothing here -- ${counts[other.id]} under ${other.title}.`;
   }
   if (state.show === 'done' && personal) return 'Nothing is finished with yet.';
   if (state.search || state.station || state.show !== 'all') {

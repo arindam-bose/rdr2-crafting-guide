@@ -196,7 +196,7 @@ export function mount(root) {
       : chosen);
 
     dirButton.textContent = `${state.dir === 'asc' ? '\u2191' : '\u2193'} ${ways[state.dir]}`;
-    dirButton.title = `Sorted ${ways[state.dir].toLowerCase()} — click to reverse`;
+    dirButton.title = `Sorted ${ways[state.dir].toLowerCase()} -- click to reverse`;
 
     gallery.innerHTML = list.length
       ? list.slice(0, state.shown).map((r) => card(r, personal)).join('')
@@ -207,7 +207,7 @@ export function mount(root) {
       ? all.filter((r) => r.state === 'wanted' && r.satisfied === r.needs).length
       : 0;
     count.textContent = `${list.length} recipe${list.length === 1 ? '' : 's'}`
-      + (personal && ready ? ` · ${ready} ready` : '');
+      + (personal && ready ? ` - ${ready} ready` : '');
   }
 
   update();
@@ -260,7 +260,7 @@ function card(r, personal) {
       </header>
 
       <p class="sub">${[r.station, r.category, r.set_name]
-        .filter(Boolean).map(esc).join(' · ')}</p>
+        .filter(Boolean).map(esc).join(' - ')}</p>
 
       ${r.description ? `<p class="buff">${esc(r.description)}</p>` : ''}
 
@@ -278,14 +278,14 @@ function ingredient(i, personal) {
     : '';
 
   if (!personal) {
-    return `<li><span class="qty">${i.qty}&times;</span>
+    return `<li><span class="qty">${i.qty}x</span>
               <span class="what">${esc(i.name)}${badge}</span></li>`;
   }
 
   return `
     <li class="${i.satisfied ? 'have' : 'short'}">
-      <span class="mark" aria-hidden="true">${i.satisfied ? '&check;' : '&times;'}</span>
-      <span class="qty">${i.qty}&times;</span>
+      <span class="mark" aria-hidden="true">${i.satisfied ? '+' : 'x'}</span>
+      <span class="qty">${i.qty}x</span>
       <span class="what">${esc(i.name)}${badge}</span>
       <span class="tally">${i.have}/${i.qty}</span>
     </li>`;
@@ -303,9 +303,9 @@ function actions(r, ready) {
   const why = craftable
     ? `Spend these ingredients from ${r.station}'s stock and mark it made`
     : r.state === 'done'
-      ? 'Already made — put it back first'
+      ? 'Already made -- put it back first'
       : r.state === 'skipped'
-        ? 'Skipped — want it again first'
+        ? 'Skipped -- want it again first'
         : `Still need ${shortfall(r)}`;
 
   const second = r.state === 'done'
@@ -315,7 +315,7 @@ function actions(r, ready) {
       ? { act: 'unskip', text: 'Want it',
           why: 'Put it back on your list' }
       : { act: 'skip', text: 'Skip',
-          why: 'Not making this — stop asking for its materials' };
+          why: 'Not making this -- stop asking for its materials' };
 
   return `
     <div class="actions">

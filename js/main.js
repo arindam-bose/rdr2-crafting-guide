@@ -8,6 +8,7 @@
 
 import * as db from './db.js';
 import * as store from './store.js';
+import * as theme from './theme.js';
 import { errorBox, placeholder } from './render.js';
 import { toast } from './toast.js';
 import * as materials from './views/materials.js';
@@ -81,7 +82,7 @@ function show(name) {
 function stub(title, message) {
   return {
     mount(root) {
-      root.innerHTML = placeholder(title, `${message} — not built yet.`);
+      root.innerHTML = placeholder(title, `${message} -- not built yet.`);
       return { update() {}, destroy() {} };
     },
   };
@@ -92,6 +93,10 @@ function stub(title, message) {
 // ------------------------------------------------------------
 
 async function start() {
+  // The attribute is already set inline; this is only the browser
+  // chrome catching up, now that the stylesheet has been applied.
+  theme.syncBrowserChrome();
+
   await db.open();
   await store.hydrate();
 
@@ -107,7 +112,7 @@ async function start() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (event.data?.type === 'offline-ready') {
-        toast('Cached — this works without a signal now.');
+        toast('Cached -- this works without a signal now.');
       }
     });
     navigator.serviceWorker.register('sw.js').catch((err) => {

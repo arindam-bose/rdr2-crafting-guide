@@ -53,9 +53,13 @@ served network-first, so edits show up on reload without a cache bump.
 
 ## Layout
 
-    index.html            shell: top bar, tabs, toast
-    app.css               one layout for phone and desktop
+    index.html            shell: masthead, tabs, toast
+    app.css               one layout for phone and desktop, and the theme
     data/rdr2.db          reference data, read-only
+    fonts/
+      chinese_rocks/      Chinese Rocks, the display face, with its licence
+      fb_remington/       FB Remington, the body face
+    images/               the logo, and the favicons cut from it
     database/
       personal_schema.sql the personal layer's DDL, and the four queries
     js/
@@ -69,9 +73,97 @@ served network-first, so edits show up on reload without a cache bump.
       views/settings.js   export, import, reset, and what is stored
       views/ledger.js     the history, as its own page
       toast.js            the undo toast
+      theme.js            parchment or leather, remembered per device
       main.js             boot and hash routing
     vendor/               sql.js, vendored so nothing is fetched from a CDN
     sw.js                 offline cache
+
+## Look
+
+### The colours
+
+The palette is the five colours of the game's key art —
+[#bd081a, #feac01, #b90303, #020002, #fffeff][palette] — declared verbatim at
+the top of `app.css` as `--rdr-*`. Everything either theme paints is derived
+from them.
+
+There are two themes off that one palette. **Parchment** is the default: the
+palette's white aged into paper, its black used as ink. **Leather** is the same
+five colours after dark — that black warmed towards hide, that white warmed
+towards parchment. Neither theme uses the raw pair, because pure `#020002`
+under pure `#fffeff` is a glare to read a long list on.
+
+Only the tokens at the top of `app.css` change between them. Nothing further
+down the file knows which theme is on, which is the point of the split.
+
+Then two signals, kept apart in both themes: **amber** is the one colour that
+asks for a press — buttons, the lit tab, anything staged — and **red** only
+ever means trouble, a material you are short of or data about to be thrown
+away.
+
+Each signal is two tokens, because a colour that fills a shape and a colour
+that draws a word are not the same colour:
+
+| | fills | draws |
+|---|---|---|
+| parchment | `--accent` `#feac01` | `--accent-text` `#8a5600` |
+| leather | `--accent` `#feac01` | `--accent-text` `#feac01` |
+| parchment | `--danger` `#bd081a` | `--danger-text` `#b90303` |
+| leather | `--danger` `#bd081a` | `--danger-text` `#ec6a5a` |
+
+Amber on paper is 1.4:1 and unreadable, so parchment draws with an ochre and
+keeps the amber for button fills, where near-black sits on it at 8.9:1. The red
+runs the other way: the raw palette red reads fine on paper and is 2.9:1 on
+leather, so only leather needs a lit variant. Every colour that sets text
+clears 4.5:1 against the surface it sits on, in both themes.
+
+The theme is a preference rather than data, so it lives in `localStorage` and
+is per device — the same person reads this on a bright phone outdoors and a
+dark screen at night. `index.html` applies it inline before the first paint,
+after the stylesheet has loaded, so the choice never flashes and the script can
+read the theme's own `--bg` back out of the CSS instead of keeping a second
+copy of it.
+
+### The lettering
+
+Two faces, and they divide the page between them. [Chinese Rocks] by Ray
+Larabie sets the names — headings, tabs, buttons, labels. It is a caps-only
+display face, so it never sets prose. [FB Remington] by Fred Brutus sets
+everything else, which on these screens is mostly numbers: `3/3`, `2x Oregano`,
+`$14.95`. It is monospaced, so those columns line up on their own. Both are
+free, and both are vendored under `fonts/`.
+
+FB Remington ships one weight and no italic, so the browser synthesises both.
+That is the right trade here rather than a compromise: a real Remington had one
+weight too, and emphasis was struck twice over the same spot.
+
+Its character set is a typewriter's, which is to say 152 codepoints. It has no
+`×`, `✓`, `·`, `−` or `—`. A browser fills a gap like that from the next font
+in the stack, which puts a second typeface inside `2× Oregano` at a different
+width and weight — so nothing here asks for one. The app types what the machine
+could type:
+
+| was | is | where |
+|---|---|---|
+| `·` | `-` | separators: `Campfire - Provisions`, ledger dates |
+| `×` | `x` | quantities: `2x Oregano` |
+| `✓` | `+` | made, or held enough of |
+| `×` | `x` | still outstanding |
+| `−` | `-` | retired, the stepper, a negative delta |
+| `—` | `--` | prose |
+
+The marks are `aria-hidden`, and the colour beside them was already carrying
+the meaning, so this costs nothing but reads as one face throughout. The one
+`·` left is in `document.title`, which the browser draws in its own font.
+
+The rule that assigns the two faces is the last thing in `app.css` on purpose:
+every control in the file sets `font: inherit` to match the page rather than
+the operating system, and that shorthand resets the family, so anything
+assigned earlier loses.
+
+[palette]: https://www.color-hex.com/color-palette/72703
+[Chinese Rocks]: https://www.dafont.com/chinese-rocks.font
+[FB Remington]: https://www.dafont.com/fb-remington.font
 
 ## State
 

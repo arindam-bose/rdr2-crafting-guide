@@ -1,35 +1,126 @@
-/* ============================================================
-   RDR2 Crafting Guide
-   One layout for phone and desktop.  The gallery is auto-fill,
-   so it reflows without breakpoints; the only media query in
-   the file moves navigation from thumb to mouse.
-   ============================================================ */
+/* ------------------------------------------------------------
+   Two faces, and they divide the page between them.
+
+   Chinese Rocks sets the names — headings, tabs, buttons, labels.
+   FB Remington sets everything else, which on these screens is
+   mostly numbers: 3/3, 2x Oregano, $14.95.  It is monospaced, so
+   those columns line up on their own.
+
+   It ships one weight and no italic, so the browser synthesises
+   both.  That is the right trade here: a real Remington had one
+   weight too, and emphasis was struck twice over the same spot.
+
+   Its character set is a typewriter's, which is to say 152 of
+   them.  It has no ×, ✓, ·, − or —, so nothing here asks for
+   one; see the marks in render.js.
+
+   What each one is used on is decided at the foot of this file,
+   and there is a reason it has to be decided there.  swap on all
+   of them, because no font should hold up the first paint.
+   ------------------------------------------------------------ */
+
+@font-face {
+  font-family: "Chinese Rocks";
+  src: url("fonts/chinese_rocks/chinese-rocks-rg.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "FB Remington";
+  src: url("fonts/fb_remington/FBRemington-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
-  color-scheme: dark;
+  /* The five colours of the game's key art, kept verbatim:
+     https://www.color-hex.com/color-palette/72703
+     Everything either theme paints is derived from these. */
+  --rdr-red:    #bd081a;
+  --rdr-amber:  #feac01;
+  --rdr-blood:  #b90303;
+  --rdr-black:  #020002;
+  --rdr-white:  #fffeff;
 
-  --ink:        #ede4d3;   /* parchment text */
-  --ink-dim:    #a99a83;
-  --ink-faint:  #6f6354;
-  --bg:         #17130f;   /* dark leather */
-  --surface:    #221c17;
-  --surface-2:  #2c251e;
-  --line:       #3a3128;
-  --accent:     #c96a3b;   /* saddle orange */
-  --ok:         #7a9a5c;
-  --warn:       #c9a13b;
-
-  /* material quality */
-  --perfect:    #e8e8e6;   /* light grey / white */
-  --legendary:  #d4af37;   /* gold */
-
-  /* station colours, carried from stations.color in the database */
-  --station-blue:   #6d94b8;
-  --station-yellow: #c9a13b;
-  --station-pink:   #c07a94;
+  --font-body:    "FB Remington", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display: "Chinese Rocks", "Haettenschweiler", "Arial Narrow", sans-serif;
 
   --radius: 10px;
   --tabs-h: 56px;
+}
+
+/* ---- parchment ---------------------------------------------
+   The palette's white, aged: paper, and the palette's black
+   for ink.  Cards sit a shade lighter than the page so they
+   lift off it; the recessed things — a buff box, a ledger row —
+   sit a shade darker. */
+
+:root {
+  color-scheme: light;
+
+  --ink:        #241a12;
+  --ink-dim:    #4a3a28;
+  --ink-faint:  #6e5c3e;
+  --bg:         #e7dbc0;
+  --surface:    #f2e9d6;
+  --surface-2:  #dccfb0;
+  --line:       #c2b191;
+  --page-wash:  #f4ecda;
+
+  --accent:      var(--rdr-amber);   /* fills */
+  --on-accent:   var(--rdr-black);   /* what sits on a fill */
+  --accent-text: #8a5600;            /* ochre: 4.6:1 on paper */
+  --danger:      var(--rdr-red);
+  --danger-text: var(--rdr-blood);
+  --ok:          #46621f;
+  --warn:        #7d5a12;
+
+  --perfect:    #3f3a33;
+  --legendary:  #8a6a12;
+
+  --station-blue:   #3f6389;
+  --station-yellow: #9a7519;
+  --station-pink:   #964f68;
+
+  --shadow: 0 8px 24px rgb(64 44 20 / .22);
+}
+
+/* ---- leather ------------------------------------------------
+   The palette's black warmed towards hide, its white warmed
+   towards parchment.  Neither is ever the raw colour: pure
+   #020002 under pure #fffeff is a glare to read a long list on. */
+
+:root[data-theme="leather"] {
+  color-scheme: dark;
+
+  --ink:        #f1e7d3;
+  --ink-dim:    #c0ae92;
+  --ink-faint:  #9a8768;
+  --bg:         #241a12;
+  --surface:    #30231a;
+  --surface-2:  #3d2d21;
+  --line:       #55402f;
+  --page-wash:  #3a2a1c;
+
+  --accent:      var(--rdr-amber);
+  --on-accent:   var(--rdr-black);
+  --accent-text: var(--rdr-amber);   /* 8.9:1 on leather, so it draws too */
+  --danger:      var(--rdr-red);
+  --danger-text: #ec6a5a;            /* the raw red is 2.9:1 here */
+  --ok:          #9cb86c;
+  --warn:        #e0b155;
+
+  --perfect:    #e8e8e6;
+  --legendary:  #e0bb45;
+
+  --station-blue:   #8fb2d4;
+  --station-yellow: #ddb455;
+  --station-pink:   #d193ab;
+
+  --shadow: 0 8px 24px rgb(0 0 0 / .45);
 }
 
 * { box-sizing: border-box; }
@@ -41,13 +132,16 @@
 
 body {
   margin: 0;
-  background: var(--bg);
+  /* A lantern above the masthead, so the page has a top. */
+  background:
+    radial-gradient(130% 70% at 50% -10%,
+                    var(--page-wash) 0%, var(--bg) 62%)
+    no-repeat fixed,
+    var(--bg);
   color: var(--ink);
-  font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 15px/1.5 var(--font-body);
   padding-bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom, 0px));
 }
-
-h1, h2, h3 { font-weight: 600; letter-spacing: .01em; }
 
 /* ---------- top bar ---------- */
 
@@ -63,6 +157,7 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .01em; }
 }
 
 .topbar {
+  position: relative;
   display: flex;
   background: color-mix(in srgb, var(--bg) 88%, transparent);
   backdrop-filter: blur(8px);
@@ -74,7 +169,58 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .01em; }
   border-bottom: 1px solid var(--line);
 }
 
-.topbar h1 { margin: 0; font-size: 1.05rem; }
+/* A thread of amber under the masthead, brightest in the middle,
+   the way a lamp falls on a poster. */
+.topbar::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 1px;
+  background: linear-gradient(to right,
+    transparent, color-mix(in srgb, var(--accent-text) 55%, transparent), transparent);
+}
+
+/* The masthead: the cylinder-seal logo, then the title on two
+   lines — the game above, what this is below.  Two lines because
+   the whole name is 36 characters and a phone's top bar is not,
+   and because it stacks to the logo's height for free. */
+.topbar h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  min-width: 0;
+  font-size: 1.05rem;
+}
+
+.brand-mark {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+}
+
+.brand-text { display: flex; flex-direction: column; min-width: 0; }
+
+.brand-game {
+  font-size: .62rem;
+  line-height: 1.25;
+  letter-spacing: .16em;
+  color: var(--accent-text);
+}
+
+.brand-app {
+  font-size: 1.12rem;
+  line-height: 1.05;
+  letter-spacing: .05em;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+@media (max-width: 400px) {
+  .brand-game { letter-spacing: .08em; }
+  .brand-app { font-size: 1rem; }
+}
 
 /* The page's own name, under the menu. */
 .page-title {
@@ -82,8 +228,8 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .01em; }
   padding: 18px 16px 0;
   max-width: 1400px;
   margin-inline: auto;
-  font-size: 1.35rem;
-  letter-spacing: -.01em;
+  font-size: 1.5rem;
+  color: var(--ink);
 }
 .page-title:empty { display: none; }
 
@@ -96,7 +242,7 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .01em; }
   cursor: pointer;
   user-select: none;
 }
-.mode input { accent-color: var(--accent); width: 16px; height: 16px; }
+.mode input { accent-color: var(--accent-text); width: 16px; height: 16px; }
 
 /* ---------- navigation: thumb on narrow, mouse on wide ---------- */
 
@@ -120,13 +266,13 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .01em; }
   gap: 6px;
   color: var(--ink-dim);
   text-decoration: none;
-  font-size: .8rem;
+  font-size: .9rem;
   border-top: 2px solid transparent;
 }
 
 .tabs a[aria-current="page"] {
   color: var(--ink);
-  border-top-color: var(--accent);
+  border-top-color: var(--accent-text);
   background: var(--surface-2);
 }
 
@@ -160,7 +306,7 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .01em; }
     border-bottom: 2px solid transparent;
   }
   .tabs a[aria-current="page"] {
-    border-bottom-color: var(--accent);
+    border-bottom-color: var(--accent-text);
     background: transparent;
   }
 }
@@ -194,7 +340,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border-radius: var(--radius);
 }
 .search::placeholder { color: var(--ink-faint); }
-.search:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.search:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
@@ -236,7 +382,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 @keyframes pulse { 50% { opacity: .15; } }
 
-.card h3 { margin: 0; font-size: .98rem; line-height: 1.3; }
+.card h3 { margin: 0; font-size: 1.08rem; line-height: 1.25; }
 
 .card .sub {
   margin: 0;
@@ -279,7 +425,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .demand .station { color: var(--ink-dim); }
 .demand .qty { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .demand .qty .have { color: var(--ok); }
-.demand .qty .short { color: var(--accent); }
+.demand .qty .short { color: var(--danger-text); }
 
 .bar {
   height: 4px;
@@ -292,7 +438,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   height: 100%;
   background: var(--ok);
 }
-.bar.short > i { background: var(--accent); }
+.bar.short > i { background: var(--danger-text); }
 
 /* ---------- a count riding along on a tab ---------- */
 
@@ -325,7 +471,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .used-in .mark { font-size: .85rem; line-height: 1; }
 .used-in li.made          { color: var(--ink-faint); }
 .used-in li.made .mark    { color: var(--ok); }
-.used-in li.open .mark    { color: var(--accent); }
+.used-in li.open .mark    { color: var(--accent-text); }
 .used-in li.retired       { color: var(--ink-faint); }
 .used-in li.made .what    { text-decoration: line-through; }
 .used-in li.retired .what { text-decoration: line-through; }
@@ -411,7 +557,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 .ingredients .mark { font-size: .9rem; line-height: 1; }
 .ingredients li.have  .mark  { color: var(--ok); }
-.ingredients li.short .mark  { color: var(--accent); }
+.ingredients li.short .mark  { color: var(--danger-text); }
 .ingredients li.short .what  { color: var(--ink-dim); }
 
 .ingredients .qty { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
@@ -444,11 +590,14 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   font: inherit;
   font-size: .86rem;
   font-weight: 600;
-  color: var(--bg);
+  color: var(--on-accent);
   background: var(--accent);
   border: 1px solid var(--accent);
   border-radius: 8px;
   cursor: pointer;
+}
+.craft-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 85%, var(--rdr-white));
 }
 .craft-btn:disabled {
   color: var(--ink-faint);
@@ -495,7 +644,6 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .segmented button[aria-selected="true"] {
   color: var(--bg);
   background: var(--ink);
-  font-weight: 600;
 }
 
 .list-label {
@@ -572,7 +720,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 .row.staged { background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
 
-.stepper output.pending { color: var(--accent); font-weight: 600; }
+.stepper output.pending { color: var(--accent-text); font-weight: 600; }
 .stepper output small {
   margin-left: 3px;
   font-size: .72rem;
@@ -596,7 +744,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: 0 8px 24px rgb(0 0 0 / .45);
+  box-shadow: var(--shadow);
 }
 @media (min-width: 720px) { .savebar { bottom: 20px; } }
 
@@ -615,10 +763,9 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border: 1px solid var(--line);
 }
 .savebar .save {
-  color: var(--bg);
+  color: var(--on-accent);
   background: var(--accent);
   border: 1px solid var(--accent);
-  font-weight: 600;
 }
 
 /* a dot beside the tab label while changes are uncommitted */
@@ -674,7 +821,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   flex-direction: column;
   gap: 10px;
 }
-.panel.danger { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.panel.danger { border-color: color-mix(in srgb, var(--danger) 55%, var(--line)); }
 
 /* ---------- ledger entries ---------- */
 
@@ -688,7 +835,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .back:hover { color: var(--ink); }
 
 .facts dt a { color: var(--ink); text-underline-offset: 2px; }
-.facts dt a:hover { color: var(--accent); }
+.facts dt a:hover { color: var(--accent-text); }
 
 .entries {
   display: flex;
@@ -719,7 +866,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   text-align: right;
 }
 .entry .delta.up { color: var(--ok); }
-.entry .delta.down { color: var(--accent); }
+.entry .delta.down { color: var(--danger-text); }
 
 .entry-what { min-width: 0; font-size: .88rem; }
 .entry-what small {
@@ -737,7 +884,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   white-space: nowrap;
 }
 
-.badge.stale { color: var(--accent); }
+.badge.stale { color: var(--danger-text); }
 
 .panel h3 {
   margin: 0;
@@ -757,7 +904,6 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 .panel-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 
-.danger-btn { background: var(--accent); border-color: var(--accent); color: var(--bg); }
 
 /* label-as-button, so the file input can stay hidden */
 .file-btn { display: inline-block; cursor: pointer; }
@@ -787,7 +933,6 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   margin: 8px 0;
   padding: 9px 11px;
   font: inherit;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: .78rem;
   color: var(--ink);
   background: var(--bg);
@@ -809,7 +954,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   gap: 8px;
 }
 .verdict p { margin: 0; }
-.verdict.bad { border-color: var(--accent); color: var(--ink); }
+.verdict.bad { border-color: var(--danger); color: var(--ink); }
 
 .problems {
   margin: 0;
@@ -840,7 +985,6 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   padding: 9px 16px;
   font: inherit;
   font-size: .86rem;
-  font-weight: 600;
   color: var(--ink);
   background: var(--surface-2);
   border: 1px solid var(--line);
@@ -848,6 +992,16 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   cursor: pointer;
 }
 .more-btn:hover { border-color: var(--ink-faint); }
+
+/* The Erase button is a .more-btn wearing this, so this has to come
+   after it — the two set the same three properties, and the one that
+   means "this cannot be undone" has to be the one that wins. */
+.danger-btn {
+  color: var(--rdr-white);
+  background: var(--danger);
+  border-color: var(--danger);
+}
+.danger-btn:hover { background: var(--rdr-blood); border-color: var(--rdr-blood); }
 
 /* ---------- misc ---------- */
 
@@ -858,7 +1012,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 
 .error {
-  border: 1px solid var(--accent);
+  border: 1px solid var(--danger);
   border-radius: var(--radius);
   padding: 14px;
   color: var(--ink);
@@ -886,14 +1040,14 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  box-shadow: 0 6px 20px rgb(0 0 0 / .4);
+  box-shadow: var(--shadow);
   font-size: .86rem;
 }
 .toast-text { flex: 1; }
 
 .toast .action {
   font: inherit;
-  color: var(--accent);
+  color: var(--accent-text);
   background: none;
   border: 0;
   padding: 0;
@@ -917,3 +1071,38 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .toast .toast-close:hover { color: var(--ink); background: var(--line); }
 @media (min-width: 720px) { .toast { bottom: 20px; } }
+
+/* ============================================================
+   The lettering, last.
+   Every control in this file sets `font: inherit` so it matches
+   the page rather than the operating system, and that shorthand
+   resets the family — so the display face has to be assigned
+   after them or the buttons quietly fall back to the sans.
+   Applied by hand rather than to every heading, because a
+   caps-only face has to earn its place: names, labels and
+   buttons yes, prose never.  It carries no bold, so anything
+   that asked for 600 is reset here and leans on size and
+   tracking instead.  The steppers stay in the UI font: a
+   caps face draws a poor + and -.
+   ============================================================ */
+
+h1, h2, h3,
+.page-title,
+.tabs a,
+.chip,
+.segmented button,
+.craft-btn, .ghost-btn, .more-btn, .danger-btn, .sort-dir, .savebar button,
+.badge,
+.list-label,
+.panel h3,
+.entry .reason {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: .04em;
+}
+
+/* Tracking the caps face needs at each size it is used. */
+.page-title { letter-spacing: .06em; }
+.tabs a     { letter-spacing: .07em; }
+.card h3    { letter-spacing: .05em; }
+.badge, .list-label, .panel h3, .entry .reason { letter-spacing: .09em; }

@@ -14,13 +14,23 @@
 //   more while this is still being written.
 // ============================================================
 
-const CACHE = 'rdr2-crafting-v5';
+const CACHE = 'rdr2-crafting-v8';
 
 // Fetched once and kept: big, and only ever replaced wholesale.
+// The fonts and the artwork join the runtime and the database here —
+// a typeface and a logo change about as often, and a conditional
+// request for each of them on every warm start buys nothing.
 const IMMUTABLE = [
   'vendor/sql-wasm.js',
   'vendor/sql-wasm.wasm',
   'data/rdr2.db',
+  'fonts/chinese_rocks/chinese-rocks-rg.otf',
+  'fonts/fb_remington/FBRemington-Regular.ttf',
+  'images/logo.png',
+  'images/logo-128.png',
+  'images/favicon-32.png',
+  'images/icon-192.png',
+  'images/apple-touch-icon.png',
 ];
 
 const SHELL = [
@@ -28,7 +38,6 @@ const SHELL = [
   'index.html',
   'app.css',
   'manifest.webmanifest',
-  'icon.svg',
   'database/personal_schema.sql',
   'js/main.js',
   'js/db.js',
@@ -36,6 +45,7 @@ const SHELL = [
   'js/queries.js',
   'js/render.js',
   'js/toast.js',
+  'js/theme.js',
   'js/views/materials.js',
   'js/views/inventory.js',
   'js/views/recipes.js',

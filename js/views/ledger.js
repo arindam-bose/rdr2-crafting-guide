@@ -69,7 +69,7 @@ export function mount(root) {
 }
 
 function entry(e) {
-  const sign = e.delta > 0 ? '+' : '−';
+  const sign = e.delta > 0 ? '+' : '-';
 
   return `
     <div class="entry">
@@ -77,8 +77,8 @@ function entry(e) {
       <span class="entry-what">
         ${esc(e.material)}${e.unknown_material
           ? ' <span class="badge stale">unknown</span>' : ''}
-        <small>${esc(e.place)} · ${esc(when(e.ts))}${
-          e.recipe ? ` · for ${esc(e.recipe)}` : ''}</small>
+        <small>${esc(e.place)} - ${esc(when(e.ts))}${
+          e.recipe ? ` - for ${esc(e.recipe)}` : ''}</small>
       </span>
       <span class="reason">${esc(REASON_WORDS[e.reason] ?? e.reason)}</span>
     </div>`;

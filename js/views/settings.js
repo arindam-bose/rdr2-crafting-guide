@@ -12,6 +12,7 @@
 // ============================================================
 
 import * as store from '../store.js';
+import * as theme from '../theme.js';
 import { esc } from '../render.js';
 import { toast } from '../toast.js';
 
@@ -29,7 +30,7 @@ export function mount(root) {
       <section class="panel">
         <h3>Take it with you</h3>
         <p class="note">Everything you have logged, as one text file. Keep it
-          somewhere safe — clearing this site's data erases the original.</p>
+          somewhere safe -- clearing this site's data erases the original.</p>
         <div class="panel-actions">
           <button type="button" class="more-btn" id="s-download">Download</button>
           <button type="button" class="ghost-btn" id="s-copy">Copy to clipboard</button>
@@ -61,9 +62,21 @@ export function mount(root) {
           have against what a station wants, recipes can be crafted, and
           anything made or skipped drops out of the way.<br>
           <strong>General</strong> ignores all of it and shows the reference
-          data whole — every recipe, every material, every quantity.</p>
+          data whole -- every recipe, every material, every quantity.</p>
         <div class="panel-actions">
           <button type="button" class="ghost-btn" id="s-mode"></button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Appearance</h3>
+        <p class="note">The same five colours either way -- the game's own --
+          laid on paper or on leather. Remembered on this device only, since
+          the right one depends on where you are reading it.</p>
+        <div class="segmented" role="tablist" id="s-theme">
+          ${theme.THEMES.map((t) => `
+            <button type="button" role="tab" data-theme="${esc(t.id)}"
+                    aria-selected="false">${esc(t.label)}</button>`).join('')}
         </div>
       </section>
 
@@ -78,7 +91,7 @@ export function mount(root) {
       <section class="panel danger">
         <h3>Erase everything</h3>
         <p class="note">Removes every ledger entry and every recipe you have
-          marked. The reference data is untouched. This cannot be undone —
+          marked. The reference data is untouched. This cannot be undone --
           download a copy first.</p>
         <div class="panel-actions" id="s-danger">
           <button type="button" class="ghost-btn" id="s-reset">Erase my data</button>
@@ -190,6 +203,26 @@ export function mount(root) {
 
   // ---- mode, offline, erase -------------------------------------------
 
+  // ---- appearance -----------------------------------------------------
+
+  const themeBar = $('#s-theme');
+
+  function paintThemeButtons() {
+    const on = theme.current();
+    for (const button of themeBar.querySelectorAll('button')) {
+      button.setAttribute('aria-selected', String(button.dataset.theme === on));
+    }
+  }
+
+  themeBar.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-theme]');
+    if (!button) return;
+    theme.set(button.dataset.theme);
+    paintThemeButtons();
+  });
+
+  paintThemeButtons();
+
   $('#s-mode').addEventListener('click', () => {
     store.setPersonal(!store.isPersonal());
     const toggle = document.getElementById('mode-toggle');
@@ -250,7 +283,7 @@ export function mount(root) {
 
     $('#s-about').innerHTML = facts([
       ['Reference data', s.referenceBuild ? `built ${s.referenceBuild}` : 'unknown'],
-      ['Stored in', 'this browser only — nothing is uploaded'],
+      ['Stored in', 'this browser only -- nothing is uploaded'],
     ]);
 
     reportOffline();
@@ -268,7 +301,7 @@ export function mount(root) {
     target.textContent = navigator.serviceWorker.controller
       ? `Cached and ready to use without a signal${
           mine.length ? ` (${mine[0]})` : ''}.`
-      : 'Not cached yet — reload once while online.';
+      : 'Not cached yet -- reload once while online.';
   }
 
   // A term with an href becomes the way into its own page.

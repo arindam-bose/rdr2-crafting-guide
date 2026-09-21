@@ -225,7 +225,7 @@ function history(m) {
 
   const parts = [`${m.gathered} gathered`];
   if (m.used_crafting) parts.push(`${m.used_crafting} crafted`);
-  return `<small class="history">${parts.join(' · ')}</small>`;
+  return `<small class="history">${parts.join(' - ')}</small>`;
 }
 
 function row(m, pending) {
@@ -237,7 +237,7 @@ function row(m, pending) {
     : '';
 
   const mark = delta
-    ? `<small>${delta > 0 ? '+' : '−'}${Math.abs(delta)}</small>`
+    ? `<small>${delta > 0 ? '+' : '-'}${Math.abs(delta)}</small>`
     : '';
 
   return `
@@ -246,7 +246,7 @@ function row(m, pending) {
       <span class="name">${esc(m.name)}${badge}${history(m)}</span>
       <span class="stepper">
         <button type="button" data-delta="-1" ${shown <= 0 ? 'disabled' : ''}
-                aria-label="One fewer ${esc(m.name)}">&minus;</button>
+                aria-label="One fewer ${esc(m.name)}">-</button>
         <output class="${shown > 0 ? 'held' : ''}${delta ? ' pending' : ''}"
           >${shown}${mark}</output>
         <button type="button" data-delta="1"
