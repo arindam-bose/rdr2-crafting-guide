@@ -74,10 +74,10 @@ function usedIn(usage = [], personal) {
       : u.state === 'done' ? 'made'
       : u.state === 'skipped' ? 'retired'
       : 'open';
-    // The face this is set in is a typewriter's: no tick, no cross, no
-    // middle dot.  These are what you would have typed instead, and the
-    // colour beside them is doing most of the work anyway.
-    const mark = { made: '+', retired: '-', open: 'x', plain: '.' }[state];
+    // These four are icons, not type.  Each sits alone in a .mark span
+    // with its own font stack, so the typewriter face not having them is
+    // contained -- unlike a gap in the middle of a word.
+    const mark = { made: '\u2713', retired: '\u2013', open: '\u2717', plain: '\u00b7' }[state];
 
     return `<li class="${state}">
       <span class="mark" aria-hidden="true">${mark}</span>
@@ -85,7 +85,11 @@ function usedIn(usage = [], personal) {
     </li>`;
   };
 
+  // Captioned, because with a single entry -- which is every misc
+  // material, each one feeding exactly one talisman -- an unlabelled
+  // list does not read as a list at all.
   return `
+    <p class="list-label used-in-label">Used in</p>
     <ul class="used-in">
       ${shown.map(line).join('')}
       ${rest ? `<li class="more">and ${rest} more</li>` : ''}

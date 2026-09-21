@@ -440,6 +440,16 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .bar.short > i { background: var(--danger-text); }
 
+/* A tick and a cross are icons rather than type, so they get their own
+   stack: the typewriter face has neither, and left to itself the browser
+   picks a different font for each one -- ✓ is in far more fonts than ✗ --
+   which lands them at two different weights side by side. */
+.mark {
+  font-family: "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2",
+               "DejaVu Sans", sans-serif;
+  font-weight: 700;
+}
+
 /* ---------- a count riding along on a tab ---------- */
 
 .tab-count {
@@ -450,6 +460,11 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 
 /* ---------- "used in" ---------- */
+
+/* The caption earns its place on the cards with one entry: every misc
+   material feeds exactly one talisman, and a lone line under the demand
+   rows reads as another demand row rather than as a list. */
+.used-in-label { margin: 2px 0 -2px; }
 
 .used-in {
   margin: 0;

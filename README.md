@@ -147,14 +147,25 @@ the machine could type:
 |---|---|---|
 | `·` | `-` | separators: `Campfire - Provisions`, ledger dates |
 | `×` | `x` | quantities: `2x Oregano` |
-| `✓` | `+` | made, or held enough of |
-| `×` | `x` | still outstanding |
-| `−` | `-` | retired, the stepper, a negative delta |
+| `−` | `-` | the stepper, a negative delta |
 | `—` | `--` | prose |
 
-The marks are `aria-hidden`, and the colour beside them was already carrying
-the meaning, so this costs nothing but reads as one face throughout. The one
-`·` left is in `document.title`, which the browser draws in its own font.
+That costs nothing — the one `·` left is in `document.title`, which the browser
+draws in its own font — and the page reads as one face throughout.
+
+The marks are the exception, and deliberately so. A tick and a cross are icons
+rather than type: each sits alone in a `.mark` span, `aria-hidden`, with the
+colour beside it already carrying the meaning. A gap there is contained in a
+way a gap mid-word is not, so `.mark` gets its own stack and keeps the real
+characters — ✓ for made, ✗ for still wanted, `–` for retired, `·` outside
+personal mode.
+
+The stack is explicit rather than left to the browser, because ✓ is in far more
+fonts than ✗: allowed to fall back on its own, each glyph lands in a different
+font and the pair arrives at two different weights. Naming
+`"Noto Sans Symbols 2", "DejaVu Sans"` ahead of `sans-serif` keeps them in one
+family. They are still not the same weight — `BALLOT X` is simply drawn heavier
+than `CHECK MARK` — which suits a mark that means *you are short of this*.
 
 The last `•` was not the app's to type: seven saddles carried their five stat
 lines as a Notion bulleted list, bullet characters and all, inside a single
@@ -201,8 +212,11 @@ build does not know are reported rather than swallowed, since the ledger stores
 slugs with no foreign key.
 
 Material cards list the recipes each material goes into, ticked off as you make
-them, and split into two tabs, Animal Materials and Misc. Items — one is a
-hunting trip, the other a detour. Each tab carries the count matching the
+them, under a *Used in* caption. The caption earns its place on the misc
+materials: all nine feed exactly one talisman each, and a single uncaptioned
+line under the demand rows reads as another demand row rather than as a list.
+The tabs are Animal Materials and Misc. Items — one is a hunting
+trip, the other a detour. Each tab carries the count matching the
 current filters, so a search that landed on the other tab is visible rather than
 lost. Both galleries show 20 cards at a time, with Show more adding another 20 and
 Show less returning to the first 20. Changing a filter, a tab or the sort starts

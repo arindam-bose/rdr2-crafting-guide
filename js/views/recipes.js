@@ -300,7 +300,7 @@ function ingredient(i, personal) {
 
   return `
     <li class="${i.satisfied ? 'have' : 'short'}">
-      <span class="mark" aria-hidden="true">${i.satisfied ? '+' : 'x'}</span>
+      <span class="mark" aria-hidden="true">${i.satisfied ? '\u2713' : '\u2717'}</span>
       <span class="qty">${i.qty}x</span>
       <span class="what">${esc(i.name)}${badge}</span>
       <span class="tally">${i.have}/${i.qty}</span>
