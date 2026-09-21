@@ -12,6 +12,7 @@
 // ============================================================
 
 import { esc, PAGE } from '../render.js';
+import * as prefs from '../prefs.js';
 
 // ------------------------------------------------------------
 // markup
@@ -41,16 +42,45 @@ export function chipRow(id, attr, chips) {
     </div>`;
 }
 
-/** The sort field and the button that reverses it. */
-export function sortControl(id, sorts, label) {
+/**
+ * The sort field and the button that reverses it.
+ *
+ * `current` has to be marked selected: without it the browser shows
+ * whichever option happens to be first, which is not necessarily the
+ * one the view is sorting by -- the control then says one thing while
+ * the list does another.
+ */
+export function sortControl(id, sorts, label, current) {
   return `
     <div class="sort">Sort
       <select class="select" id="${esc(id)}-sort" aria-label="${esc(label)}">
         ${Object.entries(sorts).map(([value, s]) => `
-          <option value="${esc(value)}">${esc(s.label)}</option>`).join('')}
+          <option value="${esc(value)}"${value === current ? ' selected' : ''}
+            >${esc(s.label)}</option>`).join('')}
       </select>
       <button type="button" class="sort-dir" id="${esc(id)}-dir"></button>
     </div>`;
+}
+
+// ------------------------------------------------------------
+// remembering the sort
+//
+// How you like a list ordered is a preference, not a filter: it
+// says nothing about what you are looking for, so unlike the search
+// box and the chips it is worth carrying between visits.
+// ------------------------------------------------------------
+
+const sortKey = (name) => `rdr2:sort:${name}`;
+
+/**
+ * The sort last used on this screen, or `fallback` if there is none
+ * we can still honour.  A stored field that no longer exists -- a
+ * rename, an older build -- falls back rather than throwing.
+ */
+export function restoreSort(name, sorts, fallback) {
+  const [sort, dir] = (prefs.get(sortKey(name)) ?? '').split(':');
+  if (!Object.hasOwn(sorts, sort)) return fallback;
+  return { sort, dir: dir === 'asc' || dir === 'desc' ? dir : sorts[sort].start };
 }
 
 // ------------------------------------------------------------
@@ -103,15 +133,19 @@ export function wireToggles(el, attr, state, onChange) {
  * The sort field and its direction.  Choosing a field also sets the
  * direction that field is nearly always wanted in.
  */
-export function wireSort(root, id, sorts, state, onChange) {
+export function wireSort(root, id, sorts, state, onChange, name) {
+  const remember = () => prefs.set(sortKey(name), `${state.sort}:${state.dir}`);
+
   root.querySelector(`#${id}-sort`).addEventListener('change', (event) => {
     state.sort = event.target.value;
     state.dir = sorts[state.sort].start;
+    remember();
     onChange();
   });
 
   root.querySelector(`#${id}-dir`).addEventListener('click', () => {
     state.dir = state.dir === 'asc' ? 'desc' : 'asc';
+    remember();
     onChange();
   });
 }

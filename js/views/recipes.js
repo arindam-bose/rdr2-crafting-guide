@@ -46,8 +46,10 @@ const SORTS = {
 };
 
 export function mount(root) {
-  const state = { search: '', station: null, category: '',
-                  show: 'all', sort: 'name', dir: 'asc', shown: PAGE };
+  const state = { search: '', station: null, category: '', show: 'all',
+                  shown: PAGE,
+                  ...toolbar.restoreSort('recipes', SORTS,
+                                         { sort: 'name', dir: 'asc' }) };
   const stations = queries.stations();
   const categories = queries.categories();
 
@@ -66,7 +68,7 @@ export function mount(root) {
         { value: 'ready', label: 'Ready to craft' },
         { value: 'done', label: 'Made' },
       ])}
-      ${toolbar.sortControl('r', SORTS, 'Sort recipes by')}
+      ${toolbar.sortControl('r', SORTS, 'Sort recipes by', state.sort)}
       <span class="count" id="r-count"></span>
     </div>
     <div class="gallery" id="r-gallery"></div>
@@ -87,7 +89,7 @@ export function mount(root) {
 
   toolbar.wirePager(pagerBox, state, update);
   toolbar.wireSearch(root.querySelector('#r-search'), state, refilter);
-  toolbar.wireSort(root, 'r', SORTS, state, refilter);
+  toolbar.wireSort(root, 'r', SORTS, state, refilter, 'recipes');
   toolbar.wirePicker(root.querySelector('#r-stations'), 'station', state, refilter);
   toolbar.wireToggles(showChips, 'show', state, refilter);
 

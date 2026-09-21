@@ -62,8 +62,9 @@ export function mount(root) {
   // a list that closed itself when you ticked something off would be
   // worse than not opening at all.
   const state = { search: '', station: null, show: 'all',
-                  group: GROUPS[0].id, sort: 'needed', dir: 'desc',
-                  shown: PAGE, expanded: new Set() };
+                  group: GROUPS[0].id, shown: PAGE, expanded: new Set(),
+                  ...toolbar.restoreSort('materials', SORTS,
+                                         { sort: 'needed', dir: 'desc' }) };
 
   const stations = queries.stations();
 
@@ -78,7 +79,7 @@ export function mount(root) {
         { value: 'short', label: 'Still needed' },
         { value: 'done', label: 'Done' },
       ])}
-      ${toolbar.sortControl('m', SORTS, 'Sort materials by')}
+      ${toolbar.sortControl('m', SORTS, 'Sort materials by', state.sort)}
       <span class="count" id="m-count"></span>
     </div>
     <div class="segmented" role="tablist" id="m-groups">
@@ -106,7 +107,7 @@ export function mount(root) {
 
   toolbar.wirePager(pagerBox, state, update);
   toolbar.wireSearch(root.querySelector('#m-search'), state, refilter);
-  toolbar.wireSort(root, 'm', SORTS, state, refilter);
+  toolbar.wireSort(root, 'm', SORTS, state, refilter, 'materials');
   toolbar.wirePicker(root.querySelector('#m-stations'), 'station', state, refilter);
   toolbar.wireToggles(showChips, 'show', state, refilter);
 

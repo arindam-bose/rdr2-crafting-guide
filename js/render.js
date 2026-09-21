@@ -65,13 +65,6 @@ export function materialCard(material, { personal, expanded = false }) {
     : 'Found out in the world';
 
   const open = material.demands.filter((d) => d.needed > 0);
-  const short = personal && open.some((d) => d.have < d.needed);
-
-  const hint = short
-    ? `<p class="sub hint">${source_type === 'animal'
-        ? 'You need to go hunting!'
-        : 'You need to go find it!'}</p>`
-    : '';
 
   return `
     <article class="card" data-ingredient="${esc(material.ingredient_id)}">
@@ -81,11 +74,54 @@ export function materialCard(material, { personal, expanded = false }) {
 
       ${open.length
         ? `<div class="demands">${open.map((d) => demandRow(d, personal)).join('')}</div>`
-        : '<p class="retired-note">Nothing wants this any more.</p>'}
+        : ''}
 
       ${usedIn(material.usage, personal, expanded)}
-      ${hint}
+      ${verdict(material, personal)}
     </article>`;
+}
+
+/**
+ * The line at the foot of the card, carried over from the formula the
+ * Notion table used.  Two numbers decide it:
+ *
+ *   totalNeeded  what the recipes you still intend to make ask for.
+ *                A made or skipped recipe stops asking, so this falls
+ *                to zero once you are finished with a material.
+ *   moreNeeded   totalNeeded minus what you are holding.  Negative
+ *                means you have more than anything still wants.
+ *
+ * Both sum across the demand rows above, so the line can never
+ * contradict the bars it sits under.  Each station draws on its own
+ * location -- the Fence on your Satchel, the Trapper on the Trapper --
+ * so nothing is counted twice.
+ *
+ * Animal materials and misc items had separate formulas in Notion and
+ * keep them here: only animals get the "done with this item" case, and
+ * the two word a surplus differently.
+ */
+function verdict(material, personal) {
+  // Without a personal layer there is no "have", so there is nothing
+  // to weigh what the stations want against.
+  if (!personal) return '';
+
+  const totalNeeded = material.demands.reduce((n, d) => n + d.needed, 0);
+  const have = material.demands.reduce((n, d) => n + d.have, 0);
+  const moreNeeded = totalNeeded - have;
+  const animal = material.source_type === 'animal';
+
+  const [state, words] =
+    animal && totalNeeded === 0
+      ? ['done', "You are done with this item, you don't need more!!"]
+    : moreNeeded === 0
+      ? ['enough', 'You have what you need!']
+    : moreNeeded > 0
+      ? ['short', animal ? 'You need to go hunting!' : 'You need to go find it!']
+    : animal
+      ? ['spare', "You're already golden! If you have more, sell them to Butcher!!"]
+      : ['spare', 'You may sell the rest!'];
+
+  return `<p class="sub hint ${state}">${words}</p>`;
 }
 
 /** The recipes a material goes into, each with its tick or cross. */

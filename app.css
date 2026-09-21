@@ -419,7 +419,14 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   font-size: .8rem;
   color: var(--ink-dim);
 }
+/* The verdict at the foot of a material card.  Red and green are the
+   signals they are everywhere else -- short of it, or holding enough.
+   "Done with it" and "spare" are not statuses to act on, so they stay
+   in the ink greys rather than spending another colour. */
 .card .hint { color: var(--ink-faint); font-style: italic; }
+.card .hint.enough { color: var(--ok); }
+.card .hint.short  { color: var(--danger-text); }
+.card .hint.spare  { color: var(--ink-dim); }
 
 .badge {
   display: inline-block;
@@ -548,12 +555,6 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border-radius: 2px;
 }
 
-.retired-note {
-  margin: 0;
-  font-size: .8rem;
-  font-style: italic;
-  color: var(--ink-faint);
-}
 
 /* ---------- recipe card ---------- */
 
