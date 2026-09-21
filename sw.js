@@ -14,7 +14,7 @@
 //   more while this is still being written.
 // ============================================================
 
-const CACHE = 'rdr2-crafting-v9';
+const CACHE = 'rdr2-crafting-v10';
 
 // Fetched once and kept: big, and only ever replaced wholesale.
 // The fonts and the artwork join the runtime and the database here —
@@ -46,11 +46,13 @@ const SHELL = [
   'js/render.js',
   'js/toast.js',
   'js/theme.js',
+  'js/prefs.js',
   'js/views/materials.js',
   'js/views/inventory.js',
   'js/views/recipes.js',
   'js/views/settings.js',
   'js/views/ledger.js',
+  'js/views/toolbar.js',
 ];
 
 self.addEventListener('install', (event) => {

@@ -458,6 +458,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .demand .qty .short { color: var(--danger-text); }
 
 .bar {
+  width: 52px;
   height: 4px;
   border-radius: 2px;
   background: var(--surface-2);
@@ -1155,13 +1156,6 @@ ul.buff li::before {
   color: var(--ink);
 }
 
-.placeholder {
-  border: 1px dashed var(--line);
-  border-radius: var(--radius);
-  padding: 32px 20px;
-  text-align: center;
-  color: var(--ink-dim);
-}
 
 .toast {
   position: fixed;

@@ -13,6 +13,7 @@
 import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { esc, pager, PAGE } from '../render.js';
+import * as toolbar from './toolbar.js';
 
 // Plainer words than the schema's, which are written for the CHECK
 // constraint rather than for reading back.
@@ -26,7 +27,7 @@ const REASON_WORDS = {
 };
 
 export function mount(root) {
-  let shown = PAGE;
+  const state = { shown: PAGE };
 
   root.innerHTML = `
     <a class="back" href="#/settings">&larr; Settings</a>
@@ -36,16 +37,7 @@ export function mount(root) {
   const list = root.querySelector('#l-entries');
   const note = root.querySelector('#l-note');
 
-  list.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-page]');
-    if (!button) return;
-
-    shown = button.dataset.page === 'more' ? shown + PAGE : PAGE;
-    update();
-    if (button.dataset.page === 'less') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  });
+  toolbar.wirePager(list, state, update);
 
   function update() {
     const total = store.stats().entries;
@@ -59,9 +51,9 @@ export function mount(root) {
       return;
     }
 
-    const rows = queries.ledgerEntries(Math.min(shown, total));
+    const rows = queries.ledgerEntries(Math.min(state.shown, total));
     list.innerHTML = `<div class="entries">${rows.map(entry).join('')}</div>`
-      + pager(shown, total);
+      + pager(state.shown, total);
   }
 
   update();

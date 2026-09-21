@@ -9,7 +9,7 @@
 import * as db from './db.js';
 import * as store from './store.js';
 import * as theme from './theme.js';
-import { errorBox, placeholder } from './render.js';
+import { errorBox } from './render.js';
 import { toast } from './toast.js';
 import * as materials from './views/materials.js';
 import * as inventory from './views/inventory.js';
@@ -78,15 +78,6 @@ function show(name) {
   }
 }
 
-/** A screen that isn't built yet, said plainly. */
-function stub(title, message) {
-  return {
-    mount(root) {
-      root.innerHTML = placeholder(title, `${message} -- not built yet.`);
-      return { update() {}, destroy() {} };
-    },
-  };
-}
 
 // ------------------------------------------------------------
 // boot

@@ -13,7 +13,8 @@
 
 import * as store from '../store.js';
 import * as theme from '../theme.js';
-import { esc } from '../render.js';
+import { esc, plural } from '../render.js';
+import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
 
 const LAST_EXPORT = 'rdr2:last-export';
@@ -121,7 +122,7 @@ export function mount(root) {
     link.click();
     URL.revokeObjectURL(url);
 
-    localStorage.setItem(LAST_EXPORT, new Date().toISOString());
+    prefs.set(LAST_EXPORT, new Date().toISOString());
     update();
     toast(`Saved rdr2-inventory-${stamp}.json`);
   });
@@ -132,7 +133,7 @@ export function mount(root) {
     const text = store.exportJSON();
     try {
       await navigator.clipboard.writeText(text);
-      localStorage.setItem(LAST_EXPORT, new Date().toISOString());
+      prefs.set(LAST_EXPORT, new Date().toISOString());
       update();
       toast('Copied. Paste it somewhere safe.');
     } catch {
@@ -262,7 +263,6 @@ export function mount(root) {
   function update() {
     const s = store.stats();
 
-    const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
     $('#s-facts').innerHTML = facts([
       ['Ledger entries', s.entries, '#/ledger'],
@@ -273,7 +273,7 @@ export function mount(root) {
       ['Recipes skipped', s.skipped],
     ]);
 
-    const last = localStorage.getItem(LAST_EXPORT);
+    const last = prefs.get(LAST_EXPORT);
     $('#s-last').textContent = last
       ? `Last exported ${new Date(last).toLocaleString()}.`
       : 'Never exported from this device.';

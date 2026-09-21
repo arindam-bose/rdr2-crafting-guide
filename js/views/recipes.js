@@ -13,7 +13,8 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { esc, empty, pager, PAGE } from '../render.js';
+import { esc, empty, pager, plural, qualityBadge, stationColour, PAGE } from '../render.js';
+import * as toolbar from './toolbar.js';
 import { toast } from '../toast.js';
 
 const STATE_LABEL = { wanted: '', done: 'Made', skipped: 'Skipped' };
@@ -52,40 +53,30 @@ export function mount(root) {
 
   root.innerHTML = `
     <div class="toolbar">
-      <input type="search" class="search" id="r-search"
-             placeholder="Search a recipe, set or material…"
-             autocomplete="off" spellcheck="false">
+      ${toolbar.searchBox('r-search', 'Search a recipe, set or material…')}
       <select class="select" id="r-category" aria-label="Category">
         <option value="">Every category</option>
         ${categories.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}
       </select>
-      <div class="chips" id="r-stations">
-        <button class="chip" data-station="" aria-pressed="true">All</button>
-        ${stations.map((s) => `
-          <button class="chip" data-station="${esc(s.id)}"
-                  aria-pressed="false">${esc(s.name)}</button>`).join('')}
-      </div>
-      <div class="chips" id="r-show">
-        <button class="chip" data-show="ready" aria-pressed="false">Ready to craft</button>
-        <button class="chip" data-show="done" aria-pressed="false">Made</button>
-      </div>
-      <div class="sort">Sort
-        <select class="select" id="r-sort" aria-label="Sort recipes by">
-          ${Object.entries(SORTS).map(([id, s]) => `
-            <option value="${id}">${esc(s.label)}</option>`).join('')}
-        </select>
-        <button type="button" class="sort-dir" id="r-dir"></button>
-      </div>
+      ${toolbar.chipRow('r-stations', 'station', [
+        { value: '', label: 'All', pressed: true },
+        ...stations.map((s) => ({ value: s.id, label: s.name })),
+      ])}
+      ${toolbar.chipRow('r-show', 'show', [
+        { value: 'ready', label: 'Ready to craft' },
+        { value: 'done', label: 'Made' },
+      ])}
+      ${toolbar.sortControl('r', SORTS, 'Sort recipes by')}
       <span class="count" id="r-count"></span>
     </div>
     <div class="gallery" id="r-gallery"></div>
     <div id="r-pager"></div>`;
 
-  const searchBox = root.querySelector('#r-search');
   const gallery = root.querySelector('#r-gallery');
   const count = root.querySelector('#r-count');
   const showChips = root.querySelector('#r-show');
   const pagerBox = root.querySelector('#r-pager');
+  const dirButton = root.querySelector('#r-dir');
 
   // Anything that changes what is in the list starts it over at the
   // first page; crafting something does not, so you keep your place.
@@ -94,62 +85,14 @@ export function mount(root) {
     update();
   }
 
-  pagerBox.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-page]');
-    if (!button) return;
-
-    if (button.dataset.page === 'more') {
-      state.shown += PAGE;
-      update();
-    } else {
-      state.shown = PAGE;
-      update();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  });
-
-  searchBox.addEventListener('input', () => {
-    state.search = searchBox.value.trim().toLowerCase();
-    refilter();
-  });
-
-  const dirButton = root.querySelector('#r-dir');
-
-  root.querySelector('#r-sort').addEventListener('change', (event) => {
-    state.sort = event.target.value;
-    state.dir = SORTS[state.sort].start;
-    refilter();
-  });
-
-  dirButton.addEventListener('click', () => {
-    state.dir = state.dir === 'asc' ? 'desc' : 'asc';
-    refilter();
-  });
+  toolbar.wirePager(pagerBox, state, update);
+  toolbar.wireSearch(root.querySelector('#r-search'), state, refilter);
+  toolbar.wireSort(root, 'r', SORTS, state, refilter);
+  toolbar.wirePicker(root.querySelector('#r-stations'), 'station', state, refilter);
+  toolbar.wireToggles(showChips, 'show', state, refilter);
 
   root.querySelector('#r-category').addEventListener('change', (event) => {
     state.category = event.target.value;
-    refilter();
-  });
-
-  root.querySelector('#r-stations').addEventListener('click', (event) => {
-    const chip = event.target.closest('.chip');
-    if (!chip) return;
-    state.station = chip.dataset.station || null;
-    for (const c of event.currentTarget.children) {
-      c.setAttribute('aria-pressed', String(c === chip));
-    }
-    refilter();
-  });
-
-  // The two view chips are a single choice, and tapping the
-  // pressed one goes back to showing everything.
-  showChips.addEventListener('click', (event) => {
-    const chip = event.target.closest('.chip');
-    if (!chip) return;
-    state.show = state.show === chip.dataset.show ? 'all' : chip.dataset.show;
-    for (const c of showChips.children) {
-      c.setAttribute('aria-pressed', String(c.dataset.show === state.show));
-    }
     refilter();
   });
 
@@ -187,16 +130,14 @@ export function mount(root) {
 
     const list = all.filter((r) => matches(r, state, personal));
 
-    const { fn, ways } = SORTS[state.sort];
-    const flip = state.dir === 'asc' ? 1 : -1;
-    const chosen = (a, b) => flip * fn(a, b);
-
+    // Made and skipped sink to the bottom whatever the field, so a
+    // Skip visibly does something.
+    const chosen = toolbar.comparator(SORTS, state);
     list.sort(personal
       ? (a, b) => RANK[a.state] - RANK[b.state] || chosen(a, b)
       : chosen);
 
-    dirButton.textContent = `${state.dir === 'asc' ? '\u2191' : '\u2193'} ${ways[state.dir]}`;
-    dirButton.title = `Sorted ${ways[state.dir].toLowerCase()} -- click to reverse`;
+    toolbar.paintDir(dirButton, SORTS, state);
 
     gallery.innerHTML = list.length
       ? list.slice(0, state.shown).map((r) => card(r, personal)).join('')
@@ -206,7 +147,7 @@ export function mount(root) {
     const ready = personal
       ? all.filter((r) => r.state === 'wanted' && r.satisfied === r.needs).length
       : 0;
-    count.textContent = `${list.length} recipe${list.length === 1 ? '' : 's'}`
+    count.textContent = plural(list.length, 'recipe')
       + (personal && ready ? ` - ${ready} ready` : '');
   }
 
@@ -248,7 +189,7 @@ function matches(r, state, personal) {
 // ------------------------------------------------------------
 
 function card(r, personal) {
-  const colour = ['blue', 'yellow', 'pink'].includes(r.color) ? r.color : '';
+  const colour = stationColour(r.color);
   const ready = r.satisfied === r.needs;
 
   return `
@@ -289,9 +230,7 @@ function buff(description) {
 
 
 function ingredient(i, personal) {
-  const badge = i.quality
-    ? `<span class="badge${i.quality === 'Legendary' ? ' legendary' : ''}">${esc(i.quality)}</span>`
-    : '';
+  const badge = qualityBadge(i.quality);
 
   if (!personal) {
     return `<li><span class="qty">${i.qty}x</span>
@@ -349,7 +288,7 @@ function actions(r, ready) {
 function shortfall(r) {
   const missing = r.ingredients
     .filter((i) => !i.satisfied)
-    .map((i) => `${i.qty - i.have}\u00d7 ${i.name}`);
+    .map((i) => `${i.qty - i.have}x ${i.name}`);
 
   return missing.length > 2
     ? `${missing.slice(0, 2).join(', ')} and ${missing.length - 2} more`

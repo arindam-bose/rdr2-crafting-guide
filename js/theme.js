@@ -14,6 +14,8 @@
 // to keep up.
 // ============================================================
 
+import * as prefs from './prefs.js';
+
 const KEY = 'rdr2:theme';
 const DEFAULT = 'parchment';
 
@@ -24,8 +26,7 @@ export const THEMES = [
 
 /** The stored choice, or the default if there isn't a usable one. */
 export function current() {
-  let stored = null;
-  try { stored = localStorage.getItem(KEY); } catch { /* private mode */ }
+  const stored = prefs.get(KEY);
   return THEMES.some((t) => t.id === stored) ? stored : DEFAULT;
 }
 
@@ -39,11 +40,8 @@ export function set(name) {
   const theme = THEMES.some((t) => t.id === name) ? name : DEFAULT;
 
   document.documentElement.dataset.theme = theme;
-  try { localStorage.setItem(KEY, theme); } catch { /* private mode */ }
-
+  prefs.set(KEY, theme);
   syncBrowserChrome();
-  for (const fn of listeners) fn(theme);
-  return theme;
 }
 
 /**
@@ -60,10 +58,3 @@ export function syncBrowserChrome() {
   if (bg) meta.setAttribute('content', bg);
 }
 
-const listeners = new Set();
-
-/** Called with the new theme whenever it changes. */
-export function subscribe(fn) {
-  listeners.add(fn);
-  return () => listeners.delete(fn);
-}

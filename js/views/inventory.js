@@ -17,7 +17,8 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { esc, empty } from '../render.js';
+import { esc, empty, plural, qualityBadge } from '../render.js';
+import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
 
 // A bump is recorded as the thing that most likely caused it, so
@@ -25,6 +26,8 @@ import { toast } from '../toast.js';
 // corrections.  Taking one away is the exception: that is nearly
 // always fixing a mis-entry.
 const REASON = { animal: 'kill', misc: 'loot' };
+
+const LOCATION_KEY = 'rdr2:location';
 
 // Staged, uncommitted edits, keyed by location and material.
 // Module-level, so leaving the screen does not throw them away.
@@ -38,7 +41,7 @@ window.addEventListener('beforeunload', (event) => {
 export function mount(root) {
   const locations = queries.locations();
   const state = {
-    location: localStorage.getItem('rdr2:location') ?? locations[0].id,
+    location: prefs.get(LOCATION_KEY) ?? locations[0].id,
     search: '',
   };
   if (!locations.some((l) => l.id === state.location)) {
@@ -73,7 +76,7 @@ export function mount(root) {
     const button = event.target.closest('[data-location]');
     if (!button) return;
     state.location = button.dataset.location;
-    localStorage.setItem('rdr2:location', state.location);
+    prefs.set(LOCATION_KEY, state.location);
     for (const b of segmented.children) {
       b.setAttribute('aria-selected', String(b === button));
     }
@@ -128,7 +131,7 @@ export function mount(root) {
     })));
 
     const ids = written.map((r) => r.id);
-    toast(`Saved ${entries.length} change${entries.length === 1 ? '' : 's'}`,
+    toast(`Saved ${plural(entries.length, 'change')}`,
           { label: 'Undo', run: () => store.undoBatch(ids) });
   }
 
@@ -139,7 +142,7 @@ export function mount(root) {
     if (searching) {
       const hits = queries.searchMaterials(state.search, state.location);
       sections.innerHTML = section(
-        `${hits.length} match${hits.length === 1 ? '' : 'es'}`,
+        plural(hits.length, 'match', 'es'),
         hits, 'No material by that name.');
     } else {
       // What you are holding here first, then the quick way back to
@@ -151,8 +154,7 @@ export function mount(root) {
     }
 
     savebar.hidden = staged.size === 0;
-    pending.textContent =
-      `${staged.size} unsaved change${staged.size === 1 ? '' : 's'}`;
+    pending.textContent = `${plural(staged.size, 'unsaved change')}`;
 
     // Say so on the tab too, since the bar goes with the screen.
     const tab = document.querySelector('.tabs [data-route="inventory"]');
@@ -232,9 +234,7 @@ function row(m, pending) {
   const delta = pending?.delta ?? 0;
   const shown = m.qty + delta;
 
-  const badge = m.quality
-    ? `<span class="badge${m.quality === 'Legendary' ? ' legendary' : ''}">${esc(m.quality)}</span>`
-    : '';
+  const badge = qualityBadge(m.quality);
 
   const mark = delta
     ? `<small>${delta > 0 ? '+' : '-'}${Math.abs(delta)}</small>`

@@ -66,12 +66,15 @@ served network-first, so edits show up on reload without a cache bump.
       db.js               open sql.js, create the personal tables
       store.js            ledger writes, IndexedDB, export/import, crafting
       queries.js          the four queries as functions
-      render.js           card templates
+      render.js           card templates and the pieces they share
+      prefs.js            localStorage, guarded: theme, location, last export
       views/materials.js  "Where to go if you have these items"
       views/inventory.js  entry: pick a location, search, tap +/-
       views/recipes.js    the catalogue, and where you craft
       views/settings.js   export, import, reset, and what is stored
       views/ledger.js     the history, as its own page
+      views/toolbar.js    search, chips, sort and pager, shared by the two
+                          galleries
       toast.js            the undo toast
       theme.js            parchment or leather, remembered per device
       main.js             boot and hash routing

@@ -13,6 +13,7 @@
 
 import * as db from './db.js';
 import { craftSpend } from './queries.js';
+import * as prefs from './prefs.js';
 
 const IDB_NAME = 'rdr2-personal';
 const IDB_VERSION = 1;
@@ -347,11 +348,11 @@ export async function reset() {
 // ------------------------------------------------------------
 
 export function isPersonal() {
-  return localStorage.getItem(MODE_KEY) !== 'general';
+  return prefs.get(MODE_KEY) !== 'general';
 }
 
 export function setPersonal(on) {
-  localStorage.setItem(MODE_KEY, on ? 'personal' : 'general');
+  prefs.set(MODE_KEY, on ? 'personal' : 'general');
   changed();
 }
 

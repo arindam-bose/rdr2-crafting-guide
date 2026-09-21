@@ -13,6 +13,37 @@ export function esc(value) {
 }
 
 /**
+ * The quality chip beside a material's name.  Three screens show a
+ * material by name -- a card, a recipe's ingredient list, an inventory
+ * row -- and all three mark quality the same way.
+ */
+export function qualityBadge(quality) {
+  if (!quality) return '';
+  const legendary = quality === 'Legendary' ? ' legendary' : '';
+  return `<span class="badge${legendary}">${esc(quality)}</span>`;
+}
+
+/** "1 material", "2 materials", "3 matches". */
+export function plural(n, word, suffix = 's') {
+  return `${n} ${word}${n === 1 ? '' : suffix}`;
+}
+
+/**
+ * A station's colour, as the database spells it.  Guarded because it
+ * reaches the stylesheet as a class name, and only these three have a
+ * rule behind them.
+ */
+export function stationColour(colour) {
+  return ['blue', 'yellow', 'pink'].includes(colour) ? colour : '';
+}
+
+/**
+ * How many recipes a material card lists before it offers the rest.
+ * Only five materials in the reference data go past this.
+ */
+const USAGE_SHOWN = 6;
+
+/**
  * One material: where it comes from, which stations still want it,
  * and what it goes into.
  *
@@ -20,16 +51,11 @@ export function esc(value) {
  *                animal, weapon, body_part, demands: [...],
  *                usage: [...] }
  *
- * `personal` decides whether the card talks about what you have.
+ * `personal` decides whether the card talks about what you have, and
+ * `expanded` whether its "used in" list is showing every entry.
  */
-const USAGE_SHOWN = 6;
-
 export function materialCard(material, { personal, expanded = false }) {
   const { material: name, quality, source_type, animal, weapon, body_part } = material;
-
-  const badge = quality
-    ? `<span class="badge${quality === 'Legendary' ? ' legendary' : ''}">${esc(quality)}</span>`
-    : '';
 
   // Where it comes from.  The database knows the animal and the
   // weapon that leaves a pelt unspoiled, which is the actionable half.
@@ -49,7 +75,7 @@ export function materialCard(material, { personal, expanded = false }) {
 
   return `
     <article class="card" data-ingredient="${esc(material.ingredient_id)}">
-      <h3>${esc(name)}${badge}</h3>
+      <h3>${esc(name)}${qualityBadge(quality)}</h3>
       <p class="sub">${origin || '&nbsp;'}${
         body_part ? ` - ${esc(body_part)}` : ''}</p>
 
@@ -86,13 +112,9 @@ function usedIn(usage = [], personal, expanded = false) {
     </li>`;
   };
 
-  // Captioned, because with a single entry -- which is every misc
-  // material, each one feeding exactly one talisman -- an unlabelled
-  // list does not read as a list at all.
-  // Only five materials in the reference data go into more than six
-  // recipes, so the control is rare -- but on those five the tail is
-  // most of the list, and a card that ends in "and 6 more" with no way
-  // to read them is the card failing at its one job.
+  // Rare -- five materials reach it -- but on those five the tail is
+  // most of the list, and a card ending in "and 6 more" with no way to
+  // read them is the card failing at its one job.
   const toggle = !over ? '' : `
     <li class="more">
       <button type="button" class="more-link" data-expand
@@ -100,6 +122,9 @@ function usedIn(usage = [], personal, expanded = false) {
         expanded ? 'Show fewer' : `and ${rest} more`}</button>
     </li>`;
 
+  // Captioned: with a single entry -- which is every misc material,
+  // each feeding exactly one talisman -- an unlabelled line under the
+  // demand rows reads as another demand row, not as a list.
   return `
     <p class="list-label used-in-label">Used in</p>
     <ul class="used-in">
@@ -110,7 +135,7 @@ function usedIn(usage = [], personal, expanded = false) {
 
 /** One station's demand for this material, and how close you are. */
 function demandRow(d, personal) {
-  const colour = ['blue', 'yellow', 'pink'].includes(d.color) ? d.color : '';
+  const colour = stationColour(d.color);
 
   if (!personal) {
     return `
@@ -130,7 +155,7 @@ function demandRow(d, personal) {
         <span class="${enough ? 'have' : 'short'}">${d.have}</span>/${d.needed}
       </span>
       <span class="station">${esc(d.station)}</span>
-      <span class="bar ${enough ? '' : 'short'}" style="width:52px"
+      <span class="bar ${enough ? '' : 'short'}"
             role="img" aria-label="${d.have} of ${d.needed} for ${esc(d.station)}"
         ><i style="width:${pct}%"></i></span>
     </div>`;
@@ -164,14 +189,6 @@ export function pager(shown, total) {
 
 export function empty(message) {
   return `<p class="empty">${esc(message)}</p>`;
-}
-
-export function placeholder(title, message) {
-  return `
-    <div class="placeholder">
-      <h2>${esc(title)}</h2>
-      <p>${esc(message)}</p>
-    </div>`;
 }
 
 export function errorBox(err) {

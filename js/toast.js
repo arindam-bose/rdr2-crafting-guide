@@ -50,7 +50,7 @@ export function toast(message, action = null) {
   timer = setTimeout(dismiss, action?.duration ?? DURATION);
 }
 
-export function dismiss() {
+function dismiss() {
   clearTimeout(timer);
   if (element) element.hidden = true;
 }

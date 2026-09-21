@@ -40,7 +40,6 @@ export function materials({ personal = true } = {}) {
                st.name              AS station,
                st.color             AS color,
                ${open}              AS needed,
-               SUM(ri.qty)          AS needed_total,
                COALESCE(inv.qty, 0) AS have
     FROM       recipe_ingredients ri
     JOIN       recipes      r   ON r.id   = ri.recipe_id

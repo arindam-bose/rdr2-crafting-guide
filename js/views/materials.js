@@ -16,7 +16,8 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { materialCard, empty, esc, pager, PAGE } from '../render.js';
+import { materialCard, empty, esc, plural, pager, PAGE } from '../render.js';
+import * as toolbar from './toolbar.js';
 
 const GROUPS = [
   { id: 'animal', title: 'Animal Materials' },
@@ -32,9 +33,7 @@ const shortfall = (c) => c.demands.reduce(
   (total, d) => total + Math.max(0, d.needed - d.have), 0);
 
 // Each field is written ascending once; the direction toggle
-// negates it.  `ways` names what each direction actually does, so
-// the button can say "Most first" rather than an arrow you have to
-// interpret.
+// negates it.  `ways` names what each direction actually does.
 const SORTS = {
   needed:  {
     label: 'Still needed',
@@ -70,26 +69,16 @@ export function mount(root) {
 
   root.innerHTML = `
     <div class="toolbar">
-      <input type="search" class="search" id="m-search"
-             placeholder="Search a material, animal or station…"
-             autocomplete="off" spellcheck="false">
-      <div class="chips" id="m-stations">
-        <button class="chip" data-station="" aria-pressed="true">All</button>
-        ${stations.map((s) => `
-          <button class="chip" data-station="${esc(s.id)}"
-                  aria-pressed="false">${esc(s.name)}</button>`).join('')}
-      </div>
-      <div class="chips" id="m-show">
-        <button class="chip" data-show="short" aria-pressed="false">Still needed</button>
-        <button class="chip" data-show="done" aria-pressed="false">Done</button>
-      </div>
-      <div class="sort">Sort
-        <select class="select" id="m-sort" aria-label="Sort materials by">
-          ${Object.entries(SORTS).map(([id, s]) => `
-            <option value="${id}">${esc(s.label)}</option>`).join('')}
-        </select>
-        <button type="button" class="sort-dir" id="m-dir"></button>
-      </div>
+      ${toolbar.searchBox('m-search', 'Search a material, animal or station…')}
+      ${toolbar.chipRow('m-stations', 'station', [
+        { value: '', label: 'All', pressed: true },
+        ...stations.map((s) => ({ value: s.id, label: s.name })),
+      ])}
+      ${toolbar.chipRow('m-show', 'show', [
+        { value: 'short', label: 'Still needed' },
+        { value: 'done', label: 'Done' },
+      ])}
+      ${toolbar.sortControl('m', SORTS, 'Sort materials by')}
       <span class="count" id="m-count"></span>
     </div>
     <div class="segmented" role="tablist" id="m-groups">
@@ -98,14 +87,14 @@ export function mount(root) {
           ${esc(g.title)}<span class="tab-count"></span></button>`).join('')}
     </div>
     <div class="gallery" id="m-gallery"></div>
-    <div id="m-pager"></div>
-    <div id="m-empty"></div>`;
+    <div id="m-pager"></div>`;
 
-  const searchBox = root.querySelector('#m-search');
   const showChips = root.querySelector('#m-show');
   const count = root.querySelector('#m-count');
-  const emptyBox = root.querySelector('#m-empty');
   const pagerBox = root.querySelector('#m-pager');
+  const gallery = root.querySelector('#m-gallery');
+  const groupTabs = root.querySelector('#m-groups');
+  const dirButton = root.querySelector('#m-dir');
 
   // Anything that changes what is in the list starts it over at the
   // first page; a store change — crafting something — does not, so
@@ -115,21 +104,11 @@ export function mount(root) {
     update();
   }
 
-  pagerBox.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-page]');
-    if (!button) return;
-
-    if (button.dataset.page === 'more') {
-      state.shown += PAGE;
-      update();
-    } else {
-      state.shown = PAGE;
-      update();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  });
-  const gallery = root.querySelector('#m-gallery');
-  const groupTabs = root.querySelector('#m-groups');
+  toolbar.wirePager(pagerBox, state, update);
+  toolbar.wireSearch(root.querySelector('#m-search'), state, refilter);
+  toolbar.wireSort(root, 'm', SORTS, state, refilter);
+  toolbar.wirePicker(root.querySelector('#m-stations'), 'station', state, refilter);
+  toolbar.wireToggles(showChips, 'show', state, refilter);
 
   // Opening one card's list does not touch the others, and does not
   // start the page over: this is reading, not filtering.
@@ -155,46 +134,6 @@ export function mount(root) {
     refilter();
   });
 
-  const dirButton = root.querySelector('#m-dir');
-
-  root.querySelector('#m-sort').addEventListener('change', (event) => {
-    state.sort = event.target.value;
-    // Each field has the direction you nearly always want it in.
-    state.dir = SORTS[state.sort].start;
-    refilter();
-  });
-
-  dirButton.addEventListener('click', () => {
-    state.dir = state.dir === 'asc' ? 'desc' : 'asc';
-    refilter();
-  });
-
-  searchBox.addEventListener('input', () => {
-    state.search = searchBox.value.trim().toLowerCase();
-    refilter();
-  });
-
-  root.querySelector('#m-stations').addEventListener('click', (event) => {
-    const chip = event.target.closest('.chip');
-    if (!chip) return;
-    state.station = chip.dataset.station || null;
-    for (const c of event.currentTarget.children) {
-      c.setAttribute('aria-pressed', String(c === chip));
-    }
-    refilter();
-  });
-
-  // One choice, and tapping the pressed chip goes back to everything.
-  showChips.addEventListener('click', (event) => {
-    const chip = event.target.closest('.chip');
-    if (!chip) return;
-    state.show = state.show === chip.dataset.show ? 'all' : chip.dataset.show;
-    for (const c of showChips.children) {
-      c.setAttribute('aria-pressed', String(c.dataset.show === state.show));
-    }
-    refilter();
-  });
-
   function update() {
     const personal = store.isPersonal();
     showChips.hidden = !personal;
@@ -212,23 +151,19 @@ export function mount(root) {
     }
 
     const cards = matched.filter((m) => m.source_type === state.group);
-    const { fn, ways } = SORTS[state.sort];
-    const flip = state.dir === 'asc' ? 1 : -1;
-    cards.sort((a, b) => flip * fn(a, b));
+    cards.sort(toolbar.comparator(SORTS, state));
+    toolbar.paintDir(dirButton, SORTS, state);
 
-    dirButton.textContent = `${state.dir === 'asc' ? '\u2191' : '\u2193'} ${ways[state.dir]}`;
-    dirButton.title = `Sorted ${ways[state.dir].toLowerCase()} -- click to reverse`;
-
-    gallery.innerHTML = cards.slice(0, state.shown)
-      .map((m) => materialCard(m, {
-        personal, expanded: state.expanded.has(m.ingredient_id),
-      })).join('');
-    pagerBox.innerHTML = pager(state.shown, cards.length);
-    emptyBox.innerHTML = cards.length
-      ? ''
+    // The empty message goes where the cards would have been, as on
+    // Recipes, so the pager always sits under the gallery.
+    gallery.innerHTML = cards.length
+      ? cards.slice(0, state.shown).map((m) => materialCard(m, {
+          personal, expanded: state.expanded.has(m.ingredient_id),
+        })).join('')
       : empty(emptyMessage(state, personal, counts));
+    pagerBox.innerHTML = pager(state.shown, cards.length);
 
-    count.textContent = `${cards.length} material${cards.length === 1 ? '' : 's'}`;
+    count.textContent = plural(cards.length, 'material');
   }
 
   update();
@@ -276,7 +211,6 @@ function group(rows, usage) {
       station: row.station,
       color: row.color,
       needed: row.needed,
-      needed_total: row.needed_total,
       have: row.have,
     });
   }
