@@ -53,7 +53,7 @@ served network-first, so edits show up on reload without a cache bump.
 
 ## Layout
 
-    index.html            shell: masthead, tabs, toast
+    index.html            shell: masthead, tabs, toast, footer
     app.css               one layout for phone and desktop, and the theme
     data/rdr2.db          reference data, read-only
     fonts/

@@ -48,6 +48,13 @@
   --font-body:    "FB Remington", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-display: "Chinese Rocks", "Haettenschweiler", "Arial Narrow", sans-serif;
 
+  /* For the handful of glyphs a typewriter never had a key for: the tick,
+     the cross, the copyright sign.  Named rather than left to the browser
+     because each one is in a different set of fonts, and falling back per
+     glyph lands them at different weights beside each other. */
+  --font-symbol:  "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2",
+                  "DejaVu Sans", sans-serif;
+
   --radius: 10px;
   --tabs-h: 56px;
 }
@@ -440,13 +447,12 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .bar.short > i { background: var(--danger-text); }
 
-/* A tick and a cross are icons rather than type, so they get their own
-   stack: the typewriter face has neither, and left to itself the browser
-   picks a different font for each one -- ✓ is in far more fonts than ✗ --
-   which lands them at two different weights side by side. */
+/* A tick and a cross are icons rather than type: the typewriter face has
+   neither, and left to itself the browser picks a different font for each
+   one -- ✓ is in far more fonts than ✗ -- which lands them at two
+   different weights side by side. */
 .mark {
-  font-family: "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2",
-               "DejaVu Sans", sans-serif;
+  font-family: var(--font-symbol);
   font-weight: 700;
 }
 
@@ -1036,6 +1042,36 @@ ul.buff li::before {
   border-color: var(--danger);
 }
 .danger-btn:hover { background: var(--rdr-blood); border-color: var(--rdr-blood); }
+
+/* ---------- footer ---------- */
+
+/* Same 1400px column as main, so its rule lines up with the content
+   above it rather than running the full width of a desktop screen. */
+.footer {
+  max-width: 1400px;
+  margin: 30px auto 0;
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+}
+
+.footer p {
+  margin: 0;
+  font-size: .78rem;
+  line-height: 1.6;
+  color: var(--ink-faint);
+}
+
+/* The face carries no bold, so a name is lifted by colour instead. */
+.footer .by { color: var(--ink-dim); }
+
+/* No typewriter had a (c) key -- you typed the three characters.  This one
+   borrows the glyph, and drops back a little so it does not outweigh the
+   year it sits against. */
+.footer .sym {
+  font-family: var(--font-symbol);
+  font-size: .92em;
+}
 
 /* ---------- misc ---------- */
 
