@@ -13,6 +13,7 @@ Requires: pandas.  Everything else is the standard library.
 """
 
 import argparse
+import datetime
 import glob
 import os
 import re
@@ -24,6 +25,9 @@ import pandas as pd
 # --------------------------------------------------------------------------
 # reference constants
 # --------------------------------------------------------------------------
+
+# Bumped when the shape of the generated database changes.
+SCHEMA_VERSION = "1"
 
 # where materials are stored
 LOCATIONS = ["Satchel", "Trapper", "Pearson"]
@@ -52,6 +56,13 @@ TEXT_FIXES = {
 
 SCHEMA = """
 PRAGMA foreign_keys = ON;
+
+-- Stamped at build time so the app can say which reference data it
+-- is showing, and an export can record which build it came from.
+CREATE TABLE meta (
+    key    TEXT PRIMARY KEY,
+    value  TEXT NOT NULL
+);
 
 -- Every id is a prefixed slug derived from the row's name: stable across
 -- rebuilds, self-describing wherever it turns up loose (URLs, the personal
@@ -217,6 +228,13 @@ def build(export_dir, out_path):
     db.executescript(SCHEMA)
     warnings = []
 
+    # ---- meta ---------------------------------------------------------
+    db.executemany("INSERT INTO meta(key, value) VALUES (?,?)", [
+        ("schema_version", SCHEMA_VERSION),
+        ("built_at", datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d")),
+        ("source", "Notion 'RDR2 Databases' export"),
+    ])
+
     # ---- weapons ------------------------------------------------------
     db.executemany("INSERT INTO weapons(id, name) VALUES (?,?)",
                    [(mkid("weapon", w), w)
@@ -323,7 +341,7 @@ def build(export_dir, out_path):
 
 def report(db, warnings, out_path):
     tables = ("weapons", "animals", "locations", "stations", "sets",
-              "ingredients", "recipes", "recipe_ingredients")
+              "ingredients", "recipes", "recipe_ingredients", "meta")
     counts = [(t, db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0])
               for t in tables]
     width = max(len(t) for t, _ in counts)

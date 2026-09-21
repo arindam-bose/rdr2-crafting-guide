@@ -201,17 +201,104 @@ export function exportJSON() {
     format: 'rdr2-crafting-guide/personal',
     version: 1,
     exported_at: new Date().toISOString(),
+    reference_build: referenceBuild(),
     ledger: db.all('SELECT * FROM ledger ORDER BY id'),
     targets: db.all('SELECT * FROM targets ORDER BY recipe_id'),
   }, null, 2);
 }
 
-/** Replace everything personal with the contents of an export. */
-export async function importJSON(text) {
-  const data = JSON.parse(text);
-  if (data?.format !== 'rdr2-crafting-guide/personal') {
-    throw new Error('Not a crafting-guide export.');
+/** Which reference database this was recorded against. */
+function referenceBuild() {
+  return db.one("SELECT value FROM meta WHERE key = 'built_at'")?.value ?? null;
+}
+
+const REASONS = ['kill', 'loot', 'buy', 'craft', 'move', 'correction'];
+
+/**
+ * Read an export without touching anything, and say what is in it.
+ *
+ * Two things are worth catching before the transaction rather than
+ * halfway through it: a `reason` the schema's CHECK will refuse,
+ * and rows naming materials this build has never heard of.  The
+ * ledger stores slugs with no foreign key, so if a name is
+ * corrected upstream the slug moves and those rows would import
+ * silently and then never appear anywhere.
+ */
+export function inspectImport(text) {
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    return { ok: false, fatal: `That is not JSON: ${err.message}` };
   }
+
+  if (data?.format !== 'rdr2-crafting-guide/personal') {
+    return { ok: false, fatal: 'Not a crafting-guide export.' };
+  }
+
+  const ledger = Array.isArray(data.ledger) ? data.ledger : [];
+  const targets = Array.isArray(data.targets) ? data.targets : [];
+
+  const known = (table) =>
+    new Set(db.all(`SELECT id FROM ${table}`).map((r) => r.id));
+  const ingredients = known('ingredients');
+  const recipes = known('recipes');
+  const locations = known('locations');
+
+  const problems = [];
+  const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+
+  const badReason = ledger.filter((r) => !REASONS.includes(r.reason)).length;
+  if (badReason) problems.push(count(badReason, 'entry has', 'entries have')
+    + ' a reason this version does not accept');
+
+  const unknownIngredient =
+    new Set(ledger.filter((r) => !ingredients.has(r.ingredient_id))
+                  .map((r) => r.ingredient_id));
+  if (unknownIngredient.size) {
+    problems.push(count(unknownIngredient.size, 'material is', 'materials are')
+      + ' not in this build of the reference data');
+  }
+
+  const unknownLocation =
+    new Set(ledger.filter((r) => !locations.has(r.location_id))
+                  .map((r) => r.location_id));
+  if (unknownLocation.size) {
+    problems.push(count(unknownLocation.size, 'location is', 'locations are')
+      + ' not in this build');
+  }
+
+  const unknownRecipe =
+    new Set(targets.filter((t) => !recipes.has(t.recipe_id))
+                   .map((t) => t.recipe_id));
+  if (unknownRecipe.size) {
+    problems.push(count(unknownRecipe.size, 'recipe is', 'recipes are')
+      + ' not in this build');
+  }
+
+  return {
+    ok: badReason === 0,
+    fatal: badReason ? 'Some entries would be rejected by the database.' : null,
+    exported_at: data.exported_at ?? null,
+    reference_build: data.reference_build ?? null,
+    ledger: ledger.length,
+    targets: targets.length,
+    problems,
+  };
+}
+
+/**
+ * Replace everything personal with the contents of an export.
+ *
+ * Replace, not merge: a ledger id counts up per device, so two
+ * devices' rows cannot be told apart and merging would double
+ * anything imported twice.  One device is the source of truth.
+ */
+export async function importJSON(text) {
+  const found = inspectImport(text);
+  if (found.fatal) throw new Error(found.fatal);
+
+  const data = JSON.parse(text);
 
   db.transaction(() => {
     db.run('DELETE FROM ledger');
@@ -226,6 +313,20 @@ export async function importJSON(text) {
 
   await hydrate();
   changed();
+  return found;
+}
+
+/** A count of what is here, for the Settings page to report. */
+export function stats() {
+  const one = (sql) => db.one(sql)?.n ?? 0;
+  return {
+    entries: one('SELECT COUNT(*) AS n FROM ledger'),
+    held: one('SELECT COUNT(*) AS n FROM inventory WHERE qty > 0'),
+    materials: one('SELECT COUNT(DISTINCT ingredient_id) AS n FROM inventory WHERE qty > 0'),
+    made: one("SELECT COUNT(*) AS n FROM targets WHERE state = 'done'"),
+    skipped: one("SELECT COUNT(*) AS n FROM targets WHERE state = 'skipped'"),
+    referenceBuild: referenceBuild(),
+  };
 }
 
 /** Throw the personal layer away. */

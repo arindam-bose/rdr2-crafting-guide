@@ -214,6 +214,28 @@ export function searchMaterials(term, locationId, limit = 40) {
     { location_id: locationId, term: `%${term}%`, limit });
 }
 
+/**
+ * The ledger, newest first, with names rather than slugs.
+ *
+ * COALESCE back to the raw id rather than leaving a blank: a row
+ * imported from a build that knew a different slug should be
+ * visible as the odd thing it is, not invisible.
+ */
+export function ledgerEntries(limit) {
+  return db.all(`
+    SELECT     l.id, l.ts, l.delta, l.reason,
+               COALESCE(ing.name, l.ingredient_id) AS material,
+               COALESCE(loc.name, l.location_id)   AS place,
+               ing.id IS NULL                      AS unknown_material,
+               r.name                              AS recipe
+    FROM       ledger l
+    LEFT JOIN  ingredients ing ON ing.id = l.ingredient_id
+    LEFT JOIN  locations   loc ON loc.id = l.location_id
+    LEFT JOIN  recipes     r   ON r.id   = l.recipe_id
+    ORDER BY   l.id DESC
+    LIMIT      :limit`, { limit });
+}
+
 /** What you are holding at one location, most of it first. */
 export function stockAt(locationId) {
   return db.all(`${STOCK_AT}

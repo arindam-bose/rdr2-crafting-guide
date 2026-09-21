@@ -14,7 +14,7 @@
 //   more while this is still being written.
 // ============================================================
 
-const CACHE = 'rdr2-crafting-v3';
+const CACHE = 'rdr2-crafting-v5';
 
 // Fetched once and kept: big, and only ever replaced wholesale.
 const IMMUTABLE = [
@@ -39,6 +39,8 @@ const SHELL = [
   'js/views/materials.js',
   'js/views/inventory.js',
   'js/views/recipes.js',
+  'js/views/settings.js',
+  'js/views/ledger.js',
 ];
 
 self.addEventListener('install', (event) => {

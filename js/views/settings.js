@@ -1,0 +1,287 @@
+// ============================================================
+// Settings — where your data lives, and how to move it.
+//
+// The whole personal layer is a browser's worth of rows in
+// IndexedDB: private, and gone if you clear site data.  Export
+// is therefore not a nicety, it is the backup.
+//
+// Import replaces rather than merges.  A ledger id counts up per
+// device, so two devices' rows cannot be told apart; merging them
+// would double anything imported twice.  One device is the source
+// of truth and the other receives.
+// ============================================================
+
+import * as store from '../store.js';
+import { esc } from '../render.js';
+import { toast } from '../toast.js';
+
+const LAST_EXPORT = 'rdr2:last-export';
+
+export function mount(root) {
+  root.innerHTML = `
+    <div class="settings">
+      <section class="panel">
+        <h3>Your data</h3>
+        <dl class="facts" id="s-facts"></dl>
+        <p class="note" id="s-last"></p>
+      </section>
+
+      <section class="panel">
+        <h3>Take it with you</h3>
+        <p class="note">Everything you have logged, as one text file. Keep it
+          somewhere safe — clearing this site's data erases the original.</p>
+        <div class="panel-actions">
+          <button type="button" class="more-btn" id="s-download">Download</button>
+          <button type="button" class="ghost-btn" id="s-copy">Copy to clipboard</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Bring it back</h3>
+        <p class="note">Reading a file <strong>replaces</strong> what is on this
+          device. Nothing is written until you confirm.</p>
+        <div class="panel-actions">
+          <label class="ghost-btn file-btn">Choose a file
+            <input type="file" id="s-file" accept=".json,application/json" hidden>
+          </label>
+        </div>
+        <details class="paste">
+          <summary>or paste it instead</summary>
+          <textarea id="s-paste" rows="4" spellcheck="false"
+                    placeholder="Paste the contents of an export…"></textarea>
+          <button type="button" class="ghost-btn" id="s-read">Read this</button>
+        </details>
+        <div id="s-preview"></div>
+      </section>
+
+      <section class="panel">
+        <h3>Personal and general</h3>
+        <p class="note">
+          <strong>Personal</strong> folds in what you own: cards show what you
+          have against what a station wants, recipes can be crafted, and
+          anything made or skipped drops out of the way.<br>
+          <strong>General</strong> ignores all of it and shows the reference
+          data whole — every recipe, every material, every quantity.</p>
+        <div class="panel-actions">
+          <button type="button" class="ghost-btn" id="s-mode"></button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Offline</h3>
+        <p class="note" id="s-offline">Checking…</p>
+        <div class="panel-actions">
+          <button type="button" class="ghost-btn" id="s-update">Check for updates</button>
+        </div>
+      </section>
+
+      <section class="panel danger">
+        <h3>Erase everything</h3>
+        <p class="note">Removes every ledger entry and every recipe you have
+          marked. The reference data is untouched. This cannot be undone —
+          download a copy first.</p>
+        <div class="panel-actions" id="s-danger">
+          <button type="button" class="ghost-btn" id="s-reset">Erase my data</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>About</h3>
+        <dl class="facts" id="s-about"></dl>
+      </section>
+    </div>`;
+
+  const $ = (sel) => root.querySelector(sel);
+  const preview = $('#s-preview');
+  let pending = null;          // text waiting for a confirmed import
+
+  // ---- the file itself ------------------------------------------------
+
+  $('#s-download').addEventListener('click', () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const blob = new Blob([store.exportJSON()], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `rdr2-inventory-${stamp}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+
+    localStorage.setItem(LAST_EXPORT, new Date().toISOString());
+    update();
+    toast(`Saved rdr2-inventory-${stamp}.json`);
+  });
+
+  // The download attribute is unreliable on iOS, so there is always
+  // a way to get the text out by hand.
+  $('#s-copy').addEventListener('click', async () => {
+    const text = store.exportJSON();
+    try {
+      await navigator.clipboard.writeText(text);
+      localStorage.setItem(LAST_EXPORT, new Date().toISOString());
+      update();
+      toast('Copied. Paste it somewhere safe.');
+    } catch {
+      toast('This browser would not let the page copy. Use Download.');
+    }
+  });
+
+  $('#s-file').addEventListener('change', async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    offer(await file.text(), file.name);
+    event.target.value = '';            // so the same file can be picked twice
+  });
+
+  $('#s-read').addEventListener('click', () => {
+    const text = $('#s-paste').value.trim();
+    if (text) offer(text, 'pasted text');
+  });
+
+  /** Say what the file holds, and what replacing would cost. */
+  function offer(text, source) {
+    const found = store.inspectImport(text);
+    const now = store.stats();
+
+    if (found.fatal) {
+      pending = null;
+      preview.innerHTML = `<div class="verdict bad">
+        <p>${esc(found.fatal)}</p></div>`;
+      return;
+    }
+
+    pending = text;
+    const when = found.exported_at
+      ? new Date(found.exported_at).toLocaleDateString()
+      : 'an unknown date';
+
+    preview.innerHTML = `
+      <div class="verdict">
+        <p><strong>${esc(source)}</strong> holds
+          ${found.ledger} ${found.ledger === 1 ? 'entry' : 'entries'} and
+          ${found.targets} marked ${found.targets === 1 ? 'recipe' : 'recipes'},
+          exported ${esc(when)}.</p>
+        <p>This device has ${now.entries} ${now.entries === 1 ? 'entry' : 'entries'}
+          and ${now.made + now.skipped} marked. All of it will be replaced.</p>
+        ${found.problems.length
+          ? `<ul class="problems">${found.problems
+              .map((w) => `<li>${esc(w)}</li>`).join('')}</ul>`
+          : ''}
+        <div class="panel-actions">
+          <button type="button" class="more-btn" id="s-confirm">Replace my data</button>
+          <button type="button" class="ghost-btn" id="s-cancel">Cancel</button>
+        </div>
+      </div>`;
+  }
+
+  preview.addEventListener('click', async (event) => {
+    if (event.target.id === 's-cancel') {
+      pending = null;
+      preview.innerHTML = '';
+    } else if (event.target.id === 's-confirm' && pending) {
+      const found = await store.importJSON(pending);
+      pending = null;
+      preview.innerHTML = '';
+      $('#s-paste').value = '';
+      toast(`Loaded ${found.ledger} ${found.ledger === 1 ? 'entry' : 'entries'}.`);
+    }
+  });
+
+  // ---- mode, offline, erase -------------------------------------------
+
+  $('#s-mode').addEventListener('click', () => {
+    store.setPersonal(!store.isPersonal());
+    const toggle = document.getElementById('mode-toggle');
+    if (toggle) toggle.checked = store.isPersonal();
+  });
+
+  $('#s-update').addEventListener('click', async () => {
+    const registration = await navigator.serviceWorker?.getRegistration();
+    if (!registration) return toast('Offline caching is not running.');
+    await registration.update();
+    toast('Checked. Any update installs on the next reload.');
+  });
+
+  // Erasing asks twice, in place, rather than through a dialog box.
+  $('#s-danger').addEventListener('click', async (event) => {
+    if (event.target.id === 's-reset') {
+      event.currentTarget.innerHTML = `
+        <span class="state-label">Erase ${store.stats().entries} entries?</span>
+        <button type="button" class="ghost-btn" id="s-reset-no">Keep it</button>
+        <button type="button" class="more-btn danger-btn" id="s-reset-yes">Erase</button>`;
+    } else if (event.target.id === 's-reset-no') {
+      resetDanger();
+    } else if (event.target.id === 's-reset-yes') {
+      await store.reset();
+      resetDanger();
+      toast('Erased.');
+    }
+  });
+
+  function resetDanger() {
+    $('#s-danger').innerHTML =
+      '<button type="button" class="ghost-btn" id="s-reset">Erase my data</button>';
+  }
+
+  // ---- what the page reports -------------------------------------------
+
+  function update() {
+    const s = store.stats();
+
+    const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+    $('#s-facts').innerHTML = facts([
+      ['Ledger entries', s.entries, '#/ledger'],
+      ['Materials held', s.materials
+        ? `${plural(s.materials, 'kind')} in ${plural(s.held, 'place')}`
+        : 'nothing yet'],
+      ['Recipes made', s.made],
+      ['Recipes skipped', s.skipped],
+    ]);
+
+    const last = localStorage.getItem(LAST_EXPORT);
+    $('#s-last').textContent = last
+      ? `Last exported ${new Date(last).toLocaleString()}.`
+      : 'Never exported from this device.';
+
+    $('#s-mode').textContent = store.isPersonal()
+      ? 'Switch to general' : 'Switch to personal';
+
+    $('#s-about').innerHTML = facts([
+      ['Reference data', s.referenceBuild ? `built ${s.referenceBuild}` : 'unknown'],
+      ['Stored in', 'this browser only — nothing is uploaded'],
+    ]);
+
+    reportOffline();
+  }
+
+  async function reportOffline() {
+    const target = $('#s-offline');
+    if (!('serviceWorker' in navigator)) {
+      target.textContent = 'This browser cannot cache the app for offline use.';
+      return;
+    }
+    const names = await caches.keys();
+    const mine = names.filter((n) => n.startsWith('rdr2-'));
+
+    target.textContent = navigator.serviceWorker.controller
+      ? `Cached and ready to use without a signal${
+          mine.length ? ` (${mine[0]})` : ''}.`
+      : 'Not cached yet — reload once while online.';
+  }
+
+  // A term with an href becomes the way into its own page.
+  function facts(pairs) {
+    return pairs.map(([term, value, href]) => `
+      <div>
+        <dt>${href
+          ? `<a href="${esc(href)}">${esc(term)}</a>`
+          : esc(term)}</dt>
+        <dd>${esc(value)}</dd>
+      </div>`).join('');
+  }
+
+  update();
+  return { update, destroy() {} };
+}

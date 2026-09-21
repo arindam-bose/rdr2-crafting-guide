@@ -656,6 +656,168 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .sort-dir:hover { color: var(--ink); border-color: var(--ink-faint); }
 
+/* ---------- settings ---------- */
+
+.settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.panel.danger { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+
+/* ---------- ledger entries ---------- */
+
+.back {
+  display: inline-block;
+  margin-bottom: 12px;
+  font-size: .85rem;
+  color: var(--ink-dim);
+  text-decoration: none;
+}
+.back:hover { color: var(--ink); }
+
+.facts dt a { color: var(--ink); text-underline-offset: 2px; }
+.facts dt a:hover { color: var(--accent); }
+
+.entries {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Three columns at any width, so nothing has to scroll sideways:
+   the amount, what and where, and why. */
+.entry {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+.entry:last-child { border-bottom: 0; }
+
+.entry .delta {
+  min-width: 2.6ch;
+  font-size: .9rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.entry .delta.up { color: var(--ok); }
+.entry .delta.down { color: var(--accent); }
+
+.entry-what { min-width: 0; font-size: .88rem; }
+.entry-what small {
+  display: block;
+  margin-top: 1px;
+  font-size: .74rem;
+  color: var(--ink-faint);
+}
+
+.entry .reason {
+  font-size: .74rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  white-space: nowrap;
+}
+
+.badge.stale { color: var(--accent); }
+
+.panel h3 {
+  margin: 0;
+  font-size: .78rem;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.note {
+  margin: 0;
+  font-size: .85rem;
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+.note strong { color: var(--ink); font-weight: 600; }
+
+.panel-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.danger-btn { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+
+/* label-as-button, so the file input can stay hidden */
+.file-btn { display: inline-block; cursor: pointer; }
+
+.facts { margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.facts > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: .86rem;
+}
+.facts dt { flex: 1; color: var(--ink-dim); }
+.facts dd {
+  margin: 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.paste summary {
+  font-size: .82rem;
+  color: var(--ink-dim);
+  cursor: pointer;
+}
+.paste textarea {
+  width: 100%;
+  margin: 8px 0;
+  padding: 9px 11px;
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .78rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  resize: vertical;
+}
+
+.verdict {
+  margin-top: 10px;
+  padding: 12px;
+  font-size: .85rem;
+  line-height: 1.5;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.verdict p { margin: 0; }
+.verdict.bad { border-color: var(--accent); color: var(--ink); }
+
+.problems {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--warn);
+  font-size: .82rem;
+}
+
 /* ---------- show more ---------- */
 
 .pager {

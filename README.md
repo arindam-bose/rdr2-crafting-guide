@@ -38,6 +38,9 @@ opened as a file, because the modules and the database are fetched.
 
     python3 scripts/build_db.py <export_dir> -o data/rdr2.db
 
+The build stamps a `meta` table with the date and schema version, which the
+Settings page reports and every export records.
+
 `<export_dir>` holds the five CSVs from the Notion export: Animals, Animal
 Materials, Misc Materials, Craftable Items, Recipe Ingredients. Ids are slugs
 derived from names (`ing-perfect-beaver-pelt`), so they survive rows being
@@ -63,6 +66,8 @@ served network-first, so edits show up on reload without a cache bump.
       views/materials.js  "Where to go if you have these items"
       views/inventory.js  entry: pick a location, search, tap +/-
       views/recipes.js    the catalogue, and where you craft
+      views/settings.js   export, import, reset, and what is stored
+      views/ledger.js     the history, as its own page
       toast.js            the undo toast
       main.js             boot and hash routing
     vendor/               sql.js, vendored so nothing is fetched from a CDN
@@ -70,7 +75,30 @@ served network-first, so edits show up on reload without a cache bump.
 
 ## State
 
-Materials, Recipes and Inventory work end to end. Settings is a stub that says so.
+All four screens work end to end.
+
+The ledger has its own page, reached from the entry count in Settings — it is
+the one thing here that grows without limit, and a page that is mostly history
+buries the controls underneath it. It lists what changed, where, when and why,
+newest first and paged, with the recipe named on a crafting row. An entry naming
+a material this build does not know is shown with its raw slug and flagged,
+rather than quietly disappearing. It is read-only: the ledger is append-only by
+design, so a mis-entry is corrected with another row or undone from the toast at
+the time, not edited afterwards.
+
+Settings is also where the personal layer can be moved. Export writes the whole
+ledger as a JSON file — the balances are derived from it, so exporting only the
+balances would lose the history behind "8 gathered · 1 crafted". A
+copy-to-clipboard button sits beside it, because `<a download>` is unreliable on
+iOS, and a paste box sits beside the file picker for the same reason.
+
+Import **replaces** rather than merges, and says so before it writes: a ledger
+id counts up per device, so two devices' rows cannot be told apart and merging
+would double anything imported twice. One device is the source of truth. A file
+is inspected first — a `reason` the schema's CHECK would refuse is caught before
+the transaction rather than halfway through it, and rows naming materials this
+build does not know are reported rather than swallowed, since the ledger stores
+slugs with no foreign key.
 
 Material cards list the recipes each material goes into, ticked off as you make
 them, and split into two tabs, Animal Materials and Misc. Items — one is a
