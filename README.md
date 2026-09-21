@@ -212,7 +212,13 @@ build does not know are reported rather than swallowed, since the ledger stores
 slugs with no foreign key.
 
 Material cards list the recipes each material goes into, ticked off as you make
-them, under a *Used in* caption. The caption earns its place on the misc
+them, under a *Used in* caption. Six are shown, and the five materials that go
+into more than six end the list with a link that opens the rest — a card whose
+last line is "and 6 more" with no way to read them is the card failing at its
+one job. Opening one leaves the others alone and does not reset the page, and
+the open cards are remembered across a rerender, so ticking something off
+elsewhere does not close them. The gallery stretches cards to a common height,
+so an opened card grows its whole row. The caption earns its place on the misc
 materials: all nine feed exactly one talisman each, and a single uncaptioned
 line under the demand rows reads as another demand row rather than as a list.
 The tabs are Animal Materials and Misc. Items — one is a hunting

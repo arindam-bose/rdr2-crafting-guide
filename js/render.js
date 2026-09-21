@@ -24,7 +24,7 @@ export function esc(value) {
  */
 const USAGE_SHOWN = 6;
 
-export function materialCard(material, { personal }) {
+export function materialCard(material, { personal, expanded = false }) {
   const { material: name, quality, source_type, animal, weapon, body_part } = material;
 
   const badge = quality
@@ -57,17 +57,18 @@ export function materialCard(material, { personal }) {
         ? `<div class="demands">${open.map((d) => demandRow(d, personal)).join('')}</div>`
         : '<p class="retired-note">Nothing wants this any more.</p>'}
 
-      ${usedIn(material.usage, personal)}
+      ${usedIn(material.usage, personal, expanded)}
       ${hint}
     </article>`;
 }
 
 /** The recipes a material goes into, each with its tick or cross. */
-function usedIn(usage = [], personal) {
+function usedIn(usage = [], personal, expanded = false) {
   if (!usage.length) return '';
 
-  const shown = usage.slice(0, USAGE_SHOWN);
+  const shown = expanded ? usage : usage.slice(0, USAGE_SHOWN);
   const rest = usage.length - shown.length;
+  const over = usage.length > USAGE_SHOWN;
 
   const line = (u) => {
     const state = !personal ? 'plain'
@@ -88,11 +89,22 @@ function usedIn(usage = [], personal) {
   // Captioned, because with a single entry -- which is every misc
   // material, each one feeding exactly one talisman -- an unlabelled
   // list does not read as a list at all.
+  // Only five materials in the reference data go into more than six
+  // recipes, so the control is rare -- but on those five the tail is
+  // most of the list, and a card that ends in "and 6 more" with no way
+  // to read them is the card failing at its one job.
+  const toggle = !over ? '' : `
+    <li class="more">
+      <button type="button" class="more-link" data-expand
+              aria-expanded="${expanded}">${
+        expanded ? 'Show fewer' : `and ${rest} more`}</button>
+    </li>`;
+
   return `
     <p class="list-label used-in-label">Used in</p>
     <ul class="used-in">
       ${shown.map(line).join('')}
-      ${rest ? `<li class="more">and ${rest} more</li>` : ''}
+      ${toggle}
     </ul>`;
 }
 

@@ -503,6 +503,27 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   display: block;
 }
 
+/* A button, not an anchor: there is no address for "this card, opened",
+   and an <a href="#"> would put one in the reader's history for every
+   list they glanced at.  It is dressed as a link because that is what it
+   behaves like. */
+.used-in .more-link {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.used-in .more-link:hover { color: var(--accent-text); }
+.used-in .more-link:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .retired-note {
   margin: 0;
   font-size: .8rem;

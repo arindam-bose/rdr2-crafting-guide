@@ -57,9 +57,14 @@ const SORTS = {
 };
 
 export function mount(root) {
+  // `expanded` holds the ingredient ids whose "used in" list is open.
+  // It lives here rather than in the DOM because every store change --
+  // crafting something, saving inventory -- rerenders the gallery, and
+  // a list that closed itself when you ticked something off would be
+  // worse than not opening at all.
   const state = { search: '', station: null, show: 'all',
                   group: GROUPS[0].id, sort: 'needed', dir: 'desc',
-                  shown: PAGE };
+                  shown: PAGE, expanded: new Set() };
 
   const stations = queries.stations();
 
@@ -125,6 +130,20 @@ export function mount(root) {
   });
   const gallery = root.querySelector('#m-gallery');
   const groupTabs = root.querySelector('#m-groups');
+
+  // Opening one card's list does not touch the others, and does not
+  // start the page over: this is reading, not filtering.
+  gallery.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-expand]');
+    if (!button) return;
+
+    const id = button.closest('.card')?.dataset.ingredient;
+    if (!id) return;
+
+    if (state.expanded.has(id)) state.expanded.delete(id);
+    else state.expanded.add(id);
+    update();
+  });
 
   groupTabs.addEventListener('click', (event) => {
     const tab = event.target.closest('[data-group]');
@@ -201,7 +220,9 @@ export function mount(root) {
     dirButton.title = `Sorted ${ways[state.dir].toLowerCase()} -- click to reverse`;
 
     gallery.innerHTML = cards.slice(0, state.shown)
-      .map((m) => materialCard(m, { personal })).join('');
+      .map((m) => materialCard(m, {
+        personal, expanded: state.expanded.has(m.ingredient_id),
+      })).join('');
     pagerBox.innerHTML = pager(state.shown, cards.length);
     emptyBox.innerHTML = cards.length
       ? ''
