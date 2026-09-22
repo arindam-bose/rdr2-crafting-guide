@@ -66,16 +66,19 @@ served network-first, so edits show up on reload without a cache bump.
       db.js               open sql.js, create the personal tables
       store.js            ledger writes, IndexedDB, export/import, crafting
       queries.js          the four queries as functions
-      render.js           card templates and the pieces they share
+      render.js           card and material-detail templates, and the
+                          pieces they share (quality and station tags)
+      dialog.js           the detail dialog every card opens: close
+                          button, Esc, backdrop, repaint on a store change
       prefs.js            localStorage, guarded: theme, location, last export
       views/materials.js  "Where to go if you have these items"
       views/inventory.js  entry: pick a location, search, tap +/-
-      views/recipes.js    the catalogue, and where you craft
+      views/recipes.js    the catalogue, and the recipe dialog you craft in
       views/settings.js   export, import, reset, and what is stored
-      views/ledger.js     the history, as its own page
+      views/ledger.js     the history, as a dialog opened from Settings
       views/toolbar.js    search, chips, sort and pager, shared by the two
                           galleries
-      toast.js            the undo toast
+      toast.js            the undo toast, which follows an open dialog
       theme.js            parchment or leather, remembered per device
       main.js             boot and hash routing
     vendor/               sql.js, vendored so nothing is fetched from a CDN
@@ -106,8 +109,9 @@ away.
 
 The line that keeps this working is that **red and amber are never decoration**.
 Everything else warm on the page — `--ink-name` for the name of a material or a
-recipe, `--ink-label` for the USED IN / STILL NEEDED / PICKED UP captions, the
-station stripes, the hover edge — is chrome, and chrome never carries status. A
+recipe, `--ink-label` for the USED IN / LOCATIONS / INGREDIENTS captions, the
+station stripes and tags, the hover edge — is chrome, and chrome never carries
+status. A
 name is a name whether or not you own the thing. Spend red on a heading and the
 red `✗` on the card below it stops meaning *you are short of this*.
 
@@ -132,7 +136,9 @@ to signal, and three warm hues at 3px are harder to tell apart than the blue,
 yellow and pink they replaced. They are picked to separate in lightness as well
 as hue — no two are closer than 1.26:1 — and, more to the point, the station is
 always named in words beside its stripe. The colour reinforces the label; it is
-never the only thing carrying it.
+never the only thing carrying it. The same three colours draw the station tags
+on recipe cards — Pearson, Trapper, Fence — which share the outlined-chip shape
+of the Legendary and Perfect tags, so a tag reads as a tag whatever it names.
 
 The theme is a preference rather than data, so it lives in `localStorage` and
 is per device — the same person reads this on a bright phone outdoors and a
@@ -162,7 +168,7 @@ the machine could type:
 
 | was | is | where |
 |---|---|---|
-| `·` | `-` | separators: `Campfire - Provisions`, ledger dates |
+| `·` | `-` | separators: `Pearson - Sep 22, 12:49 AM` in the ledger |
 | `×` | `x` | quantities: `2x Oregano` |
 | `−` | `-` | the stepper, a negative delta |
 | `—` | `--` | prose |
@@ -175,7 +181,8 @@ rather than type: each sits alone in a `.mark` span, `aria-hidden`, with the
 colour beside it already carrying the meaning. A gap there is contained in a
 way a gap mid-word is not, so `.mark` gets its own stack and keeps the real
 characters — ✓ for made, ✗ for still wanted, `–` for retired, `·` outside
-personal mode.
+personal mode. The `×` on a dialog's close button is the same kind of thing, an
+icon with an `aria-label`, and takes the same stack.
 
 The stack is explicit rather than left to the browser, because ✓ is in far more
 fonts than ✗: allowed to fall back on its own, each glyph lands in a different
@@ -188,7 +195,9 @@ The last `•` was not the app's to type: seven saddles carried their five stat
 lines as a Notion bulleted list, bullet characters and all, inside a single
 `description`. That was a list pretending to be a paragraph. `build_db.py` now
 strips the markers and stores one item per line, and the Recipes card renders a
-multi-line description as a real `<ul>` whose marker is a CSS hyphen. The
+multi-line description as a real `<ul>` whose marker is a CSS hyphen. The recipe
+dialog goes one step further and splits each line at its colon, so the stat and
+its value sit in two columns: `Stamina Drain Rate … -50%`. The
 reference data is ASCII throughout apart from two non-breaking spaces, which
 the font has.
 
@@ -205,76 +214,103 @@ assigned earlier loses.
 
 All four screens work end to end.
 
-The ledger has its own page, reached from the entry count in Settings — it is
-the one thing here that grows without limit, and a page that is mostly history
-buries the controls underneath it. It lists what changed, where, when and why,
-newest first and paged, with the recipe named on a crafting row. An entry naming
-a material this build does not know is shown with its raw slug and flagged,
-rather than quietly disappearing. It is read-only: the ledger is append-only by
-design, so a mis-entry is corrected with another row or undone from the toast at
-the time, not edited afterwards.
+### Cards and dialogs
 
-Settings is also where the personal layer can be moved. Export writes the whole
-ledger as a JSON file — the balances are derived from it, so exporting only the
-balances would lose the history behind "8 gathered · 1 crafted". A
-copy-to-clipboard button sits beside it, because `<a download>` is unreliable on
-iOS, and a paste box sits beside the file picker for the same reason.
+Both galleries are for scanning; the detail lives in a dialog. Clicking a card
+anywhere — or its name, which is a real button, so the keyboard gets there too
+— opens a native modal `<dialog>` with a close button, closed also by Esc or a
+click on the backdrop. A click that ends a text selection does not open it:
+that is someone copying a name. The dialog is shared (`js/dialog.js`) and
+repaints whenever the store changes, keeping focus on the button just pressed,
+so it never shows stale numbers. The undo toast moves inside an open dialog —
+a modal sits in the top layer and makes the rest of the page inert, so a toast
+left outside could be neither seen nor pressed.
 
-Import **replaces** rather than merges, and says so before it writes: a ledger
-id counts up per device, so two devices' rows cannot be told apart and merging
-would double anything imported twice. One device is the source of truth. A file
-is inspected first — a `reason` the schema's CHECK would refuse is caught before
-the transaction rather than halfway through it, and rows naming materials this
-build does not know are reported rather than swallowed, since the ledger stores
-slugs with no foreign key.
+### Materials
 
-Material cards list the recipes each material goes into, ticked off as you make
-them, under a *Used in* caption. Six are shown, and the five materials that go
-into more than six end the list with a link that opens the rest — a card whose
-last line is "and 6 more" with no way to read them is the card failing at its
-one job. Opening one leaves the others alone and does not reset the page, and
-the open cards are remembered across a rerender, so ticking something off
-elsewhere does not close them. The gallery stretches cards to a common height,
-so an opened card grows its whole row. The caption earns its place on the misc
-materials: all nine feed exactly one talisman each, and a single uncaptioned
-line under the demand rows reads as another demand row rather than as a list.
-The tabs are Animal Materials and Misc. Items — one is a hunting
-trip, the other a detour. Each tab carries the count matching the
-current filters, so a search that landed on the other tab is visible rather than
-lost. Both galleries show 20 cards at a time, with Show more adding another 20 and
-Show less returning to the first 20. Changing a filter, a tab or the sort starts
-the list over at 20; a store change — crafting something — does not, so you keep
-your place.
+A material card is two captioned lists. **Used in** names the recipes it goes
+into, ticked off as you make them, with the quantity spelled out when a recipe
+takes more than one — `2x for Legendary Alligator Gambler's Hat`. Six are
+shown; the five materials that go into more ask for the rest with a link, and
+an opened list survives a rerender. **Locations** has a row per station that
+still wants it — `Pearson: 0/2` — with the station's colour down the left edge
+and a progress bar on the right.
 
-Sorting is a field and a direction rather than a list of every combination:
-Materials by what is still needed, quality or name; Recipes by name or by how
-many items they swallow, with made and skipped ones still sinking to the bottom.
-The direction button says what it does — "Most first", "Legendary first", "A-Z"
-— and each field starts in the direction you nearly always want it in. The **Still needed** and **Done** filters divide them by
-whether anything is still outstanding; a material whose recipes are all made or
-skipped moves to Done and says nothing wants it any more, rather than vanishing.
+The dialog adds what the card leaves out: the animal, quality, type and the
+weapon that leaves it unspoiled; every recipe with a Done / Not done / Skipped
+tag; each station's demand against what you hold where it draws from — the
+Fence names your Satchel — and the verdict, *You need to go hunting!* and its
+siblings. Each station row has `-` and `+ Add to Trapper` buttons. These write
+at once, one ledger row per tap with an undo toast, rather than staging a
+batch as Inventory does: here you are logging one thing and looking straight
+at the result. In personal mode a station with nothing left to make still
+shows, as *needs no more*, since you may be holding some there to sell.
 
-Inventory lists what you are holding at the selected location first, then what
-you logged recently, so it reads as a stock list rather than only a search box.
-Each row also reports how many have passed through your hands there and how many
-went into crafting, read from `inventory_totals` — the same ledger as
-`inventory`, without the balance's habit of dropping rows that netted to zero.
-`qty <= gathered` holds by construction, since one sums every delta and the
-other only the positive ones.
+The tabs are Animal Materials and Misc. Items — one is a hunting trip, the
+other a detour — each carrying the count that matches the current filters, so
+a search that landed on the other tab is visible rather than lost. The
+category filter lists the animal parts (Pelt, Hide, Skin, Feather, …) and a
+**Misc. items** entry of its own, since misc items have no part; picking a
+category also switches to the tab its materials are on.
 
-Crafting spends a recipe's ingredients from its station's own stock and marks it
-done, as one commit — the same path Inventory saves through, so undo works the
-same way. A recipe can also be skipped, which retires it without spending
-anything: nothing is written to the ledger, only the target's state.
+### Recipes
 
-The Craft button is always present and disabled when it cannot be used, so its
-absence never has to be interpreted; its tooltip says why — what is still
-missing, or that the recipe is already made or skipped. Recipes you have made or
-skipped sort to the bottom of the list.
+A recipe card has its name, a tag for its station, its price, its buff and an
+**Ingredients** list with have/need tallies. A made or skipped recipe is
+dimmed, carries a dashed *Made* or *Skipped* tag, and sorts to the bottom. The
+card has no buttons.
+
+The dialog lays out the type, vendor, set and price, the buffs as a two-column
+table, the ingredients, and the two things you can do:
+
+- **Craft** spends the ingredients from the station's own stock and marks the
+  recipe done, as one commit with undo. It is always present and disabled when
+  it cannot be used, with the reason written beside it — what is still
+  missing, or that the recipe is made or skipped — rather than in a tooltip a
+  phone cannot show. A double-click spends once.
+- **The switch** in the corner reads *Skip / Want it* while a recipe is not
+  made, and *Put back / Crafted* once it is. Skipping retires a recipe without
+  spending anything — only the target's state is written. Putting back refunds
+  the ingredients and wants the recipe again.
+
+Once a recipe is crafted its ingredient list drops the crosses and tallies:
+the ingredients were spent making it, and a row of red under something
+already made reads as a shortfall.
 
 A recipe that is done or skipped stops asking for its materials, so it drops out
 of the Materials screen. Demand is per station, so that only removes the demand
 at *that* station: a material two recipes want still shows for the other one.
+
+### Filtering and sorting
+
+Both galleries share one toolbar: the search box on a row of its own, then a
+category dropdown, the stations in the order Pearson, Trapper, Fence, the
+personal filters, and the sort, all left-aligned, with the count on the right.
+In personal mode Materials filters to **Still needed** or **Done** — a
+material whose recipes are all made or skipped moves to Done rather than
+vanishing — and Recipes to **Ready to craft** or **Made**.
+
+Sorting is a field and a direction rather than a list of every combination:
+Materials by what is still needed, quality or name; Recipes by name or by how
+many items they swallow. The direction button says what it does — "Most
+first", "Legendary first", "A-Z" — each field starts in the direction you
+nearly always want, and the choice is remembered per screen.
+
+Both galleries show 20 cards at a time, with Show more adding another 20 and
+Show less returning to the first 20. Changing a filter, a tab or the sort starts
+the list over at 20; a store change — crafting something — does not, so you keep
+your place.
+
+### Inventory
+
+Inventory lists what you are holding at the selected location first — *In the
+Satchel*, *With Trapper*, *With Pearson*, each with a count of the rows under
+it — then what you logged recently, so it reads as a stock list rather than
+only a search box. Each row also reports how many have passed through your
+hands there and how many went into crafting, read from `inventory_totals` — the
+same ledger as `inventory`, without the balance's habit of dropping rows that
+netted to zero. `qty <= gathered` holds by construction, since one sums every
+delta and the other only the positive ones.
 
 Inventory stages rather than writes. Steppers adjust a pending batch; Save
 commits the lot as one SQLite transaction and one IndexedDB transaction, one
@@ -285,4 +321,29 @@ outstanding.
 
 A plus is recorded as the thing that most likely caused it (`kill` for an animal
 material, `loot` otherwise); a minus as a `correction`, since that is nearly
-always what it is.
+always what it is. The same rule holds for the buttons in a material's dialog.
+
+### Settings and the ledger
+
+The ledger opens as a dialog from the *Ledger entries* count in Settings — it is
+the one thing here that grows without limit, and a page that is mostly history
+buries the controls underneath it. It lists what changed, where, when and why,
+newest first and paged, with the recipe named on a crafting row. An entry naming
+a material this build does not know is shown with its raw slug and flagged,
+rather than quietly disappearing. It is read-only: the ledger is append-only by
+design, so a mis-entry is corrected with another row or undone from the toast at
+the time, not edited afterwards.
+
+Settings is also where the personal layer can be moved. Export writes the whole
+ledger as a JSON file — the balances are derived from it, so exporting only the
+balances would lose the history behind "8 gathered - 1 crafted". A
+copy-to-clipboard button sits beside it, because `<a download>` is unreliable on
+iOS, and a paste box sits beside the file picker for the same reason.
+
+Import **replaces** rather than merges, and says so before it writes: a ledger
+id counts up per device, so two devices' rows cannot be told apart and merging
+would double anything imported twice. One device is the source of truth. A file
+is inspected first — a `reason` the schema's CHECK would refuse is caught before
+the transaction rather than halfway through it, and rows naming materials this
+build does not know are reported rather than swallowed, since the ledger stores
+slugs with no foreign key.
