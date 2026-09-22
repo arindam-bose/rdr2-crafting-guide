@@ -186,10 +186,15 @@ export function craftSpend(recipeId) {
 // stepper on a row writes to the location you have selected.
 // ------------------------------------------------------------
 export function locations() {
-  // Insertion order, not alphabetical: build_db.py writes them as
-  // Satchel, Trapper, Pearson, and the Satchel — what you carry —
-  // is the one that should lead and be the default.
-  return db.all('SELECT id, name FROM locations ORDER BY rowid');
+  // Satchel, Pearson, Trapper: a chosen order, matching the station
+  // chips elsewhere.  The Satchel -- what you carry -- leads, and is
+  // the default.  Anything new sorts after.
+  return db.all(`
+    SELECT   id, name FROM locations
+    ORDER BY CASE id WHEN 'loc-satchel' THEN 0
+                     WHEN 'loc-pearson' THEN 1
+                     WHEN 'loc-trapper' THEN 2
+                     ELSE 3 END, name`);
 }
 
 // `inventory` is the balance, `inventory_totals` the history: how
