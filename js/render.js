@@ -44,8 +44,9 @@ export function stationColour(colour) {
 const USAGE_SHOWN = 6;
 
 /**
- * One material: where it comes from, which stations still want it,
- * and what it goes into.
+ * One material: what it goes into and which stations still want it.
+ * Where it comes from and the verdict live in the detail view, which
+ * the whole card opens.
  *
  *   material = { ingredient_id, material, quality, source_type,
  *                animal, weapon, body_part, demands: [...],
@@ -55,34 +56,143 @@ const USAGE_SHOWN = 6;
  * `expanded` whether its "used in" list is showing every entry.
  */
 export function materialCard(material, { personal, expanded = false }) {
-  const { material: name, quality, source_type, animal, weapon, body_part } = material;
-
-  // Where it comes from.  The database knows the animal and the
-  // weapon that leaves a pelt unspoiled, which is the actionable half.
-  const origin = source_type === 'animal'
-    ? [animal && esc(animal), weapon && `with the ${esc(weapon)}`]
-        .filter(Boolean).join(' ')
-    : 'Found out in the world';
+  const { material: name, quality } = material;
 
   const open = material.demands.filter((d) => d.needed > 0);
 
+  // The name is a real button, so the card opens from the keyboard
+  // too; a click anywhere else on the card is forwarded to it.
   return `
-    <article class="card" data-ingredient="${esc(material.ingredient_id)}">
-      <h3>${esc(name)}${qualityBadge(quality)}</h3>
-      <p class="sub">${origin || '&nbsp;'}${
-        body_part ? ` - ${esc(body_part)}` : ''}</p>
+    <article class="card material" data-ingredient="${esc(material.ingredient_id)}">
+      <h3><button type="button" class="card-open" data-open
+            aria-haspopup="dialog">${esc(name)}</button>${qualityBadge(quality)}</h3>
+
+      ${usedIn(material.usage, personal, expanded)}
 
       ${open.length
         ? `<div class="demands">${open.map((d) => demandRow(d, personal)).join('')}</div>`
         : ''}
-
-      ${usedIn(material.usage, personal, expanded)}
-      ${verdict(material, personal)}
     </article>`;
 }
 
 /**
- * The line at the foot of the card, carried over from the formula the
+ * The same material, opened: every fact the database has about it, laid
+ * out for reading rather than scanning, with a stepper per station so
+ * what you just brought in can be logged without leaving the page.
+ */
+export function materialDetail(material, { personal }) {
+  const { material: name, quality, source_type, animal, weapon, body_part } = material;
+  const isAnimal = source_type === 'animal';
+
+  const facts = (isAnimal
+    ? [['Animal', animal], ['Quality', quality], ['Type', body_part], ['Weapon', weapon]]
+    : [['Source', 'Found out in the world'], ['Quality', quality]])
+    .filter(([, value]) => value);
+
+  // Stations with nothing left to make still show in personal mode --
+  // struck through -- because you may be holding some there to sell.
+  const demands = personal
+    ? material.demands
+    : material.demands.filter((d) => d.needed > 0);
+
+  return `
+    <header class="detail-head">
+      <div>
+        <p class="detail-kicker">${isAnimal ? 'Animal material' : 'Misc. item'}</p>
+        <h2 id="detail-title">${esc(name)}</h2>
+      </div>
+      <button type="button" class="detail-close" data-close
+              aria-label="Close">&times;</button>
+    </header>
+
+    ${facts.length ? `
+      <dl class="traits">
+        ${facts.map(([label, value]) => `
+          <div class="trait">
+            <dt>${label}</dt>
+            <dd>${label === 'Quality' ? qualityBadge(value) : esc(value)}</dd>
+          </div>`).join('')}
+      </dl>` : ''}
+
+    ${material.usage.length ? `
+      <section class="detail-section">
+        <h3 class="list-label">Recipes used in</h3>
+        <ul class="detail-recipes">
+          ${material.usage.map((u) => recipeLine(u, personal)).join('')}
+        </ul>
+      </section>` : ''}
+
+    ${demands.length ? `
+      <section class="detail-section">
+        <h3 class="list-label">Locations</h3>
+        <div class="detail-stock">
+          ${demands.map((d) => stockLine(d, material, personal)).join('')}
+        </div>
+      </section>` : ''}
+
+    ${personal ? `
+      <section class="detail-section">
+        <h3 class="list-label">Comments</h3>
+        ${verdict(material, personal)}
+      </section>` : ''}`;
+}
+
+/** One recipe in the detail view, with its state spelled out. */
+function recipeLine(u, personal) {
+  const [state, label] = !personal ? ['plain', '']
+    : u.state === 'done' ? ['made', 'Done']
+    : u.state === 'skipped' ? ['retired', 'Skipped']
+    : ['open', 'Not done'];
+
+  return `
+    <li class="${state}">
+      <span class="what">${u.qty > 1 ? `${u.qty}x ` : ''}${esc(u.recipe)}
+        <small>${esc(u.station)}</small></span>
+      ${label ? `<span class="state">${label}</span>` : ''}
+    </li>`;
+}
+
+/**
+ * One station in the detail view: what it asks for, what you hold where
+ * it draws from, and a stepper that writes straight to that location.
+ * The Fence is the odd one -- it sells at its own counter but spends
+ * from your Satchel -- so the location is named whenever it differs.
+ */
+function stockLine(d, material, personal) {
+  const colour = stationColour(d.color);
+  const where = d.location && d.location !== d.station
+    ? `<small class="from">from your ${esc(d.location)}</small>` : '';
+
+  if (!personal) {
+    return `
+      <div class="stock-line demand ${colour}">
+        <span class="stock-text"><span class="station">${esc(d.station)}</span>
+          needs ${d.needed}${where}</span>
+      </div>`;
+  }
+
+  const enough = d.have >= d.needed;
+  const retired = d.needed === 0;
+  const needs = retired ? 'needs no more' : `needs ${d.needed}`;
+
+  return `
+    <div class="stock-line demand ${colour}${retired ? ' retired' : ''}"
+         data-location="${esc(d.location_id)}" data-location-name="${esc(d.location)}"
+         data-ingredient="${esc(material.ingredient_id)}"
+         data-name="${esc(material.material)}" data-source="${esc(material.source_type)}">
+      <span class="stock-text"><span class="station">${esc(d.station)}</span>
+        ${needs}, has <span class="${enough ? 'have' : 'short'}">${d.have}</span>${where}</span>
+      <span class="stepper">
+        <button type="button" data-delta="-1" ${d.have <= 0 ? 'disabled' : ''}
+                aria-label="One fewer in the ${esc(d.location)}">-</button>
+        <button type="button" class="add" data-delta="1"
+                aria-label="Add one to the ${esc(d.location)}">+ Add to ${esc(d.location)}</button>
+      </span>
+    </div>`;
+}
+
+/**
+ * The Comments line in the detail view, carried over from the formula the
  * Notion table used.  Two numbers decide it:
  *
  *   totalNeeded  what the recipes you still intend to make ask for.

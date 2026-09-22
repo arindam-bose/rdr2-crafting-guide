@@ -20,6 +20,13 @@ export function toast(message, action = null) {
   element ??= document.getElementById('toast');
   clearTimeout(timer);
 
+  // A modal dialog sits in the top layer, above anything a z-index can
+  // reach, and makes the rest of the page inert.  So while one is open
+  // the toast lives inside it, or its Undo could be neither seen nor
+  // pressed.
+  const host = document.querySelector('dialog[open]') ?? document.body;
+  if (element.parentElement !== host) host.append(element);
+
   const text = document.createElement('span');
   text.className = 'toast-text';
   text.textContent = message;
@@ -49,6 +56,13 @@ export function toast(message, action = null) {
   element.hidden = false;
   timer = setTimeout(dismiss, action?.duration ?? DURATION);
 }
+
+// Back to the page when that dialog closes, still showing, so an Undo
+// offered inside it stays in reach.  `close` does not bubble; capture
+// sees it anyway.
+document.addEventListener('close', (event) => {
+  if (element && event.target.contains(element)) document.body.append(element);
+}, true);
 
 function dismiss() {
   clearTimeout(timer);

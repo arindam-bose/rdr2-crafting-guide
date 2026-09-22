@@ -39,11 +39,14 @@ export function materials({ personal = true } = {}) {
                st.id                AS station_id,
                st.name              AS station,
                st.color             AS color,
+               loc.id               AS location_id,
+               loc.name             AS location,
                ${open}              AS needed,
                COALESCE(inv.qty, 0) AS have
     FROM       recipe_ingredients ri
     JOIN       recipes      r   ON r.id   = ri.recipe_id
     JOIN       stations     st  ON st.id  = r.station_id
+    JOIN       locations    loc ON loc.id = st.location_id
     JOIN       ingredients  ing ON ing.id = ri.ingredient_id
     LEFT JOIN  animals      a   ON a.id   = ing.animal_id
     LEFT JOIN  weapons      w   ON w.id   = a.weapon_id

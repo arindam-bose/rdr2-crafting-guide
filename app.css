@@ -419,14 +419,41 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   font-size: .8rem;
   color: var(--ink-dim);
 }
-/* The verdict at the foot of a material card.  Red and green are the
+/* The verdict in a material's detail view.  Red and green are the
    signals they are everywhere else -- short of it, or holding enough.
    "Done with it" and "spare" are not statuses to act on, so they stay
    in the ink greys rather than spending another colour. */
-.card .hint { color: var(--ink-faint); font-style: italic; }
-.card .hint.enough { color: var(--ok); }
-.card .hint.short  { color: var(--danger-text); }
-.card .hint.spare  { color: var(--ink-dim); }
+.hint { color: var(--ink-faint); font-style: italic; }
+.hint.enough { color: var(--ok); }
+.hint.short  { color: var(--danger-text); }
+.hint.spare  { color: var(--ink-dim); }
+
+/* A material card opens its detail view from anywhere on it.  The name
+   is the button that does it -- dressed as the heading it replaces --
+   so the card keeps one tab stop and a screen reader one control. */
+.card.material { cursor: pointer; }
+
+.card-open {
+  font: inherit;
+  letter-spacing: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.card-open:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+@media (hover: hover) {
+  .card.material:hover .card-open {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
 
 .badge {
   display: inline-block;
@@ -553,6 +580,183 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   outline: 2px solid var(--accent-text);
   outline-offset: 2px;
   border-radius: 2px;
+}
+
+/* ---------- material detail dialog ---------- */
+
+/* The page behind does not scroll under a modal. */
+body:has(dialog.detail[open]) { overflow: hidden; }
+
+/* No padding on the <dialog> itself: .detail-body covers the whole box,
+   so a click that lands on the dialog element can only be the backdrop. */
+.detail {
+  width: min(560px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  padding: 0;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.detail::backdrop {
+  background: rgb(20 12 6 / .55);
+  backdrop-filter: blur(2px);
+}
+.detail[open] { animation: detail-in .16s ease-out; }
+@keyframes detail-in {
+  from { opacity: 0; transform: translateY(8px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .detail[open] { animation: none; }
+}
+
+.detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 20px 20px;
+}
+
+.detail-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.detail-head > div { flex: 1; min-width: 0; }
+.detail-kicker {
+  margin: 0 0 4px;
+  font-size: .74rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.detail-head h2 {
+  margin: 0;
+  font-size: 1.6rem;
+  line-height: 1.15;
+  color: var(--ink-name);
+  letter-spacing: .05em;
+}
+
+.detail-close {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  /* the typewriter face has no ×; see .mark */
+  font: 1.4rem/1 var(--font-symbol);
+  color: var(--ink-dim);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.detail-close:hover { color: var(--ink); border-color: var(--ink-faint); }
+.detail-close:focus-visible,
+.detail .stepper button:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+/* the facts: a two-column ledger of label over value */
+.traits {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 1px;
+  margin: 0;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.trait {
+  padding: 9px 12px;
+  background: var(--page-wash);
+}
+.trait dt {
+  margin-bottom: 3px;
+  font-size: .7rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ink-label);
+}
+.trait dd { margin: 0; font-size: .92rem; }
+.trait .badge { margin-left: 0; }
+
+.detail-section .list-label { margin-bottom: 8px; }
+.detail .hint { margin: 0; font-size: .92rem; }
+
+.detail-recipes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.detail-recipes li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  font-size: .88rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.detail-recipes li:last-child { border-bottom: 0; }
+.detail-recipes .what { flex: 1; min-width: 0; }
+.detail-recipes .what small {
+  display: block;
+  margin-top: 1px;
+  font-size: .72rem;
+  color: var(--ink-faint);
+}
+.detail-recipes .state {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  font-size: .72rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+}
+.detail-recipes li.open .state    { color: var(--danger-text); }
+.detail-recipes li.made .state    { color: var(--ok); }
+.detail-recipes li.retired .state { color: var(--ink-faint); }
+.detail-recipes li.made .what,
+.detail-recipes li.retired .what  { color: var(--ink-faint); }
+
+.detail-stock { display: flex; flex-direction: column; gap: 10px; }
+
+.stock-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 6px 0 6px 12px;
+  font-size: .9rem;
+}
+.stock-line .stock-text { flex: 1 1 180px; }
+.stock-line .station { color: var(--ink); }
+.stock-line .have  { color: var(--ok); }
+.stock-line .short { color: var(--danger-text); }
+.stock-line .from {
+  display: block;
+  margin-top: 1px;
+  font-size: .72rem;
+  color: var(--ink-faint);
+}
+.stock-line.retired .stock-text { color: var(--ink-faint); }
+
+/* "+ Add to Trapper" says where the one goes, so it is wider than a
+   plain stepper button and sized to its words. */
+.stock-line .stepper button.add {
+  width: auto;
+  padding: 0 12px;
+  font-size: .86rem;
+  white-space: nowrap;
 }
 
 

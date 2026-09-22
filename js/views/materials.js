@@ -16,8 +16,13 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { materialCard, empty, esc, plural, pager, PAGE } from '../render.js';
+import { materialCard, materialDetail, empty, esc, plural, pager, PAGE } from '../render.js';
+import { toast } from '../toast.js';
 import * as toolbar from './toolbar.js';
+
+// As on Inventory: a gain is logged as whatever most likely caused
+// it, and taking one away is nearly always fixing a mis-entry.
+const REASON = { animal: 'kill', misc: 'loot' };
 
 const GROUPS = [
   { id: 'animal', title: 'Animal Materials' },
@@ -112,17 +117,102 @@ export function mount(root) {
   toolbar.wireToggles(showChips, 'show', state, refilter);
 
   // Opening one card's list does not touch the others, and does not
-  // start the page over: this is reading, not filtering.
+  // start the page over: this is reading, not filtering.  Anywhere
+  // else on a card opens it -- unless the click ended a text
+  // selection, which is someone copying a name, not asking for more.
   gallery.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-expand]');
-    if (!button) return;
-
-    const id = button.closest('.card')?.dataset.ingredient;
+    const id = event.target.closest('.card')?.dataset.ingredient;
     if (!id) return;
 
-    if (state.expanded.has(id)) state.expanded.delete(id);
-    else state.expanded.add(id);
-    update();
+    if (event.target.closest('[data-expand]')) {
+      if (state.expanded.has(id)) state.expanded.delete(id);
+      else state.expanded.add(id);
+      update();
+      return;
+    }
+
+    if (!event.target.closest('[data-open]') && String(getSelection())) return;
+    openDetail(id);
+  });
+
+  // ---------- the detail dialog ----------
+  //
+  // On <body>, not inside the view: the view is an aria-live region,
+  // and every refresh of an open dialog would be read out again.
+  const dialog = document.createElement('dialog');
+  dialog.className = 'detail';
+  dialog.setAttribute('aria-labelledby', 'detail-title');
+  // Only the body is repainted: the undo toast moves into the dialog
+  // while it is open, and must not be wiped along with the content.
+  const detailBody = document.createElement('div');
+  detailBody.className = 'detail-body';
+  dialog.append(detailBody);
+  document.body.append(dialog);
+
+  let detailId = null;
+  let lastCards = [];
+
+  function openDetail(id) {
+    detailId = id;
+    paintDetail();
+    if (!dialog.open) dialog.showModal();
+    dialog.querySelector('[data-close]')?.focus();
+  }
+
+  // Looked up afresh from the whole list, not the visible page: a
+  // material you just finished with may have filtered itself out of
+  // the gallery, and the dialog should stay put while you look at it.
+  function paintDetail() {
+    const personal = store.isPersonal();
+    const card = lastCards.find((m) => m.ingredient_id === detailId);
+    if (!card) { dialog.close(); return; }
+
+    // The stepper just tapped is replaced by the repaint, so put the
+    // focus back on its successor rather than losing it to <body>.
+    const focused = document.activeElement;
+    const again = dialog.contains(focused) && focused.dataset.delta
+      ? `[data-location="${focused.closest('[data-location]').dataset.location}"] `
+        + `[data-delta="${focused.dataset.delta}"]`
+      : null;
+
+    detailBody.innerHTML = materialDetail(card, { personal });
+
+    const target = again && dialog.querySelector(again);
+    if (target && !target.disabled) target.focus();
+    else if (again) dialog.querySelector('[data-close]')?.focus();
+  }
+
+  dialog.addEventListener('close', () => {
+    detailId = null;
+    detailBody.innerHTML = '';
+  });
+
+  dialog.addEventListener('click', async (event) => {
+    // A click on the backdrop lands on the <dialog> itself: the body
+    // inside it covers every pixel of the box.
+    if (event.target === dialog || event.target.closest('[data-close]')) {
+      dialog.close();
+      return;
+    }
+
+    const button = event.target.closest('[data-delta]');
+    if (!button) return;
+
+    // One tap, one ledger row, straight away: the stepper on Inventory
+    // stages a batch, but here you are logging one thing and looking
+    // right at the result, so a save step would only be in the way.
+    const row = button.closest('[data-location]').dataset;
+    const delta = Number(button.dataset.delta);
+    const written = await store.record({
+      ingredient_id: row.ingredient,
+      location_id: row.location,
+      delta,
+      reason: delta > 0 ? REASON[row.source] ?? 'loot' : 'correction',
+    });
+
+    toast(`${delta > 0 ? 'Added' : 'Took'} one ${row.name} ${
+            delta > 0 ? 'to' : 'from'} the ${row.locationName}`,
+          { label: 'Undo', run: () => store.undo(written.id) });
   });
 
   groupTabs.addEventListener('click', (event) => {
@@ -139,8 +229,8 @@ export function mount(root) {
     const personal = store.isPersonal();
     showChips.hidden = !personal;
 
-    const matched = group(queries.materials({ personal }), queries.materialUsage())
-      .filter((m) => matches(m, state, personal));
+    lastCards = group(queries.materials({ personal }), queries.materialUsage());
+    const matched = lastCards.filter((m) => matches(m, state, personal));
 
     // Every tab shows how many of the current matches it holds, so
     // a search that landed on the other tab is visible, not lost.
@@ -165,10 +255,22 @@ export function mount(root) {
     pagerBox.innerHTML = pager(state.shown, cards.length);
 
     count.textContent = plural(cards.length, 'material');
+
+    if (dialog.open) paintDetail();
   }
 
   update();
-  return { update, destroy() {} };
+  return {
+    update,
+    destroy() {
+      // `close` fires a task later, after the dialog is gone, so the
+      // toast it would have sent home is rescued by hand first.
+      const note = document.getElementById('toast');
+      if (note && dialog.contains(note)) document.body.append(note);
+      if (dialog.open) dialog.close();
+      dialog.remove();
+    },
+  };
 }
 
 function emptyMessage(state, personal, counts) {
@@ -211,6 +313,8 @@ function group(rows, usage) {
       station_id: row.station_id,
       station: row.station,
       color: row.color,
+      location_id: row.location_id,
+      location: row.location,
       needed: row.needed,
       have: row.have,
     });
