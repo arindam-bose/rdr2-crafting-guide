@@ -12,7 +12,7 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { esc, pager, PAGE } from '../render.js';
+import { detailHead, esc, pager, PAGE } from '../render.js';
 import { detailDialog } from '../dialog.js';
 
 // Plainer words than the schema's, which are written for the CHECK
@@ -55,14 +55,7 @@ export function ledgerDialog() {
     const rows = total ? queries.ledgerEntries(Math.min(shown, total)) : [];
 
     return `
-      <header class="detail-head">
-        <div>
-          <p class="detail-kicker">Your data</p>
-          <h2 id="detail-title">Ledger</h2>
-        </div>
-        <button type="button" class="detail-close" data-close
-                aria-label="Close">&times;</button>
-      </header>
+      ${detailHead('Your data', 'Ledger')}
 
       ${total
         ? `<p class="note">Current stock is the sum of this. Newest first.</p>

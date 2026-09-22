@@ -85,6 +85,76 @@ export function materialCard(material, { personal, expanded = false }) {
     </article>`;
 }
 
+// ------------------------------------------------------------
+// detail dialogs
+//
+// The pieces every dialog body is built from, so the three that
+// exist -- a material, a recipe, the ledger -- are laid out alike.
+// ------------------------------------------------------------
+
+/**
+ * A dialog's heading: a kicker over the title, anything that belongs
+ * in the corner (the recipe's want switch), and the close button that
+ * dialog.js listens for.
+ */
+export function detailHead(kicker, title, aside = '') {
+  return `
+    <header class="detail-head">
+      <div>
+        <p class="detail-kicker">${esc(kicker)}</p>
+        <h2 id="detail-title">${esc(title)}</h2>
+      </div>
+      ${aside}
+      <button type="button" class="detail-close" data-close
+              aria-label="Close">&times;</button>
+    </header>`;
+}
+
+/**
+ * The grid of facts under a heading.  Values are HTML, already
+ * escaped, since some of them are tags; a pair with no value is
+ * left out rather than shown empty.
+ */
+export function traits(pairs) {
+  const shown = pairs.filter(([, value]) => value);
+  if (!shown.length) return '';
+  return `
+    <dl class="traits">
+      ${shown.map(([label, value]) => `
+        <div class="trait"><dt>${esc(label)}</dt><dd>${value}</dd></div>`).join('')}
+    </dl>`;
+}
+
+/** A captioned block of a dialog; nothing at all when it has no body. */
+export function detailSection(title, body) {
+  if (!body) return '';
+  return `
+    <section class="detail-section">
+      <h3 class="list-label">${esc(title)}</h3>
+      ${body}
+    </section>`;
+}
+
+// ------------------------------------------------------------
+// locations
+//
+// The Satchel is a bag, so things are in it; the Trapper and
+// Pearson are people, so things are with them.  Every screen that
+// names a location says it the same way.
+// ------------------------------------------------------------
+
+const SATCHEL = 'loc-satchel';
+
+/** "the Satchel", "Pearson" -- a location as the object of a sentence. */
+export function placeName(id, name) {
+  return id === SATCHEL ? `the ${name}` : name;
+}
+
+/** "In the Satchel", "With Pearson" -- where something is being held. */
+export function heldAt(id, name) {
+  return `${id === SATCHEL ? 'In' : 'With'} ${placeName(id, name)}`;
+}
+
 /**
  * The same material, opened: every fact the database has about it, laid
  * out for reading rather than scanning, with a stepper per station so
@@ -94,57 +164,30 @@ export function materialDetail(material, { personal }) {
   const { material: name, quality, source_type, animal, weapon, body_part } = material;
   const isAnimal = source_type === 'animal';
 
-  const facts = (isAnimal
-    ? [['Animal', animal], ['Quality', quality], ['Type', body_part], ['Weapon', weapon]]
-    : [['Source', 'Found out in the world'], ['Quality', quality]])
-    .filter(([, value]) => value);
+  const facts = isAnimal
+    ? [['Animal', esc(animal)], ['Quality', qualityBadge(quality)],
+       ['Type', esc(body_part)], ['Weapon', esc(weapon)]]
+    : [['Source', 'Found out in the world'], ['Quality', qualityBadge(quality)]];
 
   // Stations with nothing left to make still show in personal mode --
-  // struck through -- because you may be holding some there to sell.
+  // faded, as "needs no more" -- because you may be holding some there
+  // to sell.
   const demands = personal
     ? material.demands
     : material.demands.filter((d) => d.needed > 0);
 
   return `
-    <header class="detail-head">
-      <div>
-        <p class="detail-kicker">${isAnimal ? 'Animal material' : 'Misc. item'}</p>
-        <h2 id="detail-title">${esc(name)}</h2>
-      </div>
-      <button type="button" class="detail-close" data-close
-              aria-label="Close">&times;</button>
-    </header>
-
-    ${facts.length ? `
-      <dl class="traits">
-        ${facts.map(([label, value]) => `
-          <div class="trait">
-            <dt>${label}</dt>
-            <dd>${label === 'Quality' ? qualityBadge(value) : esc(value)}</dd>
-          </div>`).join('')}
-      </dl>` : ''}
-
-    ${material.usage.length ? `
-      <section class="detail-section">
-        <h3 class="list-label">Recipes used in</h3>
-        <ul class="detail-recipes">
-          ${material.usage.map((u) => recipeLine(u, personal)).join('')}
-        </ul>
-      </section>` : ''}
-
-    ${demands.length ? `
-      <section class="detail-section">
-        <h3 class="list-label">Locations</h3>
-        <div class="detail-stock">
-          ${demands.map((d) => stockLine(d, material, personal)).join('')}
-        </div>
-      </section>` : ''}
-
-    ${personal ? `
-      <section class="detail-section">
-        <h3 class="list-label">Comments</h3>
-        ${verdict(material, personal)}
-      </section>` : ''}`;
+    ${detailHead(isAnimal ? 'Animal material' : 'Misc. item', name)}
+    ${traits(facts)}
+    ${detailSection('Recipes used in', material.usage.length && `
+      <ul class="detail-list detail-recipes">
+        ${material.usage.map((u) => recipeLine(u, personal)).join('')}
+      </ul>`)}
+    ${detailSection('Locations', demands.length && `
+      <div class="detail-stock">
+        ${demands.map((d) => stockLine(d, personal)).join('')}
+      </div>`)}
+    ${detailSection('Comments', verdict(material, personal))}`;
 }
 
 /** "2x for " when a recipe takes more than one of this; nothing for one. */
@@ -172,9 +215,11 @@ function recipeLine(u, personal) {
  * it draws from, and a stepper that writes straight to that location.
  * The Fence is the odd one -- it sells at its own counter but spends
  * from your Satchel -- so the location is named whenever it differs.
+ * The row carries only its location; the view knows the material.
  */
-function stockLine(d, material, personal) {
+function stockLine(d, personal) {
   const colour = stationColour(d.color);
+  const place = placeName(d.location_id, d.location);
   const where = d.location && d.location !== d.station
     ? `<small class="from">from your ${esc(d.location)}</small>` : '';
 
@@ -192,17 +237,15 @@ function stockLine(d, material, personal) {
 
   return `
     <div class="stock-line demand ${colour}${retired ? ' retired' : ''}"
-         data-location="${esc(d.location_id)}" data-location-name="${esc(d.location)}"
-         data-ingredient="${esc(material.ingredient_id)}"
-         data-name="${esc(material.material)}" data-source="${esc(material.source_type)}">
+         data-location="${esc(d.location_id)}">
       <span class="stock-text"><span class="station">${esc(d.station)}</span>
         ${needs}, has <span class="${enough ? 'have' : 'short'}">${d.have}</span>${where}</span>
       <span class="stepper">
         <button type="button" data-delta="-1" data-key="${esc(d.location_id)}-less"
                 ${d.have <= 0 ? 'disabled' : ''}
-                aria-label="One fewer in the ${esc(d.location)}">-</button>
+                aria-label="One fewer with ${esc(place)}">-</button>
         <button type="button" class="add" data-delta="1" data-key="${esc(d.location_id)}-more"
-                aria-label="Add one to the ${esc(d.location)}">+ Add to ${esc(d.location)}</button>
+                aria-label="Add one to ${esc(place)}">+ Add to ${esc(d.location)}</button>
       </span>
     </div>`;
 }
@@ -217,8 +260,8 @@ function stockLine(d, material, personal) {
  *   moreNeeded   totalNeeded minus what you are holding.  Negative
  *                means you have more than anything still wants.
  *
- * Both sum across the demand rows above, so the line can never
- * contradict the bars it sits under.  Each station draws on its own
+ * Both sum across the station rows above it, so the line can never
+ * contradict them.  Each station draws on its own
  * location -- the Fence on your Satchel, the Trapper on the Trapper --
  * so nothing is counted twice.
  *
@@ -247,7 +290,7 @@ function verdict(material, personal) {
       ? ['spare', "You're already golden! If you have more, sell them to Butcher!!"]
       : ['spare', 'You may sell the rest!'];
 
-  return `<p class="sub hint ${state}">${words}</p>`;
+  return `<p class="hint ${state}">${words}</p>`;
 }
 
 /** The recipes a material goes into, each with its tick or cross. */

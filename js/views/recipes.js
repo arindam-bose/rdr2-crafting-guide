@@ -6,15 +6,16 @@
 // rather than in SQL, because 165 recipes is nothing and a chip
 // should not cost a round trip to the database.
 //
-// Crafting spends the ingredients from the station's own stock
-// and marks the recipe done, as one commit — the same path the
-// Inventory screen saves through, so undo works the same way.
+// The cards are for scanning.  Crafting, skipping and putting back
+// happen in the dialog a card opens: crafting spends the ingredients
+// from the station's own stock and marks the recipe done, as one
+// commit with an undo.
 // ============================================================
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { esc, empty, pager, plural, qualityBadge, stationBadge, stationColour,
-         PAGE } from '../render.js';
+         detailHead, detailSection, placeName, traits, PAGE } from '../render.js';
 import * as toolbar from './toolbar.js';
 import { toast } from '../toast.js';
 import { detailDialog, opensCard } from '../dialog.js';
@@ -31,6 +32,10 @@ const RANK = { wanted: 0, done: 1, skipped: 2 };
 // kinds: one recipe wanting 15 snake skins is a bigger errand than
 // three wanting one pelt each.
 const byName = (a, b) => a.name.localeCompare(b.name);
+
+// Ready to craft: still wanted -- not made, not skipped -- and every
+// ingredient is in the station's stock.
+const ready = (r) => r.state === 'wanted' && r.satisfied === r.needs;
 
 const SORTS = {
   materials: {
@@ -100,8 +105,6 @@ export function mount(root) {
     refilter();
   });
 
-  // The card is for scanning; crafting, skipping and putting back
-  // all happen in the dialog it opens.
   gallery.addEventListener('click', (event) => {
     const id = event.target.closest('.card')?.dataset.recipe;
     if (id && opensCard(event)) detail.open(id);
@@ -110,25 +113,16 @@ export function mount(root) {
   // The whole list, not the visible page: crafting a recipe can
   // filter it out of the gallery, and the dialog should stay put.
   let lastAll = [];
-  let busy = false;
 
   const detail = detailDialog({
     render(id) {
       const r = lastAll.find((x) => x.id === id);
       return r ? recipeDetail(r, store.isPersonal()) : null;
     },
-    // The dialog only repaints once the write has reached IndexedDB,
-    // so until then the old buttons are still live; a double-click on
-    // Craft must not spend the ingredients twice.
-    async onClick(event) {
+    onClick(event, id) {
       const button = event.target.closest('[data-act]');
-      if (!button || button.disabled || busy) return;
-      const r = lastAll.find((x) => x.id === button.closest('[data-recipe]').dataset.recipe);
-      if (!r) return;
-
-      busy = true;
-      try { await act(button.dataset.act, r.id, r.name); }
-      finally { busy = false; }
+      const r = lastAll.find((x) => x.id === id);
+      if (button && !button.disabled && r) return act(button.dataset.act, r.id, r.name);
     },
   });
 
@@ -174,11 +168,9 @@ export function mount(root) {
       : empty('Nothing matches those filters.');
     pagerBox.innerHTML = pager(state.shown, list.length);
 
-    const ready = personal
-      ? all.filter((r) => r.state === 'wanted' && r.satisfied === r.needs).length
-      : 0;
+    const readyCount = personal ? all.filter(ready).length : 0;
     count.textContent = plural(list.length, 'recipe')
-      + (personal && ready ? ` - ${ready} ready` : '');
+      + (readyCount ? ` - ${readyCount} ready` : '');
 
     detail.refresh();
   }
@@ -201,9 +193,7 @@ function matches(r, state, personal) {
   if (state.category && r.category !== state.category) return false;
 
   if (personal) {
-    if (state.show === 'ready' && !(r.state === 'wanted' && r.satisfied === r.needs)) {
-      return false;
-    }
+    if (state.show === 'ready' && !ready(r)) return false;
     if (state.show === 'done' && r.state !== 'done') return false;
   }
 
@@ -239,7 +229,7 @@ function card(r, personal) {
       ${buff(r.description)}
 
       ${r.ingredients.length ? `
-        <p class="list-label ingredients-label">Ingredients</p>
+        <p class="list-label card-label">Ingredients</p>
         <ul class="ingredients">
           ${r.ingredients.map((i) => ingredient(i, tally(r, personal))).join('')}
         </ul>` : ''}
@@ -305,48 +295,24 @@ function ingredient(i, personal) {
  * your mind about wanting it.
  */
 function recipeDetail(r, personal) {
-  const facts = [
-    ['Type', r.category && esc(r.category)],
-    ['Vendor', stationBadge(r.station, r.color)],
-    ['Set', r.set_name && esc(r.set_name)],
-    ['Price', r.price_cents && money(r.price_cents)],
-  ].filter(([, value]) => value);
-
   const buffs = buffLines(r.description);
 
   return `
-    <header class="detail-head" data-recipe="${esc(r.id)}">
-      <div>
-        <p class="detail-kicker">Recipe</p>
-        <h2 id="detail-title">${esc(r.name)}</h2>
-      </div>
-      ${personal ? wantSwitch(r) : ''}
-      <button type="button" class="detail-close" data-close
-              aria-label="Close">&times;</button>
-    </header>
-
-    ${facts.length ? `
-      <dl class="traits">
-        ${facts.map(([label, value]) => `
-          <div class="trait"><dt>${label}</dt><dd>${value}</dd></div>`).join('')}
-      </dl>` : ''}
-
-    ${buffs.length ? `
-      <section class="detail-section">
-        <h3 class="list-label">Buffs</h3>
-        <ul class="detail-buffs">
-          ${buffs.map((b) => `<li>${buffLine(b)}</li>`).join('')}
-        </ul>
-      </section>` : ''}
-
-    ${r.ingredients.length ? `
-      <section class="detail-section">
-        <h3 class="list-label">Ingredients</h3>
-        <ul class="ingredients detail-ingredients">
-          ${r.ingredients.map((i) => ingredient(i, tally(r, personal))).join('')}
-        </ul>
-      </section>` : ''}
-
+    ${detailHead('Recipe', r.name, personal ? wantSwitch(r) : '')}
+    ${traits([
+      ['Type', esc(r.category)],
+      ['Vendor', stationBadge(r.station, r.color)],
+      ['Set', esc(r.set_name)],
+      ['Price', r.price_cents && money(r.price_cents)],
+    ])}
+    ${detailSection('Buffs', buffs.length && `
+      <ul class="detail-list detail-buffs">
+        ${buffs.map((b) => `<li>${buffLine(b)}</li>`).join('')}
+      </ul>`)}
+    ${detailSection('Ingredients', r.ingredients.length && `
+      <ul class="ingredients detail-ingredients">
+        ${r.ingredients.map((i) => ingredient(i, tally(r, personal))).join('')}
+      </ul>`)}
     ${personal ? craftRow(r) : ''}`;
 }
 
@@ -359,10 +325,8 @@ function buffLine(line) {
   const at = line.lastIndexOf(':');
   if (at < 1 || at === line.length - 1) return `<span class="stat">${esc(line)}</span>`;
 
-  const value = line.slice(at + 1).trim();
-  const sign = value.startsWith('-') ? ' down' : value.startsWith('+') ? ' up' : '';
   return `<span class="stat">${esc(line.slice(0, at))}</span>
-          <span class="value${sign}">${esc(value)}</span>`;
+          <span class="value">${esc(line.slice(at + 1).trim())}</span>`;
 }
 
 /**
@@ -378,7 +342,7 @@ function wantSwitch(r) {
   const [off, onText] = made ? ['Put back', 'Crafted'] : ['Skip', 'Want it'];
   const act = made ? 'uncraft' : on ? 'skip' : 'unskip';
   const why = made
-    ? `Put it back: refund the ingredients to ${r.station} and want it again`
+    ? `Put it back: refund the ingredients to ${placeName(r.location_id, r.location)} and want it again`
     : on ? 'Not making this -- stop asking for its materials'
          : 'Put it back on your list';
 
@@ -397,11 +361,10 @@ function wantSwitch(r) {
  * rather than hidden in a tooltip a phone cannot show.
  */
 function craftRow(r) {
-  const ready = r.satisfied === r.needs;
-  const craftable = r.state === 'wanted' && ready;
+  const craftable = ready(r);
 
   const why = craftable
-    ? `Spends these from the ${esc(r.station)}'s stock and marks it made.`
+    ? `Spends these from ${esc(placeName(r.location_id, r.location))} and marks it made.`
     : r.state === 'done'
       ? 'Already crafted. Switch to Put back to undo it.'
       : r.state === 'skipped'
@@ -409,7 +372,7 @@ function craftRow(r) {
         : `Still need ${esc(shortfall(r))}.`;
 
   return `
-    <div class="craft-row" data-recipe="${esc(r.id)}">
+    <div class="craft-row">
       <p class="craft-why${craftable ? ' ready' : ''}">${why}</p>
       <button type="button" class="craft-btn" data-act="craft" data-key="craft"
               ${craftable ? '' : 'disabled'}>Craft</button>

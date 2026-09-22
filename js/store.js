@@ -117,6 +117,19 @@ export async function hydrate() {
 // ------------------------------------------------------------
 
 /**
+ * Why a hand-entered change happened, as the ledger records it.  A
+ * gain is logged as whatever most likely caused it -- a kill for an
+ * animal material, loot for anything else -- so the ledger still
+ * reads as a history.  Taking one away is nearly always fixing a
+ * mis-entry.  Inventory's steppers and a material dialog's buttons
+ * both go through this.
+ */
+export function reasonFor(sourceType, delta) {
+  if (delta < 0) return 'correction';
+  return sourceType === 'animal' ? 'kill' : 'loot';
+}
+
+/**
  * Append one ledger row.  `delta` is signed: positive for a gain,
  * negative for a spend.  Returns the stored row, whose id is what
  * `undo` takes.

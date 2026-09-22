@@ -65,7 +65,7 @@ served network-first, so edits show up on reload without a cache bump.
     js/
       db.js               open sql.js, create the personal tables
       store.js            ledger writes, IndexedDB, export/import, crafting
-      queries.js          the four queries as functions
+      queries.js          every read, as functions
       render.js           card and material-detail templates, and the
                           pieces they share (quality and station tags)
       dialog.js           the detail dialog every card opens: close
@@ -222,7 +222,10 @@ anywhere — or its name, which is a real button, so the keyboard gets there too
 click on the backdrop. A click that ends a text selection does not open it:
 that is someone copying a name. The dialog is shared (`js/dialog.js`) and
 repaints whenever the store changes, keeping focus on the button just pressed,
-so it never shows stale numbers. The undo toast moves inside an open dialog —
+so it never shows stale numbers. Its buttons act one at a time: a write
+repaints the dialog only once it has reached IndexedDB, so until then a second
+tap is ignored rather than crafting twice or taking stock below zero. The undo
+toast moves inside an open dialog —
 a modal sits in the top layer and makes the rest of the page inert, so a toast
 left outside could be neither seen nor pressed.
 
@@ -267,7 +270,7 @@ table, the ingredients, and the two things you can do:
   recipe done, as one commit with undo. It is always present and disabled when
   it cannot be used, with the reason written beside it — what is still
   missing, or that the recipe is made or skipped — rather than in a tooltip a
-  phone cannot show. A double-click spends once.
+  phone cannot show.
 - **The switch** in the corner reads *Skip / Want it* while a recipe is not
   made, and *Put back / Crafted* once it is. Skipping retires a recipe without
   spending anything — only the target's state is written. Putting back refunds
@@ -321,7 +324,9 @@ outstanding.
 
 A plus is recorded as the thing that most likely caused it (`kill` for an animal
 material, `loot` otherwise); a minus as a `correction`, since that is nearly
-always what it is. The same rule holds for the buttons in a material's dialog.
+always what it is. The same rule (`store.reasonFor`) holds for the buttons in a
+material's dialog, and every screen names a location the same way: *in the
+Satchel*, *with Pearson*.
 
 ### Settings and the ledger
 

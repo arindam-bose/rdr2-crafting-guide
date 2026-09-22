@@ -1,21 +1,21 @@
 // ============================================================
 // The detail dialog a card opens.
 //
-// Materials and Recipes both open one, and the plumbing is the
-// same: a native modal <dialog>, a close button, Esc and a
-// backdrop click to leave, and a body that repaints whenever the
-// store changes underneath it.  What goes in the body, and what
-// its buttons do, is the view's business.
+// Materials, Recipes and the ledger all open one, and the
+// plumbing is the same: a native modal <dialog>, a close button,
+// Esc and a backdrop click to leave, and a body that repaints
+// whenever the store changes underneath it.  What goes in the
+// body, and what its buttons do, is the view's business.
 //
 //   const detail = detailDialog({
 //     render: (id) => html | null,   // null: the thing is gone, close
-//     onClick: (event) => {},        // anything but the close button
+//     onClick: (event, id) => {},    // anything but the close button
 //   });
 //   detail.open(id); detail.refresh(); detail.destroy();
 //
-// The rendered body must give its heading id="detail-title" and
-// its close button data-close.  Any button that should keep focus
-// across a repaint carries a data-key naming it.
+// The rendered body starts with detailHead() from render.js, which
+// supplies the heading and the close button.  Any button that
+// should keep focus across a repaint carries a data-key naming it.
 // ============================================================
 
 export function detailDialog({ render, onClick = () => {} }) {
@@ -33,10 +33,15 @@ export function detailDialog({ render, onClick = () => {} }) {
   document.body.append(dialog);
 
   let current = null;
+  let busy = false;
 
+  /** Repaint; false if there is nothing left to show, which closes it. */
   function paint() {
     const html = render(current);
-    if (html == null) { dialog.close(); return; }
+    if (html == null) {
+      if (dialog.open) dialog.close();
+      return false;
+    }
 
     // The button just pressed is replaced by the repaint, so put the
     // focus back on its successor rather than losing it to <body>.
@@ -49,6 +54,7 @@ export function detailDialog({ render, onClick = () => {} }) {
       const again = body.querySelector(`[data-key="${CSS.escape(key)}"]`);
       (again && !again.disabled ? again : body.querySelector('[data-close]'))?.focus();
     }
+    return true;
   }
 
   dialog.addEventListener('close', () => {
@@ -56,20 +62,28 @@ export function detailDialog({ render, onClick = () => {} }) {
     body.innerHTML = '';
   });
 
-  dialog.addEventListener('click', (event) => {
+  dialog.addEventListener('click', async (event) => {
     // A click on the backdrop lands on the <dialog> itself: the body
     // inside it covers every pixel of the box.
     if (event.target === dialog || event.target.closest('[data-close]')) {
       dialog.close();
       return;
     }
-    onClick(event);
+
+    // Every action here is a write, and the body only repaints once it
+    // has reached IndexedDB -- until then the old buttons are still
+    // live.  One at a time, so a double-click cannot craft twice or
+    // take a stock that has just reached zero below it.
+    if (busy) return;
+    busy = true;
+    try { await onClick(event, current); }
+    finally { busy = false; }
   });
 
   return {
     open(id) {
       current = id;
-      paint();
+      if (!paint()) { current = null; return; }
       if (!dialog.open) dialog.showModal();
       body.querySelector('[data-close]')?.focus();
     },

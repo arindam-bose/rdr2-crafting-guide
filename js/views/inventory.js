@@ -17,15 +17,9 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { esc, empty, plural, qualityBadge } from '../render.js';
+import { esc, empty, heldAt, plural, qualityBadge } from '../render.js';
 import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
-
-// A bump is recorded as the thing that most likely caused it, so
-// the ledger still reads as a history rather than a pile of
-// corrections.  Taking one away is the exception: that is nearly
-// always fixing a mis-entry.
-const REASON = { animal: 'kill', misc: 'loot' };
 
 const LOCATION_KEY = 'rdr2:location';
 
@@ -127,7 +121,7 @@ export function mount(root) {
       ingredient_id: e.ingredient_id,
       location_id: e.location_id,
       delta: e.delta,
-      reason: e.delta > 0 ? REASON[e.source_type] ?? 'loot' : 'correction',
+      reason: store.reasonFor(e.source_type, e.delta),
     })));
 
     const ids = written.map((r) => r.id);
@@ -138,7 +132,7 @@ export function mount(root) {
   function update() {
     const searching = state.search.length > 0;
     const place = locations.find((l) => l.id === state.location).name;
-    const at = where(state.location, place);
+    const at = heldAt(state.location, place);
 
     if (searching) {
       const hits = queries.searchMaterials(state.search, state.location);
@@ -183,14 +177,6 @@ export function mount(root) {
 
   update();
   return { update, destroy() {} };
-}
-
-/**
- * How a location is spoken of.  The Satchel is a bag, so things are
- * in it; the Trapper and Pearson are people, so things are with them.
- */
-function where(locationId, name) {
-  return locationId === 'loc-satchel' ? `In the ${name}` : `With ${name}`;
 }
 
 const lower = (text) => text[0].toLowerCase() + text.slice(1);

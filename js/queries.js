@@ -1,8 +1,12 @@
 // ============================================================
-// The four queries from database/personal_schema.sql, as
-// functions.  The SQL is kept close to the version written in
-// that file; what is added here is the extra columns the cards
-// need for display, and the ids the views hand back on a tap.
+// Every read the screens make, as functions.
+//
+// database/personal_schema.sql sketches four queries; these are
+// them, kept close to that SQL, plus the extra columns the cards
+// need for display and the ids the views hand back on a tap.
+// "What can I craft right now" (query 3) has no function of its
+// own: recipeList() counts each recipe's stocked ingredients, and
+// a recipe is ready when that count is all of them.
 //
 // These read.  The one that writes — crafting, query 4 — lives
 // in store.js instead, so that every ledger write goes through
@@ -113,6 +117,8 @@ export function recipeList() {
                st.id   AS station_id,
                st.name AS station,
                st.color,
+               loc.id   AS location_id,
+               loc.name AS location,
                s.name  AS set_name,
                s.set_type,
                COALESCE(t.state, 'wanted')             AS state,
@@ -121,6 +127,7 @@ export function recipeList() {
                SUM(COALESCE(inv.qty, 0) >= ri.qty)     AS satisfied
     FROM       recipes  r
     LEFT JOIN  stations st ON st.id = r.station_id
+    LEFT JOIN  locations loc ON loc.id = st.location_id
     LEFT JOIN  sets     s  ON s.id  = r.set_id
     LEFT JOIN  targets  t  ON t.recipe_id = r.id
     LEFT JOIN  recipe_ingredients ri ON ri.recipe_id = r.id
@@ -157,26 +164,6 @@ export function categories() {
   return db.all(`SELECT DISTINCT category FROM recipes
                  WHERE category IS NOT NULL ORDER BY category`)
            .map((r) => r.category);
-}
-
-// ------------------------------------------------------------
-// 3. What can I craft right now?
-//    MIN() over a boolean is 1 only when every ingredient passes.
-// ------------------------------------------------------------
-export function craftable() {
-  return db.all(`
-    SELECT     r.id, r.name, st.name AS station, st.color
-    FROM       recipes r
-    JOIN       stations           st  ON st.id = r.station_id
-    JOIN       recipe_ingredients ri  ON ri.recipe_id = r.id
-    LEFT JOIN  targets            t   ON t.recipe_id = r.id
-    LEFT JOIN  inventory          inv ON inv.ingredient_id = ri.ingredient_id
-                                     AND inv.location_id   = st.location_id
-    WHERE      COALESCE(t.state, 'wanted') = 'wanted'
-    GROUP BY   r.id
-    HAVING     MIN(COALESCE(inv.qty, 0) >= ri.qty) = 1
-    ORDER BY   r.name
-  `);
 }
 
 // ------------------------------------------------------------

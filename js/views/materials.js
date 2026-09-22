@@ -1,8 +1,9 @@
 // ============================================================
 // Materials — "Where to go if you have these items".
 //
-// One card per material, carrying a row for every station that
-// still wants it, and the list of recipes it goes into.  Two
+// One card per material: the recipes it goes into, and a row for
+// every station that still wants it.  A card opens a dialog with
+// the rest, where stock can be logged a tap at a time.  Two
 // tabs, because the 100 animal materials and the 9 things you
 // pick up off the ground are collected in completely different
 // ways: one is a hunting trip, the other is a detour.  Each tab
@@ -16,14 +17,11 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { materialCard, materialDetail, empty, esc, plural, pager, PAGE } from '../render.js';
+import { materialCard, materialDetail, empty, esc, placeName, plural, pager,
+         PAGE } from '../render.js';
 import { toast } from '../toast.js';
 import { detailDialog, opensCard } from '../dialog.js';
 import * as toolbar from './toolbar.js';
-
-// As on Inventory: a gain is logged as whatever most likely caused
-// it, and taking one away is nearly always fixing a mis-entry.
-const REASON = { animal: 'kill', misc: 'loot' };
 
 // The category filter's one entry that is not a body part: misc
 // items have none, so they get a category of their own.  A value no
@@ -165,24 +163,27 @@ export function mount(root) {
       return card ? materialDetail(card, { personal: store.isPersonal() }) : null;
     },
 
-    async onClick(event) {
+    // One tap, one ledger row, straight away: the stepper on Inventory
+    // stages a batch, but here you are logging one thing and looking
+    // right at the result, so a save step would only be in the way.
+    async onClick(event, id) {
       const button = event.target.closest('[data-delta]');
-      if (!button) return;
+      const card = lastCards.find((m) => m.ingredient_id === id);
+      const d = card?.demands.find(
+        (x) => x.location_id === button?.closest('[data-location]').dataset.location);
+      if (!button || !d) return;
 
-      // One tap, one ledger row, straight away: the stepper on Inventory
-      // stages a batch, but here you are logging one thing and looking
-      // right at the result, so a save step would only be in the way.
-      const row = button.closest('[data-location]').dataset;
       const delta = Number(button.dataset.delta);
       const written = await store.record({
-        ingredient_id: row.ingredient,
-        location_id: row.location,
+        ingredient_id: id,
+        location_id: d.location_id,
         delta,
-        reason: delta > 0 ? REASON[row.source] ?? 'loot' : 'correction',
+        reason: store.reasonFor(card.source_type, delta),
       });
 
-      toast(`${delta > 0 ? 'Added' : 'Took'} one ${row.name} ${
-              delta > 0 ? 'to' : 'from'} the ${row.locationName}`,
+      const place = placeName(d.location_id, d.location);
+      toast(delta > 0 ? `Added one ${card.material} to ${place}`
+                      : `Took one ${card.material} from ${place}`,
             { label: 'Undo', run: () => store.undo(written.id) });
     },
   });

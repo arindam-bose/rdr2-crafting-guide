@@ -1,11 +1,11 @@
 -- ============================================================
 -- RDR2 Crafting Guide — PERSONAL LAYER
 -- ============================================================
--- Lives in the user's browser, never on the server.  Attaches
--- alongside the read-only reference database so the queries
--- below can join across both.
---
---   ATTACH DATABASE 'personal.db' AS me;
+-- Lives in the user's browser, never on the server.  js/db.js
+-- runs this file in the same sql.js connection as the read-only
+-- reference database, so the queries below join across both
+-- without an ATTACH.  Only the DDL runs: the queries are
+-- comments, kept as the reference for js/queries.js.
 -- ============================================================
 
 PRAGMA foreign_keys = ON;
@@ -82,8 +82,8 @@ CREATE TABLE targets (
 
 -- ------------------------------------------------------------
 -- 1. Material card — "Where to go if you have these items".
---    Demand is per STATION (your cards say "for Fence"), stock
---    is per LOCATION (Fence draws from the Satchel).
+--    Demand is per STATION, stock is per LOCATION (the Fence
+--    draws from the Satchel).
 --    Drop the targets join for the general, non-personal mode.
 -- ------------------------------------------------------------
 -- SELECT     ing.name                        AS material,
