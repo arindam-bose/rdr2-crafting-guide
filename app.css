@@ -345,8 +345,10 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   margin-bottom: 14px;
 }
 
+/* The search box has the first row to itself, full width, as on
+   Inventory; the filters and the sort follow on the rows under it. */
 .search {
-  flex: 1 1 200px;
+  flex: 1 1 100%;
   min-width: 0;
   padding: 9px 12px;
   font: inherit;
@@ -376,6 +378,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border-color: var(--ink);
 }
 
+/* Filters and sort read from the left; the count alone is pushed right. */
 .count { font-size: .8rem; color: var(--ink-faint); margin-left: auto; }
 
 /* ---------- material card ---------- */
@@ -1066,6 +1069,16 @@ ul.buff li::before {
 
 .stock-section + .stock-section { margin-top: 18px; }
 
+/* A section's name on the left, how many rows it holds on the right --
+   the same split as the toolbars on Materials and Recipes. */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.section-head .list-label { margin: 0; }
+
 .rows {
   display: flex;
   flex-direction: column;
@@ -1187,13 +1200,12 @@ ul.buff li::before {
   background: var(--accent);
 }
 
-/* A sort control sits at the end of the toolbar, after the filters.
+/* A sort control sits after the filters, left-aligned with them.
    Both galleries use this, so the rule serves Materials and Recipes. */
 .sort {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-left: auto;
   font-size: .8rem;
   color: var(--ink-faint);
 }

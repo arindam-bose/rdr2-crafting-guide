@@ -79,9 +79,24 @@ export function materialUsage() {
   `);
 }
 
-/** The stations, for the filter chips. */
+/**
+ * The stations, for the filter chips: Pearson, Trapper, Fence, a
+ * chosen order rather than the alphabet's.  Anything new sorts after.
+ */
 export function stations() {
-  return db.all('SELECT id, name, color FROM stations ORDER BY name');
+  return db.all(`
+    SELECT   id, name, color FROM stations
+    ORDER BY CASE id WHEN 'station-pearson' THEN 0
+                     WHEN 'station-trapper' THEN 1
+                     WHEN 'station-fence'   THEN 2
+                     ELSE 3 END, name`);
+}
+
+/** What part of an animal a material is -- Pelt, Hide, Skin -- for the filter. */
+export function bodyParts() {
+  return db.all(`SELECT DISTINCT body_part FROM ingredients
+                 WHERE body_part IS NOT NULL ORDER BY body_part`)
+           .map((r) => r.body_part);
 }
 
 // ------------------------------------------------------------

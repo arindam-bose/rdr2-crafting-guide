@@ -142,9 +142,10 @@ export function mount(root) {
 
     if (searching) {
       const hits = queries.searchMaterials(state.search, state.location);
+      // The title is already the count here.
       sections.innerHTML = section(
         plural(hits.length, 'match', 'es'),
-        hits, 'No material by that name.');
+        hits, 'No material by that name.', false);
     } else {
       // What you are holding here first, then the quick way back to
       // whatever you were logging lately.
@@ -164,11 +165,14 @@ export function mount(root) {
     }
   }
 
-  function section(title, list, emptyText) {
+  function section(title, list, emptyText, counted = true) {
     if (!list.length && !emptyText) return '';
     return `
       <section class="stock-section">
-        <p class="list-label">${esc(title)}</p>
+        <div class="section-head">
+          <p class="list-label">${esc(title)}</p>
+          ${counted ? `<span class="count">${plural(list.length, 'item')}</span>` : ''}
+        </div>
         ${list.length
           ? `<div class="rows">${list
                .map((m) => row(m, staged.get(key(state.location, m.ingredient_id))))

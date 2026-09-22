@@ -25,6 +25,11 @@ import * as toolbar from './toolbar.js';
 // it, and taking one away is nearly always fixing a mis-entry.
 const REASON = { animal: 'kill', misc: 'loot' };
 
+// The category filter's one entry that is not a body part: misc
+// items have none, so they get a category of their own.  A value no
+// body part can collide with, since the rest come from the data.
+const MISC = ':misc';
+
 const GROUPS = [
   { id: 'animal', title: 'Animal Materials' },
   { id: 'misc',   title: 'Misc. Items' },
@@ -67,16 +72,22 @@ export function mount(root) {
   // crafting something, saving inventory -- rerenders the gallery, and
   // a list that closed itself when you ticked something off would be
   // worse than not opening at all.
-  const state = { search: '', station: null, show: 'all',
+  const state = { search: '', station: null, part: '', show: 'all',
                   group: GROUPS[0].id, shown: PAGE, expanded: new Set(),
                   ...toolbar.restoreSort('materials', SORTS,
                                          { sort: 'needed', dir: 'desc' }) };
 
   const stations = queries.stations();
+  const parts = queries.bodyParts();
 
   root.innerHTML = `
     <div class="toolbar">
       ${toolbar.searchBox('m-search', 'Search a material, animal or station…')}
+      <select class="select" id="m-part" aria-label="Category">
+        <option value="">Every category</option>
+        ${parts.map((p) => `<option value="${esc(p)}">${esc(p)}</option>`).join('')}
+        <option value="${MISC}">Misc. items</option>
+      </select>
       ${toolbar.chipRow('m-stations', 'station', [
         { value: '', label: 'All', pressed: true },
         ...stations.map((s) => ({ value: s.id, label: s.name })),
@@ -116,6 +127,15 @@ export function mount(root) {
   toolbar.wireSort(root, 'm', SORTS, state, refilter, 'materials');
   toolbar.wirePicker(root.querySelector('#m-stations'), 'station', state, refilter);
   toolbar.wireToggles(showChips, 'show', state, refilter);
+
+  // A category belongs to one tab or the other, so choosing one takes
+  // you to the tab its materials are on rather than leaving you on an
+  // empty one.
+  root.querySelector('#m-part').addEventListener('change', (event) => {
+    state.part = event.target.value;
+    if (state.part) selectGroup(state.part === MISC ? 'misc' : 'animal');
+    refilter();
+  });
 
   // Opening one card's list does not touch the others, and does not
   // start the page over: this is reading, not filtering.  Anywhere
@@ -170,12 +190,16 @@ export function mount(root) {
   groupTabs.addEventListener('click', (event) => {
     const tab = event.target.closest('[data-group]');
     if (!tab) return;
-    state.group = tab.dataset.group;
-    for (const t of groupTabs.children) {
-      t.setAttribute('aria-selected', String(t === tab));
-    }
+    selectGroup(tab.dataset.group);
     refilter();
   });
+
+  function selectGroup(id) {
+    state.group = id;
+    for (const t of groupTabs.children) {
+      t.setAttribute('aria-selected', String(t.dataset.group === id));
+    }
+  }
 
   function update() {
     const personal = store.isPersonal();
@@ -224,7 +248,7 @@ function emptyMessage(state, personal, counts) {
     return `Nothing here -- ${counts[other.id]} under ${other.title}.`;
   }
   if (state.show === 'done' && personal) return 'Nothing is finished with yet.';
-  if (state.search || state.station || state.show !== 'all') {
+  if (state.search || state.station || state.part || state.show !== 'all') {
     return 'Nothing matches those filters.';
   }
   return 'Every recipe is done. Go buy a hat.';
@@ -284,6 +308,9 @@ function matches(card, state, personal) {
         (d) => d.station_id === state.station && (d.needed > 0 || !personal))) {
     return false;
   }
+
+  if (state.part === MISC ? card.source_type !== 'misc'
+      : state.part && card.body_part !== state.part) return false;
 
   if (personal) {
     // Done: you have enough of it, or nothing is asking for it any
