@@ -13,9 +13,11 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { esc, empty, pager, plural, qualityBadge, stationColour, PAGE } from '../render.js';
+import { esc, empty, pager, plural, qualityBadge, stationBadge, stationColour,
+         PAGE } from '../render.js';
 import * as toolbar from './toolbar.js';
 import { toast } from '../toast.js';
+import { detailDialog, opensCard } from '../dialog.js';
 
 const STATE_LABEL = { wanted: '', done: 'Made', skipped: 'Skipped' };
 
@@ -98,11 +100,36 @@ export function mount(root) {
     refilter();
   });
 
+  // The card is for scanning; crafting, skipping and putting back
+  // all happen in the dialog it opens.
   gallery.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-act]');
-    if (!button) return;
-    act(button.dataset.act, button.closest('.card').dataset.recipe,
-        button.closest('.card').dataset.name);
+    const id = event.target.closest('.card')?.dataset.recipe;
+    if (id && opensCard(event)) detail.open(id);
+  });
+
+  // The whole list, not the visible page: crafting a recipe can
+  // filter it out of the gallery, and the dialog should stay put.
+  let lastAll = [];
+  let busy = false;
+
+  const detail = detailDialog({
+    render(id) {
+      const r = lastAll.find((x) => x.id === id);
+      return r ? recipeDetail(r, store.isPersonal()) : null;
+    },
+    // The dialog only repaints once the write has reached IndexedDB,
+    // so until then the old buttons are still live; a double-click on
+    // Craft must not spend the ingredients twice.
+    async onClick(event) {
+      const button = event.target.closest('[data-act]');
+      if (!button || button.disabled || busy) return;
+      const r = lastAll.find((x) => x.id === button.closest('[data-recipe]').dataset.recipe);
+      if (!r) return;
+
+      busy = true;
+      try { await act(button.dataset.act, r.id, r.name); }
+      finally { busy = false; }
+    },
   });
 
   async function act(action, recipeId, name) {
@@ -130,6 +157,7 @@ export function mount(root) {
     const all = queries.recipeList()
       .map((r) => ({ ...r, ingredients: ingredients.get(r.id) ?? [] }));
 
+    lastAll = all;
     const list = all.filter((r) => matches(r, state, personal));
 
     // Made and skipped sink to the bottom whatever the field, so a
@@ -151,10 +179,12 @@ export function mount(root) {
       : 0;
     count.textContent = plural(list.length, 'recipe')
       + (personal && ready ? ` - ${ready} ready` : '');
+
+    detail.refresh();
   }
 
   update();
-  return { update, destroy() {} };
+  return { update, destroy: detail.destroy };
 }
 
 function group(rows) {
@@ -192,27 +222,33 @@ function matches(r, state, personal) {
 
 function card(r, personal) {
   const colour = stationColour(r.color);
-  const ready = r.satisfied === r.needs;
+  const settled = personal && r.state !== 'wanted';
 
+  // The name is a real button, so the card opens from the keyboard
+  // too; a click anywhere else on the card is forwarded to it.
   return `
-    <article class="card recipe ${colour}${r.state !== 'wanted' ? ' settled' : ''}"
-             data-recipe="${esc(r.id)}" data-name="${esc(r.name)}">
+    <article class="card recipe ${colour}${settled ? ' settled' : ''}"
+             data-recipe="${esc(r.id)}">
       <header class="recipe-head">
-        <h3>${esc(r.name)}</h3>
+        <h3><button type="button" class="card-open" data-open
+              aria-haspopup="dialog">${esc(r.name)}</button>${
+          stationBadge(r.station, r.color)}${settled ? stateBadge(r.state) : ''}</h3>
         ${r.price_cents ? `<span class="price">${money(r.price_cents)}</span>` : ''}
       </header>
 
-      <p class="sub">${[r.station, r.category, r.set_name]
-        .filter(Boolean).map(esc).join(' - ')}</p>
-
       ${buff(r.description)}
 
-      <ul class="ingredients">
-        ${r.ingredients.map((i) => ingredient(i, personal)).join('')}
-      </ul>
-
-      ${personal ? actions(r, ready) : ''}
+      ${r.ingredients.length ? `
+        <p class="list-label ingredients-label">Ingredients</p>
+        <ul class="ingredients">
+          ${r.ingredients.map((i) => ingredient(i, tally(r, personal))).join('')}
+        </ul>` : ''}
     </article>`;
+}
+
+/** "Made" or "Skipped", beside the station, once a recipe is settled. */
+function stateBadge(state) {
+  return `<span class="badge state ${state}">${esc(STATE_LABEL[state])}</span>`;
 }
 
 /**
@@ -222,14 +258,25 @@ function card(r, personal) {
  * marker becomes a CSS hyphen, which the page's typewriter face can draw.
  */
 function buff(description) {
-  if (!description) return '';
-
-  const lines = description.split('\n').map((line) => line.trim()).filter(Boolean);
-  if (lines.length < 2) return `<p class="buff">${esc(description)}</p>`;
+  const lines = buffLines(description);
+  if (!lines.length) return '';
+  if (lines.length < 2) return `<p class="buff">${esc(lines[0])}</p>`;
 
   return `<ul class="buff">${lines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>`;
 }
 
+function buffLines(description) {
+  return (description ?? '').split('\n').map((line) => line.trim()).filter(Boolean);
+}
+
+/**
+ * Whether an ingredient list shows ticks and tallies.  Not once the
+ * recipe is crafted: its ingredients were spent making it, and a row
+ * of red crosses under something already made reads as a shortfall.
+ */
+function tally(r, personal) {
+  return personal && r.state !== 'done';
+}
 
 function ingredient(i, personal) {
   const badge = qualityBadge(i.quality);
@@ -241,48 +288,131 @@ function ingredient(i, personal) {
 
   return `
     <li class="${i.satisfied ? 'have' : 'short'}">
-      <span class="mark" aria-hidden="true">${i.satisfied ? '\u2713' : '\u2717'}</span>
+      <span class="mark" aria-hidden="true">${i.satisfied ? '✓' : '✗'}</span>
       <span class="qty">${i.qty}x</span>
       <span class="what">${esc(i.name)}${badge}</span>
       <span class="tally">${i.have}/${i.qty}</span>
     </li>`;
 }
 
-function actions(r, ready) {
-  const craftable = r.state === 'wanted' && ready;
+// ------------------------------------------------------------
+// the detail dialog
+// ------------------------------------------------------------
 
-  const label = r.state === 'wanted'
-    ? `${r.satisfied} of ${r.needs} ready`
-    : STATE_LABEL[r.state];
+/**
+ * The same recipe, opened: what it is, what it does, what it takes,
+ * and the two things you can do about it -- craft it, or change
+ * your mind about wanting it.
+ */
+function recipeDetail(r, personal) {
+  const facts = [
+    ['Type', r.category && esc(r.category)],
+    ['Vendor', stationBadge(r.station, r.color)],
+    ['Set', r.set_name && esc(r.set_name)],
+    ['Price', r.price_cents && money(r.price_cents)],
+  ].filter(([, value]) => value);
 
-  // The button is always there, so its absence never has to be
-  // interpreted; the tooltip carries why it is off.
-  const why = craftable
-    ? `Spend these ingredients from ${r.station}'s stock and mark it made`
-    : r.state === 'done'
-      ? 'Already made -- put it back first'
-      : r.state === 'skipped'
-        ? 'Skipped -- want it again first'
-        : `Still need ${shortfall(r)}`;
-
-  const second = r.state === 'done'
-    ? { act: 'uncraft', text: 'Put back',
-        why: `Refund the ingredients to ${r.station} and want it again` }
-    : r.state === 'skipped'
-      ? { act: 'unskip', text: 'Want it',
-          why: 'Put it back on your list' }
-      : { act: 'skip', text: 'Skip',
-          why: 'Not making this -- stop asking for its materials' };
+  const buffs = buffLines(r.description);
 
   return `
-    <div class="actions">
-      <span class="state-label">${esc(label)}</span>
-      <span class="craft-wrap" title="${esc(why)}">
-        <button type="button" class="craft-btn" data-act="craft"
-                ${craftable ? '' : 'disabled'}>Craft</button>
-      </span>
-      <button type="button" class="ghost-btn" data-act="${second.act}"
-              title="${esc(second.why)}">${esc(second.text)}</button>
+    <header class="detail-head" data-recipe="${esc(r.id)}">
+      <div>
+        <p class="detail-kicker">Recipe</p>
+        <h2 id="detail-title">${esc(r.name)}</h2>
+      </div>
+      ${personal ? wantSwitch(r) : ''}
+      <button type="button" class="detail-close" data-close
+              aria-label="Close">&times;</button>
+    </header>
+
+    ${facts.length ? `
+      <dl class="traits">
+        ${facts.map(([label, value]) => `
+          <div class="trait"><dt>${label}</dt><dd>${value}</dd></div>`).join('')}
+      </dl>` : ''}
+
+    ${buffs.length ? `
+      <section class="detail-section">
+        <h3 class="list-label">Buffs</h3>
+        <ul class="detail-buffs">
+          ${buffs.map((b) => `<li>${buffLine(b)}</li>`).join('')}
+        </ul>
+      </section>` : ''}
+
+    ${r.ingredients.length ? `
+      <section class="detail-section">
+        <h3 class="list-label">Ingredients</h3>
+        <ul class="ingredients detail-ingredients">
+          ${r.ingredients.map((i) => ingredient(i, tally(r, personal))).join('')}
+        </ul>
+      </section>` : ''}
+
+    ${personal ? craftRow(r) : ''}`;
+}
+
+/**
+ * "Stamina Drain Rate: -50%" reads best as a stat and its value, the
+ * value set apart so a column of them can be scanned.  A line with no
+ * colon -- most one-line buffs are a sentence -- is left as it is.
+ */
+function buffLine(line) {
+  const at = line.lastIndexOf(':');
+  if (at < 1 || at === line.length - 1) return `<span class="stat">${esc(line)}</span>`;
+
+  const value = line.slice(at + 1).trim();
+  const sign = value.startsWith('-') ? ' down' : value.startsWith('+') ? ' up' : '';
+  return `<span class="stat">${esc(line.slice(0, at))}</span>
+          <span class="value${sign}">${esc(value)}</span>`;
+}
+
+/**
+ * The switch in the corner.  Two-sided, with both words showing, so
+ * it reads the same whichever way it is set:
+ *
+ *   not made    Skip  [--o]  Want it     off skips it, on wants it back
+ *   made    Put back  [--o]  Crafted     off refunds the ingredients
+ */
+function wantSwitch(r) {
+  const made = r.state === 'done';
+  const on = r.state !== 'skipped';
+  const [off, onText] = made ? ['Put back', 'Crafted'] : ['Skip', 'Want it'];
+  const act = made ? 'uncraft' : on ? 'skip' : 'unskip';
+  const why = made
+    ? `Put it back: refund the ingredients to ${r.station} and want it again`
+    : on ? 'Not making this -- stop asking for its materials'
+         : 'Put it back on your list';
+
+  return `
+    <button type="button" class="want-switch" role="switch" aria-checked="${on}"
+            data-act="${act}" data-key="switch" title="${esc(why)}"
+            aria-label="${esc(onText)}">
+      <span class="side off" aria-hidden="true">${off}</span>
+      <span class="track" aria-hidden="true"><i></i></span>
+      <span class="side on" aria-hidden="true">${onText}</span>
+    </button>`;
+}
+
+/**
+ * The Craft button, with the reason it is off written beside it
+ * rather than hidden in a tooltip a phone cannot show.
+ */
+function craftRow(r) {
+  const ready = r.satisfied === r.needs;
+  const craftable = r.state === 'wanted' && ready;
+
+  const why = craftable
+    ? `Spends these from the ${esc(r.station)}'s stock and marks it made.`
+    : r.state === 'done'
+      ? 'Already crafted. Switch to Put back to undo it.'
+      : r.state === 'skipped'
+        ? 'Skipped. Switch to Want it to craft it.'
+        : `Still need ${esc(shortfall(r))}.`;
+
+  return `
+    <div class="craft-row" data-recipe="${esc(r.id)}">
+      <p class="craft-why${craftable ? ' ready' : ''}">${why}</p>
+      <button type="button" class="craft-btn" data-act="craft" data-key="craft"
+              ${craftable ? '' : 'disabled'}>Craft</button>
     </div>`;
 }
 

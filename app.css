@@ -431,7 +431,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 /* A material card opens its detail view from anywhere on it.  The name
    is the button that does it -- dressed as the heading it replaces --
    so the card keeps one tab stop and a screen reader one control. */
-.card.material { cursor: pointer; }
+.card.material, .card.recipe { cursor: pointer; }
 
 .card-open {
   font: inherit;
@@ -449,7 +449,8 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border-radius: 2px;
 }
 @media (hover: hover) {
-  .card.material:hover .card-open {
+  .card.material:hover .card-open,
+  .card.recipe:hover .card-open {
     text-decoration: underline;
     text-underline-offset: 3px;
   }
@@ -468,6 +469,16 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   vertical-align: 1px;
 }
 .badge.legendary { color: var(--legendary); }
+
+/* A station as a chip: its stripe colour, so the tag, the card's edge
+   and the demand rows all name the Trapper the same way. */
+.badge.station        { color: var(--ink-dim); }
+.badge.station.blue   { color: var(--station-blue); }
+.badge.station.yellow { color: var(--station-yellow); }
+.badge.station.pink   { color: var(--station-pink); }
+
+/* Made and Skipped: settled, so in the quiet ink rather than a colour. */
+.badge.state { color: var(--ink-faint); border-style: dashed; }
 
 /* demand rows, one per station that wants this material */
 
@@ -857,23 +868,131 @@ ul.buff li::before {
   font-variant-numeric: tabular-nums;
 }
 
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: auto;
-  padding-top: 4px;
-}
+.ingredients-label { margin: 2px 0 -2px; }
 
+/* The words beside a pair of buttons -- Settings' erase confirmation. */
 .state-label {
   flex: 1;
   font-size: .8rem;
   color: var(--ink-faint);
 }
 
-/* A disabled button swallows pointer events, so the tooltip lives
-   on a wrapper that can still be hovered. */
-.craft-wrap { flex: 0 0 auto; display: inline-flex; }
+/* ---------- recipe detail dialog ---------- */
+
+/* Buffs as a stat and its value, the values in a column of their own. */
+.detail-buffs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.detail-buffs li {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 12px;
+  font-size: .88rem;
+  background: var(--page-wash);
+  border-bottom: 1px solid var(--line);
+}
+.detail-buffs li:last-child { border-bottom: 0; }
+.detail-buffs .stat  { flex: 1; min-width: 0; color: var(--ink-dim); }
+.detail-buffs .value {
+  flex: 0 0 auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.detail-ingredients {
+  padding: 10px 12px;
+  font-size: .9rem;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.craft-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.craft-row .craft-btn { flex: 0 0 auto; padding: 10px 22px; font-size: .95rem; }
+.craft-why {
+  flex: 1;
+  margin: 0;
+  font-size: .8rem;
+  color: var(--ink-faint);
+}
+.craft-why.ready { color: var(--ok); }
+
+/* The want switch in the dialog's corner: both words always showing,
+   the one that is in force drawn in ink, the other faint. */
+.want-switch {
+  flex: 0 0 auto;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 4px;
+  font: inherit;
+  font-size: .76rem;
+  color: var(--ink-faint);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.want-switch .side { white-space: nowrap; }
+.want-switch[aria-checked="true"]  .side.on,
+.want-switch[aria-checked="false"] .side.off { color: var(--ink); }
+
+.want-switch .track {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  transition: background .15s;
+}
+.want-switch .track i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  transition: transform .15s, background .15s;
+}
+.want-switch[aria-checked="true"] .track {
+  background: color-mix(in srgb, var(--ok) 22%, var(--surface-2));
+  border-color: var(--ok);
+}
+.want-switch[aria-checked="true"] .track i {
+  transform: translateX(16px);
+  background: var(--ok);
+}
+.want-switch:hover .track { border-color: var(--ink-faint); }
+.want-switch:focus-visible,
+.craft-row .craft-btn:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .want-switch .track, .want-switch .track i { transition: none; }
+}
+
+/* On a phone the switch drops under the title rather than squeezing it. */
+@media (max-width: 480px) {
+  .detail-head { flex-wrap: wrap; }
+  .detail-head > div { flex-basis: calc(100% - 48px); }
+  .detail-head .want-switch { order: 3; margin-left: -4px; }
+}
 
 .craft-btn {
   padding: 9px 14px;

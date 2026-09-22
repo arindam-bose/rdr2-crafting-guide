@@ -23,6 +23,15 @@ export function qualityBadge(quality) {
   return `<span class="badge${legendary}">${esc(quality)}</span>`;
 }
 
+/**
+ * A station as a chip, the same shape as the quality one, in the
+ * station's own colour -- the one its stripe and demand rows use.
+ */
+export function stationBadge(name, colour) {
+  if (!name) return '';
+  return `<span class="badge station ${stationColour(colour)}">${esc(name)}</span>`;
+}
+
 /** "1 material", "2 materials", "3 matches". */
 export function plural(n, word, suffix = 's') {
   return `${n} ${word}${n === 1 ? '' : suffix}`;
@@ -183,9 +192,10 @@ function stockLine(d, material, personal) {
       <span class="stock-text"><span class="station">${esc(d.station)}</span>
         ${needs}, has <span class="${enough ? 'have' : 'short'}">${d.have}</span>${where}</span>
       <span class="stepper">
-        <button type="button" data-delta="-1" ${d.have <= 0 ? 'disabled' : ''}
+        <button type="button" data-delta="-1" data-key="${esc(d.location_id)}-less"
+                ${d.have <= 0 ? 'disabled' : ''}
                 aria-label="One fewer in the ${esc(d.location)}">-</button>
-        <button type="button" class="add" data-delta="1"
+        <button type="button" class="add" data-delta="1" data-key="${esc(d.location_id)}-more"
                 aria-label="Add one to the ${esc(d.location)}">+ Add to ${esc(d.location)}</button>
       </span>
     </div>`;

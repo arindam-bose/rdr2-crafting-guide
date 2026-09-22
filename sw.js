@@ -44,6 +44,7 @@ const SHELL = [
   'js/store.js',
   'js/queries.js',
   'js/render.js',
+  'js/dialog.js',
   'js/toast.js',
   'js/theme.js',
   'js/prefs.js',
