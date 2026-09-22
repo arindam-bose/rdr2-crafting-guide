@@ -138,6 +138,7 @@ export function mount(root) {
   function update() {
     const searching = state.search.length > 0;
     const place = locations.find((l) => l.id === state.location).name;
+    const at = where(state.location, place);
 
     if (searching) {
       const hits = queries.searchMaterials(state.search, state.location);
@@ -148,8 +149,7 @@ export function mount(root) {
       // What you are holding here first, then the quick way back to
       // whatever you were logging lately.
       sections.innerHTML =
-        section(`In the ${place}`, held(state.location),
-                `Nothing in the ${place} yet.`)
+        section(at, held(state.location), `Nothing ${lower(at)} yet.`)
         + section('Recently touched', recent(state.location), '');
     }
 
@@ -180,6 +180,16 @@ export function mount(root) {
   update();
   return { update, destroy() {} };
 }
+
+/**
+ * How a location is spoken of.  The Satchel is a bag, so things are
+ * in it; the Trapper and Pearson are people, so things are with them.
+ */
+function where(locationId, name) {
+  return locationId === 'loc-satchel' ? `In the ${name}` : `With ${name}`;
+}
+
+const lower = (text) => text[0].toLowerCase() + text.slice(1);
 
 /**
  * What you are holding here, plus anything staged for it — a

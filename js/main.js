@@ -15,7 +15,6 @@ import * as materials from './views/materials.js';
 import * as inventory from './views/inventory.js';
 import * as recipes from './views/recipes.js';
 import * as settings from './views/settings.js';
-import * as ledger from './views/ledger.js';
 
 // Each route names itself: the tab label, and the heading under it.
 const ROUTES = {
@@ -27,12 +26,6 @@ const ROUTES = {
                view: () => inventory },
   settings:  { title: 'Settings',
                view: () => settings },
-
-  // A subpage: reached from Settings, and keeping that tab lit
-  // while you are on it, since it has no tab of its own.
-  ledger:    { title: 'Ledger',
-               view: () => ledger,
-               tab: 'settings' },
 };
 
 const DEFAULT_ROUTE = 'materials';
@@ -60,9 +53,8 @@ function show(name) {
   current?.destroy?.();
   currentName = name;
 
-  const lit = ROUTES[name].tab ?? name;
   for (const tab of tabs.querySelectorAll('a')) {
-    if (tab.dataset.route === lit) tab.setAttribute('aria-current', 'page');
+    if (tab.dataset.route === name) tab.setAttribute('aria-current', 'page');
     else tab.removeAttribute('aria-current');
   }
 

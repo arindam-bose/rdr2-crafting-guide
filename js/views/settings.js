@@ -16,6 +16,7 @@ import * as theme from '../theme.js';
 import { esc, plural } from '../render.js';
 import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
+import { ledgerDialog } from './ledger.js';
 
 const LAST_EXPORT = 'rdr2:last-export';
 
@@ -107,6 +108,11 @@ export function mount(root) {
 
   const $ = (sel) => root.querySelector(sel);
   const preview = $('#s-preview');
+  const ledger = ledgerDialog();
+
+  $('#s-facts').addEventListener('click', (event) => {
+    if (event.target.closest('[data-ledger]')) ledger.open();
+  });
   let pending = null;          // text waiting for a confirmed import
 
   // ---- the file itself ------------------------------------------------
@@ -265,7 +271,7 @@ export function mount(root) {
 
 
     $('#s-facts').innerHTML = facts([
-      ['Ledger entries', s.entries, '#/ledger'],
+      ['Ledger entries', s.entries, 'ledger'],
       ['Materials held', s.materials
         ? `${plural(s.materials, 'kind')} in ${plural(s.held, 'place')}`
         : 'nothing yet'],
@@ -287,6 +293,7 @@ export function mount(root) {
     ]);
 
     reportOffline();
+    ledger.refresh();
   }
 
   async function reportOffline() {
@@ -304,17 +311,18 @@ export function mount(root) {
       : 'Not cached yet -- reload once while online.';
   }
 
-  // A term with an href becomes the way into its own page.
+  // A term with an `opens` becomes the button that opens its dialog.
   function facts(pairs) {
-    return pairs.map(([term, value, href]) => `
+    return pairs.map(([term, value, opens]) => `
       <div>
-        <dt>${href
-          ? `<a href="${esc(href)}">${esc(term)}</a>`
+        <dt>${opens
+          ? `<button type="button" class="fact-open" data-${esc(opens)}
+                     aria-haspopup="dialog">${esc(term)}</button>`
           : esc(term)}</dt>
         <dd>${esc(value)}</dd>
       </div>`).join('');
   }
 
   update();
-  return { update, destroy() {} };
+  return { update, destroy: ledger.destroy };
 }

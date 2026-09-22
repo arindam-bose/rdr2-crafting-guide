@@ -78,8 +78,9 @@ export function materialCard(material, { personal, expanded = false }) {
 
       ${usedIn(material.usage, personal, expanded)}
 
-      ${open.length
-        ? `<div class="demands">${open.map((d) => demandRow(d, personal)).join('')}</div>`
+      ${open.length ? `
+        <p class="list-label card-label">Locations</p>
+        <div class="demands">${open.map((d) => demandRow(d, personal)).join('')}</div>`
         : ''}
     </article>`;
 }
@@ -146,6 +147,11 @@ export function materialDetail(material, { personal }) {
       </section>` : ''}`;
 }
 
+/** "2x for " when a recipe takes more than one of this; nothing for one. */
+function forQty(qty) {
+  return qty > 1 ? `${qty}x for ` : '';
+}
+
 /** One recipe in the detail view, with its state spelled out. */
 function recipeLine(u, personal) {
   const [state, label] = !personal ? ['plain', '']
@@ -155,7 +161,7 @@ function recipeLine(u, personal) {
 
   return `
     <li class="${state}">
-      <span class="what">${u.qty > 1 ? `${u.qty}x ` : ''}${esc(u.recipe)}
+      <span class="what">${forQty(u.qty)}${esc(u.recipe)}
         <small>${esc(u.station)}</small></span>
       ${label ? `<span class="state">${label}</span>` : ''}
     </li>`;
@@ -264,7 +270,7 @@ function usedIn(usage = [], personal, expanded = false) {
 
     return `<li class="${state}">
       <span class="mark" aria-hidden="true">${mark}</span>
-      <span class="what">${u.qty > 1 ? `${u.qty}x ` : ''}${esc(u.recipe)}</span>
+      <span class="what">${forQty(u.qty)}${esc(u.recipe)}</span>
     </li>`;
   };
 
@@ -282,22 +288,25 @@ function usedIn(usage = [], personal, expanded = false) {
   // each feeding exactly one talisman -- an unlabelled line under the
   // demand rows reads as another demand row, not as a list.
   return `
-    <p class="list-label used-in-label">Used in</p>
+    <p class="list-label card-label">Used in</p>
     <ul class="used-in">
       ${shown.map(line).join('')}
       ${toggle}
     </ul>`;
 }
 
-/** One station's demand for this material, and how close you are. */
+/**
+ * One station's demand for this material, and how close you are:
+ * "Pearson: 0/2", the station's colour down the left edge.
+ */
 function demandRow(d, personal) {
   const colour = stationColour(d.color);
 
   if (!personal) {
     return `
       <div class="demand ${colour}">
-        <span class="qty">${d.needed}x</span>
-        <span class="station">${esc(d.station)}</span>
+        <span class="station">${esc(d.station)}:</span>
+        <span class="qty">${d.needed}</span>
         <span></span>
       </div>`;
   }
@@ -307,10 +316,10 @@ function demandRow(d, personal) {
 
   return `
     <div class="demand ${colour}">
+      <span class="station">${esc(d.station)}:</span>
       <span class="qty">
         <span class="${enough ? 'have' : 'short'}">${d.have}</span>/${d.needed}
       </span>
-      <span class="station">${esc(d.station)}</span>
       <span class="bar ${enough ? '' : 'short'}"
             role="img" aria-label="${d.have} of ${d.needed} for ${esc(d.station)}"
         ><i style="width:${pct}%"></i></span>
@@ -334,11 +343,11 @@ export function pager(shown, total) {
     <div class="pager">
       <span class="pager-count">${Math.min(shown, total)} of ${total}</span>
       ${next > 0
-        ? `<button type="button" class="more-btn" data-page="more"
+        ? `<button type="button" class="more-btn" data-page="more" data-key="page-more"
              >Show ${next} more</button>`
         : ''}
       ${shown > PAGE
-        ? '<button type="button" class="ghost-btn" data-page="less">Show less</button>'
+        ? '<button type="button" class="ghost-btn" data-page="less" data-key="page-less">Show less</button>'
         : ''}
     </div>`;
 }

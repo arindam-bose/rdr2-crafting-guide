@@ -536,10 +536,9 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 /* ---------- "used in" ---------- */
 
-/* The caption earns its place on the cards with one entry: every misc
-   material feeds exactly one talisman, and a lone line under the demand
-   rows reads as another demand row rather than as a list. */
-.used-in-label { margin: 2px 0 -2px; }
+/* The captions on a material card -- Used in, Locations -- tight to the
+   list they head, so the card reads as two labelled blocks. */
+.card-label { margin: 2px 0 -2px; }
 
 .used-in {
   margin: 0;
@@ -1257,17 +1256,28 @@ ul.buff li::before {
 
 /* ---------- ledger entries ---------- */
 
-.back {
-  display: inline-block;
-  margin-bottom: 12px;
-  font-size: .85rem;
-  color: var(--ink-dim);
-  text-decoration: none;
+/* "Ledger entries" on Settings: a button that opens the ledger dialog,
+   dressed as the link it reads as. */
+.fact-open {
+  font: inherit;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
-.back:hover { color: var(--ink); }
+.fact-open:hover { color: var(--accent-text); }
+.fact-open:focus-visible {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
 
-.facts dt a { color: var(--ink); text-underline-offset: 2px; }
-.facts dt a:hover { color: var(--accent-text); }
+/* In the dialog, the note sits tight under the heading. */
+.detail .note { margin: 0; }
+.detail .pager { margin-top: 0; }
 
 .entries {
   display: flex;

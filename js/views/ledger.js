@@ -1,9 +1,9 @@
 // ============================================================
 // Ledger — the record everything else is derived from.
 //
-// Its own page rather than a panel in Settings: it is the one
-// thing here that grows without limit, and a page that is mostly
-// history buries the controls underneath it.
+// A dialog opened from Settings rather than a panel in it: it is
+// the one thing there that grows without limit, and a page that
+// is mostly history buries the controls underneath it.
 //
 // Read-only.  The ledger is append-only by design — a mis-entry
 // is corrected with another row, or undone from the toast at the
@@ -13,7 +13,7 @@
 import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { esc, pager, PAGE } from '../render.js';
-import * as toolbar from './toolbar.js';
+import { detailDialog } from '../dialog.js';
 
 // Plainer words than the schema's, which are written for the CHECK
 // constraint rather than for reading back.
@@ -26,38 +26,61 @@ const REASON_WORDS = {
   correction: 'corrected',
 };
 
-export function mount(root) {
-  const state = { shown: PAGE };
+/**
+ * The ledger dialog.  Returns { open, refresh, destroy }, like any
+ * other detail dialog; the view that owns the link owns this too.
+ */
+export function ledgerDialog() {
+  let shown = PAGE;
 
-  root.innerHTML = `
-    <a class="back" href="#/settings">&larr; Settings</a>
-    <p class="note" id="l-note"></p>
-    <div id="l-entries"></div>`;
+  const dialog = detailDialog({
+    render,
+    onClick(event) {
+      const button = event.target.closest('[data-page]');
+      if (!button) return;
 
-  const list = root.querySelector('#l-entries');
-  const note = root.querySelector('#l-note');
+      if (button.dataset.page === 'more') {
+        shown += PAGE;
+        dialog.refresh();
+      } else {
+        shown = PAGE;
+        dialog.refresh();
+        button.closest('dialog')?.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    },
+  });
 
-  toolbar.wirePager(list, state, update);
-
-  function update() {
+  function render() {
     const total = store.stats().entries;
+    const rows = total ? queries.ledgerEntries(Math.min(shown, total)) : [];
 
-    note.textContent = total
-      ? 'Current stock is the sum of this. Newest first.'
-      : '';
+    return `
+      <header class="detail-head">
+        <div>
+          <p class="detail-kicker">Your data</p>
+          <h2 id="detail-title">Ledger</h2>
+        </div>
+        <button type="button" class="detail-close" data-close
+                aria-label="Close">&times;</button>
+      </header>
 
-    if (!total) {
-      list.innerHTML = '<p class="empty">Nothing logged yet.</p>';
-      return;
-    }
-
-    const rows = queries.ledgerEntries(Math.min(state.shown, total));
-    list.innerHTML = `<div class="entries">${rows.map(entry).join('')}</div>`
-      + pager(state.shown, total);
+      ${total
+        ? `<p class="note">Current stock is the sum of this. Newest first.</p>
+           <div class="entries">${rows.map(entry).join('')}</div>
+           ${pager(shown, total)}`
+        : '<p class="empty">Nothing logged yet.</p>'}`;
   }
 
-  update();
-  return { update, destroy() {} };
+  return {
+    // Always from the top: a long list left paged out is not where
+    // you meant to start reading.
+    open() {
+      shown = PAGE;
+      dialog.open('ledger');
+    },
+    refresh: dialog.refresh,
+    destroy: dialog.destroy,
+  };
 }
 
 function entry(e) {
