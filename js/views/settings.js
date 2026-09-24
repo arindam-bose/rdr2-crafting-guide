@@ -48,11 +48,11 @@ export function mount(root) {
   root.innerHTML = `
     <div class="settings">
       <section class="panel">
-        <h3>Personal and general</h3>
+        <h3>Personalize and General</h3>
         <p class="note">
-          <strong>Personal</strong> folds in what you own: cards show what you
-          have against what a station wants, recipes can be crafted, and
-          anything made or skipped drops out of the way.<br>
+          <strong>Personalize</strong> folds in what you own: cards show what
+          you have against what a vendor wants, recipes can be crafted, and
+          anything crafted or skipped drops out of the way.<br>
           <strong>General</strong> ignores all of it and shows the reference
           data whole -- every recipe, every material, every quantity.</p>
         <div class="panel-actions">
@@ -307,7 +307,7 @@ export function mount(root) {
       ['Materials held', s.materials
         ? `${plural(s.materials, 'kind')} in ${plural(s.held, 'place')}`
         : 'nothing yet'],
-      ['Recipes made', s.made],
+      ['Recipes crafted', s.made],
       ['Recipes skipped', s.skipped],
     ]);
 
@@ -317,7 +317,7 @@ export function mount(root) {
       : 'Never exported from this device.';
 
     $('#s-mode').textContent = store.isPersonal()
-      ? 'Switch to general' : 'Switch to personal';
+      ? 'Switch to General' : 'Switch to Personalize';
 
     $('#s-about').innerHTML = facts([
       ['Reference data', s.referenceBuild ? `built ${s.referenceBuild}` : 'unknown'],

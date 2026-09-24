@@ -546,7 +546,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .badge.station.yellow { color: var(--station-yellow); }
 .badge.station.pink   { color: var(--station-pink); }
 
-/* Made and Skipped: settled, so in the quiet ink rather than a colour. */
+/* Crafted and Skipped: settled, so in the quiet ink rather than a colour. */
 .badge.state { color: var(--ink-faint); border-style: dashed; }
 
 /* demand rows, one per station that wants this material */

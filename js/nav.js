@@ -24,16 +24,35 @@ export function href(route, id) {
   return `#/${route}/${encodeURIComponent(id)}`;
 }
 
-/** Go there, as a tap on a card does.  Same thing a link would do. */
+/**
+ * Go there, as a tap on a card does -- and as a cross-link does, since
+ * main.js sends plain left-clicks on one through here rather than
+ * letting the anchor navigate on its own.
+ *
+ * The entry that lands is stamped as one this app pushed.  That stamp
+ * is what `closed` reads: an entry we made is ours to spend, and one
+ * we did not -- a bookmark opened cold, a shared link -- is not.
+ */
 export function open(route, id) {
   location.hash = href(route, id);
+  history.replaceState({ card: true }, '');
 }
 
 /**
- * Drop the card from the address, without adding to history: closing
- * a dialog is not somewhere you went, and a reader who shuts one and
- * then presses Back means to leave the page, not to reopen it.
+ * The card is shut, so take it out of the address.
+ *
+ * Going back rather than rewriting, when the entry is one we pushed:
+ * rewriting would leave it on the stack pointing at the same place it
+ * already was, and Back would then be a press that does nothing --
+ * once per card the reader had opened.  Spending it instead means
+ * closing a dialog lands exactly where opening it came from, which is
+ * what Back would have done anyway.
+ *
+ * Arrived at cold there is nothing to spend, so the address is
+ * rewritten in place and the reader keeps a Back that leaves.
  */
 export function closed(route) {
-  if (parse().id) history.replaceState(null, '', `#/${route}`);
+  if (!parse().id) return;                  // already left by Back
+  if (history.state?.card) history.back();
+  else history.replaceState(null, '', `#/${route}`);
 }

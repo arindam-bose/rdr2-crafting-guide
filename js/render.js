@@ -209,10 +209,12 @@ function forQty(qty) {
 
 /** One recipe in the detail view, with its state spelled out. */
 function recipeLine(u, personal) {
+  // The same three words Recipes uses for the same three states, so a
+  // recipe does not change its name on the way across.
   const [state, label] = !personal ? ['plain', '']
-    : u.state === 'done' ? ['made', 'Done']
+    : u.state === 'done' ? ['made', 'Crafted']
     : u.state === 'skipped' ? ['retired', 'Skipped']
-    : ['open', 'Not done'];
+    : ['open', 'Not crafted'];
 
   return `
     <li class="${state}">

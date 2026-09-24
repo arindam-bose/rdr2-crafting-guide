@@ -10,16 +10,25 @@
 //   const detail = detailDialog({
 //     render: (id) => html | null,   // null: the thing is gone, close
 //     onClick: (event, id) => {},    // anything but the close button
-//     onClose: () => {},             // Esc, the backdrop, the X
+//     route: 'materials',            // this dialog is part of the address
 //   });
-//   detail.open(id); detail.close(); detail.refresh(); detail.destroy();
+//   detail.focus(id); detail.refresh(); detail.destroy();
+//
+// A dialog given a `route` is addressable: it opens whichever card
+// the address names and takes that card back out of the address when
+// it is shut, so the view hands `focus` straight to the router and
+// has nothing else to say about it.  The ledger's dialog has no
+// route -- there is no address for "the history, opened" -- and is
+// driven by open() alone.
 //
 // The rendered body starts with detailHead() from render.js, which
 // supplies the heading and the close button.  Any button that
 // should keep focus across a repaint carries a data-key naming it.
 // ============================================================
 
-export function detailDialog({ render, onClick = () => {}, onClose = () => {} }) {
+import * as nav from './nav.js';
+
+export function detailDialog({ render, onClick = () => {}, route = null }) {
   // On <body>, not inside the view: the view is an aria-live region,
   // and every refresh of an open dialog would be read out again.
   const dialog = document.createElement('dialog');
@@ -67,7 +76,7 @@ export function detailDialog({ render, onClick = () => {}, onClose = () => {} })
   dialog.addEventListener('close', () => {
     current = null;
     body.innerHTML = '';
-    if (!leaving) onClose();
+    if (!leaving && route) nav.closed(route);
   });
 
   dialog.addEventListener('click', async (event) => {
@@ -88,22 +97,31 @@ export function detailDialog({ render, onClick = () => {}, onClose = () => {} })
     finally { busy = false; }
   });
 
+  /** Show `id`; false if there is no such thing to show. */
+  function openCard(id) {
+    current = id;
+    if (!paint()) { current = null; return false; }
+    if (!dialog.open) dialog.showModal();
+    body.querySelector('[data-close]')?.focus();
+    return true;
+  }
+
   return {
-    /** Show `id`; false if there is no such thing to show. */
-    open(id) {
-      current = id;
-      if (!paint()) { current = null; return false; }
-      if (!dialog.open) dialog.showModal();
-      body.querySelector('[data-close]')?.focus();
-      return true;
-    },
+    open: openCard,
 
-    /** What is on screen, or null -- so an address already arrived at
-        is not repainted, which would throw the focus back to the X. */
-    showing: () => current,
-
-    close() {
-      if (dialog.open) dialog.close();
+    /**
+     * Show whichever card the address names, or none -- what the
+     * router calls on every arrival.
+     *
+     * An id already on screen is left alone rather than repainted,
+     * which would throw the focus back to the close button.  An id
+     * nothing answers to -- a stale bookmark, something dropped from
+     * the reference data -- leaves the page up and takes itself back
+     * out of the address.
+     */
+    focus(id) {
+      if (!id) { if (dialog.open) dialog.close(); }
+      else if (id !== current && !openCard(id) && route) nav.closed(route);
     },
 
     /** Repaint if open -- called on every store change. */

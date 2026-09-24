@@ -112,6 +112,26 @@ async function start() {
   // never disagree.
   store.subscribe(() => { paintMode(); current?.update?.(); });
 
+  // A cross-link is a real anchor -- middle-clickable, copyable, and
+  // something the keyboard can reach -- but a plain left-click is sent
+  // through nav.open() rather than left to the browser, so that every
+  // card the app opens leaves the same stamped history entry and can
+  // be closed by spending it again.  A modified click is left alone:
+  // that is someone opening a tab, not following a link here.
+  document.addEventListener('click', (event) => {
+    if (event.defaultPrevented || event.button !== 0
+        || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    const link = event.target.closest('a.xlink[href^="#/"]');
+    if (!link) return;
+
+    const { name, id } = nav.parse(link.getAttribute('href'));
+    if (!(name in ROUTES) || !id) return;   // let the browser have it
+
+    event.preventDefault();
+    nav.open(name, id);
+  });
+
   window.addEventListener('hashchange', () => show(route()));
   show(route());
 

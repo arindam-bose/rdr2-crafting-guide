@@ -22,9 +22,14 @@ import * as toolbar from './toolbar.js';
 import { toast } from '../toast.js';
 import { detailDialog, opensCard } from '../dialog.js';
 
-const STATE_LABEL = { wanted: '', done: 'Made', skipped: 'Skipped' };
+// One word for the done state, wherever it is said: the badge on a
+// settled card, the filter chip, the want switch, the toast, and the
+// line a material's dialog shows for the same recipe.  "Done" is not
+// it -- Materials already spends that on a material you are finished
+// with, which is a different thing from a recipe you have crafted.
+const STATE_LABEL = { wanted: '', done: 'Crafted', skipped: 'Skipped' };
 
-// What you are still working on comes first; what you have made
+// What you are still working on comes first; what you have crafted
 // next; what you have retired last.  A skipped recipe keeping its
 // alphabetical slot was the thing that made Skip feel like it had
 // not done anything.
@@ -120,6 +125,8 @@ export function mount(root) {
   let lastAll = [];
 
   const detail = detailDialog({
+    route: 'recipes',
+
     render(id) {
       const r = lastAll.find((x) => x.id === id);
       return r ? recipeDetail(r, store.isPersonal()) : null;
@@ -129,13 +136,12 @@ export function mount(root) {
       const r = lastAll.find((x) => x.id === id);
       if (button && !button.disabled && r) return act(button.dataset.act, r.id, r.name);
     },
-    onClose: () => nav.closed('recipes'),
   });
 
   async function act(action, recipeId, name) {
     if (action === 'craft') {
       await store.craft(recipeId);
-      toast(`Made ${name}`, { label: 'Undo', run: () => store.uncraft(recipeId) });
+      toast(`Crafted ${name}`, { label: 'Undo', run: () => store.uncraft(recipeId) });
     } else if (action === 'uncraft') {
       await store.uncraft(recipeId);
       toast(`${name} is wanted again`);
@@ -160,7 +166,7 @@ export function mount(root) {
     lastAll = all;
     const list = all.filter((r) => matches(r, state, personal));
 
-    // Made and skipped sink to the bottom whatever the field, so a
+    // Crafted and skipped sink to the bottom whatever the field, so a
     // Skip visibly does something.
     const chosen = toolbar.comparator(SORTS, state);
     list.sort(personal
@@ -182,19 +188,7 @@ export function mount(root) {
   }
 
   update();
-  return {
-    update,
-
-    // Which recipe the address wants open.  An id nothing answers to
-    // -- a stale bookmark, a recipe dropped from the reference data --
-    // leaves the page up and takes itself back out of the address.
-    focus(id) {
-      if (!id) detail.close();
-      else if (id !== detail.showing() && !detail.open(id)) nav.closed('recipes');
-    },
-
-    destroy: detail.destroy,
-  };
+  return { update, focus: detail.focus, destroy: detail.destroy };
 }
 
 function group(rows) {
@@ -254,7 +248,7 @@ function card(r, personal) {
     </article>`;
 }
 
-/** "Made" or "Skipped", beside the station, once a recipe is settled. */
+/** "Crafted" or "Skipped", beside the vendor, once a recipe is settled. */
 function stateBadge(state) {
   return `<span class="badge state ${state}">${esc(STATE_LABEL[state])}</span>`;
 }

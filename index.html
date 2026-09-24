@@ -50,6 +50,18 @@ try {
       <span class="track" aria-hidden="true"><i></i></span>
       <span class="side on" aria-hidden="true">Personalize</span>
     </button>
+
+    <!-- Set here rather than left to main.js, for the same reason the
+         theme is set in the head: that module is deferred behind the
+         wasm runtime, and until it runs a reader in General mode would
+         watch the switch sit on Personalize -- and a screen reader
+         would be told the wrong one outright. -->
+    <script>
+    try {
+      document.getElementById('mode-toggle').setAttribute('aria-checked',
+        String(localStorage.getItem('rdr2:personal-mode') !== 'general'));
+    } catch (e) { /* private mode: the default is fine */ }
+    </script>
   </header>
 
   <nav class="tabs">

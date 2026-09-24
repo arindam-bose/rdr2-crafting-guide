@@ -244,12 +244,16 @@ What makes that work is that an open dialog is part of the address.
 `#/recipes/<id>` is a page and a card, and every dialog in the app opens by
 going there — including one opened by tapping a card on the page you are
 already on, so there is one way in rather than two that can drift apart. The
-address is also the way out: closing a dialog drops the card from it (without
-adding to history, since shutting something is not somewhere you went), so
-Back closes an open dialog, and a link to one can be bookmarked or shared and
-opens cold. An id nothing answers to — a stale bookmark, a recipe dropped from
-the reference data — leaves the page up and quietly takes itself back out of
-the address.
+address is also the way out. Opening a card stamps the history entry it
+pushes as one the app made, and closing spends that entry rather than
+rewriting it — so Back closes an open dialog, and closing a dialog lands
+exactly where opening it came from. Rewriting instead would leave the entry on
+the stack pointing where it already pointed, and Back would then be a press
+that does nothing, once per card the reader had opened. Arrived at cold there
+is nothing to spend, so a bookmarked or shared link still opens, and closing it
+rewrites the address in place and leaves Back free to leave. An id nothing
+answers to — a stale bookmark, a recipe dropped from the reference data —
+leaves the page up and quietly takes itself back out of the address.
 
 ### Materials
 
@@ -257,13 +261,13 @@ A material card is two captioned lists. **Used in** names the recipes it goes
 into, ticked off as you make them, with the quantity spelled out when a recipe
 takes more than one — `2x for Legendary Alligator Gambler's Hat`. Six are
 shown; the five materials that go into more ask for the rest with a link, and
-an opened list survives a rerender. **Locations** has a row per station that
-still wants it — `Pearson: 0/2` — with the station's colour down the left edge
+an opened list survives a rerender. **Vendors** has a row per vendor that
+still wants it — `Pearson: 0/2` — with that vendor's colour down the left edge
 and a progress bar on the right.
 
 The dialog adds what the card leaves out: the animal, quality, type and the
-weapon that leaves it unspoiled; every recipe with a Done / Not done / Skipped
-tag; each station's demand against what you hold where it draws from — the
+weapon that leaves it unspoiled; every recipe with a Crafted / Not crafted /
+Skipped tag; each vendor's demand against what you hold where it draws from — the
 Fence names your Satchel — and the verdict, *You need to go hunting!* and its
 siblings. Each station row has `-` and `+ Add to Trapper` buttons. These write
 at once, one ledger row per tap with an undo toast, rather than staging a
@@ -280,10 +284,10 @@ category also switches to the tab its materials are on.
 
 ### Recipes
 
-A recipe card has its name, a tag for its station, its price, its buff and an
-**Ingredients** list with have/need tallies. A made or skipped recipe is
-dimmed, carries a dashed *Made* or *Skipped* tag, and sorts to the bottom. The
-card has no buttons.
+A recipe card has its name, a tag for its vendor, its price, its buff and an
+**Ingredients** list with have/need tallies. A crafted or skipped recipe is
+dimmed, carries a dashed *Crafted* or *Skipped* tag, and sorts to the bottom.
+The card has no buttons.
 
 The dialog lays out the type, vendor, set and price, the buffs as a two-column
 table, the ingredients, and the two things you can do:
@@ -312,12 +316,12 @@ Both galleries share one toolbar: the search box on a row of its own, then a
 category dropdown, the stations in the order Pearson, Trapper, Fence, the
 personal filters, and the sort, all left-aligned, with the count on the right.
 In personal mode Materials filters to **Still needed** or **Done** — a
-material whose recipes are all made or skipped moves to Done rather than
-vanishing — and Recipes to **Ready to craft** or **Made**.
+material whose recipes are all crafted or skipped moves to Done rather than
+vanishing — and Recipes to **Ready to craft** or **Crafted**.
 
 Sorting is a field and a direction rather than a list of every combination:
 Materials by what is still needed, quality or name; Recipes by name or by how
-many items they swallow. The direction button says what it does — "Most
+many items they swallow. Both open on name, A–Z. The direction button says what it does — "Most
 first", "Legendary first", "A-Z" — each field starts in the direction you
 nearly always want, and the choice is remembered per screen.
 

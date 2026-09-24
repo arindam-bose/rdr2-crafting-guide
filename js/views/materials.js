@@ -162,6 +162,8 @@ export function mount(root) {
   // material you just finished with may have filtered itself out of
   // the gallery, and the dialog should stay put while you look at it.
   const detail = detailDialog({
+    route: 'materials',
+
     render(id) {
       const card = lastCards.find((m) => m.ingredient_id === id);
       return card ? materialDetail(card, { personal: store.isPersonal() }) : null;
@@ -190,8 +192,6 @@ export function mount(root) {
                       : `Took one ${card.material} from ${place}`,
             { label: 'Undo', run: () => store.undo(written.id) });
     },
-
-    onClose: () => nav.closed('materials'),
   });
 
   groupTabs.addEventListener('click', (event) => {
@@ -243,19 +243,7 @@ export function mount(root) {
   }
 
   update();
-  return {
-    update,
-
-    // Which material the address wants open.  An id nothing answers
-    // to -- a stale bookmark, a material dropped from the reference
-    // data -- leaves the page up and takes itself back out of it.
-    focus(id) {
-      if (!id) detail.close();
-      else if (id !== detail.showing() && !detail.open(id)) nav.closed('materials');
-    },
-
-    destroy: detail.destroy,
-  };
+  return { update, focus: detail.focus, destroy: detail.destroy };
 }
 
 function emptyMessage(state, personal, counts) {
