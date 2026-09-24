@@ -15,7 +15,9 @@
 import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { esc, empty, pager, plural, qualityBadge, stationBadge, stationColour,
-         detailHead, detailSection, placeName, traits, PAGE } from '../render.js';
+         detailHead, detailSection, placeName, traits, crossLink,
+         PAGE } from '../render.js';
+import * as nav from '../nav.js';
 import * as toolbar from './toolbar.js';
 import { toast } from '../toast.js';
 import { detailDialog, opensCard } from '../dialog.js';
@@ -105,9 +107,12 @@ export function mount(root) {
     refilter();
   });
 
+  // Through the address, not straight to the dialog: a recipe opened
+  // by tapping its card and one opened by a link from a material are
+  // then the same thing, and Back shuts either.
   gallery.addEventListener('click', (event) => {
     const id = event.target.closest('.card')?.dataset.recipe;
-    if (id && opensCard(event)) detail.open(id);
+    if (id && opensCard(event)) nav.open('recipes', id);
   });
 
   // The whole list, not the visible page: crafting a recipe can
@@ -124,6 +129,7 @@ export function mount(root) {
       const r = lastAll.find((x) => x.id === id);
       if (button && !button.disabled && r) return act(button.dataset.act, r.id, r.name);
     },
+    onClose: () => nav.closed('recipes'),
   });
 
   async function act(action, recipeId, name) {
@@ -176,7 +182,19 @@ export function mount(root) {
   }
 
   update();
-  return { update, destroy: detail.destroy };
+  return {
+    update,
+
+    // Which recipe the address wants open.  An id nothing answers to
+    // -- a stale bookmark, a recipe dropped from the reference data --
+    // leaves the page up and takes itself back out of the address.
+    focus(id) {
+      if (!id) detail.close();
+      else if (id !== detail.showing() && !detail.open(id)) nav.closed('recipes');
+    },
+
+    destroy: detail.destroy,
+  };
 }
 
 function group(rows) {
@@ -270,17 +288,18 @@ function tally(r, personal) {
 
 function ingredient(i, personal) {
   const badge = qualityBadge(i.quality);
+  const name = crossLink('materials', i.ingredient_id, i.name);
 
   if (!personal) {
     return `<li><span class="qty">${i.qty}x</span>
-              <span class="what">${esc(i.name)}${badge}</span></li>`;
+              <span class="what">${name}${badge}</span></li>`;
   }
 
   return `
     <li class="${i.satisfied ? 'have' : 'short'}">
       <span class="mark" aria-hidden="true">${i.satisfied ? '✓' : '✗'}</span>
       <span class="qty">${i.qty}x</span>
-      <span class="what">${esc(i.name)}${badge}</span>
+      <span class="what">${name}${badge}</span>
       <span class="tally">${i.have}/${i.qty}</span>
     </li>`;
 }

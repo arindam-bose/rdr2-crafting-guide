@@ -70,6 +70,7 @@ served network-first, so edits show up on reload without a cache bump.
                           pieces they share (quality and station tags)
       dialog.js           the detail dialog every card opens: close
                           button, Esc, backdrop, repaint on a store change
+      nav.js              the address: which page, and which card is open
       prefs.js            localStorage, guarded: theme, location, last export
       views/materials.js  "Where to go if you have these items"
       views/inventory.js  entry: pick a location, search, tap +/-
@@ -228,6 +229,27 @@ tap is ignored rather than crafting twice or taking stock below zero. The undo
 toast moves inside an open dialog —
 a modal sits in the top layer and makes the rest of the page inert, so a toast
 left outside could be neither seen nor pressed.
+
+### Cross-links
+
+Every recipe named on the Materials page, and every material named on the
+Recipes page, is a link to the other one: tapping **Bear Batwing Chaps** on a
+pelt's card lands on Recipes with that recipe already open, and tapping
+**Perfect Bear Pelt** inside it comes straight back. They are real anchors
+with real `href`s, so they can be middle-clicked, copied and tabbed to, and
+drawn as the text around them with the underline turned most of the way down:
+a card can carry a dozen, and a dozen loud links would be a page of blue.
+
+What makes that work is that an open dialog is part of the address.
+`#/recipes/<id>` is a page and a card, and every dialog in the app opens by
+going there — including one opened by tapping a card on the page you are
+already on, so there is one way in rather than two that can drift apart. The
+address is also the way out: closing a dialog drops the card from it (without
+adding to history, since shutting something is not somewhere you went), so
+Back closes an open dialog, and a link to one can be bookmarked or shared and
+opens cold. An id nothing answers to — a stale bookmark, a recipe dropped from
+the reference data — leaves the page up and quietly takes itself back out of
+the address.
 
 ### Materials
 

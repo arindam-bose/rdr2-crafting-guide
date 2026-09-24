@@ -21,6 +21,7 @@ import { materialCard, materialDetail, empty, esc, placeName, plural, pager,
          PAGE } from '../render.js';
 import { toast } from '../toast.js';
 import { detailDialog, opensCard } from '../dialog.js';
+import * as nav from '../nav.js';
 import * as toolbar from './toolbar.js';
 
 // The category filter's one entry that is not a body part: misc
@@ -149,7 +150,10 @@ export function mount(root) {
       return;
     }
 
-    if (opensCard(event)) detail.open(id);
+    // Through the address, not straight to the dialog: a material
+    // opened by tapping its card and one opened by a link from a
+    // recipe are then the same thing, and Back shuts either.
+    if (opensCard(event)) nav.open('materials', id);
   });
 
   let lastCards = [];
@@ -186,6 +190,8 @@ export function mount(root) {
                       : `Took one ${card.material} from ${place}`,
             { label: 'Undo', run: () => store.undo(written.id) });
     },
+
+    onClose: () => nav.closed('materials'),
   });
 
   groupTabs.addEventListener('click', (event) => {
@@ -239,6 +245,15 @@ export function mount(root) {
   update();
   return {
     update,
+
+    // Which material the address wants open.  An id nothing answers
+    // to -- a stale bookmark, a material dropped from the reference
+    // data -- leaves the page up and takes itself back out of it.
+    focus(id) {
+      if (!id) detail.close();
+      else if (id !== detail.showing() && !detail.open(id)) nav.closed('materials');
+    },
+
     destroy: detail.destroy,
   };
 }

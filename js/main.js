@@ -7,6 +7,7 @@
 // ============================================================
 
 import * as db from './db.js';
+import * as nav from './nav.js';
 import * as store from './store.js';
 import * as theme from './theme.js';
 import { errorBox } from './render.js';
@@ -47,32 +48,41 @@ function paintMode() {
 // routing
 // ------------------------------------------------------------
 
-function routeName() {
-  const name = location.hash.replace(/^#\/?/, '').split('/')[0];
-  return name in ROUTES ? name : DEFAULT_ROUTE;
+/** The page and the card the address asks for. */
+function route() {
+  const { name, id } = nav.parse();
+  return { name: name in ROUTES ? name : DEFAULT_ROUTE, id };
 }
 
-function show(name) {
-  if (name === currentName) return;
+/**
+ * Arrive at an address.  The page is mounted only when it changes --
+ * a cross-link from Materials to Recipes mounts Recipes, but opening
+ * a second recipe from the one already showing does not -- and then
+ * the view is told which of its cards the address wants open.
+ */
+function show({ name, id }) {
+  if (name !== currentName) {
+    current?.destroy?.();
+    currentName = name;
 
-  current?.destroy?.();
-  currentName = name;
+    for (const tab of tabs.querySelectorAll('a')) {
+      if (tab.dataset.route === name) tab.setAttribute('aria-current', 'page');
+      else tab.removeAttribute('aria-current');
+    }
 
-  for (const tab of tabs.querySelectorAll('a')) {
-    if (tab.dataset.route === name) tab.setAttribute('aria-current', 'page');
-    else tab.removeAttribute('aria-current');
+    pageTitle.textContent = ROUTES[name].title;
+    document.title = `${ROUTES[name].title} · RDR2 Crafting Guide`;
+
+    try {
+      current = ROUTES[name].view().mount(view);
+    } catch (err) {
+      console.error(err);
+      view.innerHTML = errorBox(err);
+      current = null;
+    }
   }
 
-  pageTitle.textContent = ROUTES[name].title;
-  document.title = `${ROUTES[name].title} · RDR2 Crafting Guide`;
-
-  try {
-    current = ROUTES[name].view().mount(view);
-  } catch (err) {
-    console.error(err);
-    view.innerHTML = errorBox(err);
-    current = null;
-  }
+  current?.focus?.(id);
 }
 
 
@@ -102,8 +112,8 @@ async function start() {
   // never disagree.
   store.subscribe(() => { paintMode(); current?.update?.(); });
 
-  window.addEventListener('hashchange', () => show(routeName()));
-  show(routeName());
+  window.addEventListener('hashchange', () => show(route()));
+  show(route());
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {

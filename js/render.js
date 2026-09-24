@@ -6,6 +6,18 @@
 // database goes through esc() on the way in.
 // ============================================================
 
+import * as nav from './nav.js';
+
+/**
+ * A name that is also somewhere to go: the recipes on a material's
+ * card, the materials on a recipe's.  A real anchor with a real
+ * href, so it can be middle-clicked, copied, and tabbed to, and so
+ * the page it lands on can be arrived at cold from a bookmark.
+ */
+export function crossLink(route, id, text) {
+  return `<a class="xlink" href="${esc(nav.href(route, id))}">${esc(text)}</a>`;
+}
+
 export function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -204,7 +216,8 @@ function recipeLine(u, personal) {
 
   return `
     <li class="${state}">
-      <span class="what">${forQty(u.qty)}${esc(u.recipe)}
+      <span class="what">${forQty(u.qty)}${
+        crossLink('recipes', u.recipe_id, u.recipe)}
         <small>${esc(u.station)}</small></span>
       ${label ? `<span class="state">${label}</span>` : ''}
     </li>`;
@@ -313,7 +326,8 @@ function usedIn(usage = [], personal, expanded = false) {
 
     return `<li class="${state}">
       <span class="mark" aria-hidden="true">${mark}</span>
-      <span class="what">${forQty(u.qty)}${esc(u.recipe)}</span>
+      <span class="what">${forQty(u.qty)}${
+        crossLink('recipes', u.recipe_id, u.recipe)}</span>
     </li>`;
   };
 

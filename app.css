@@ -640,6 +640,24 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   display: block;
 }
 
+/* Cross-links: the recipes named on a material's card, the materials
+   named on a recipe's.  A card can carry a dozen of them, so they are
+   drawn as the surrounding text with the underline turned most of the
+   way down -- enough to read as links in a list, not enough to turn a
+   card into a page of blue.  Hovered or tabbed to, one comes up to the
+   accent and takes its full underline. */
+.xlink {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 32%, transparent);
+  text-underline-offset: 2px;
+}
+.xlink:hover,
+.xlink:focus-visible {
+  color: var(--accent-text);
+  text-decoration-color: currentColor;
+}
+
 /* Buttons dressed as links: "and 6 more" on a card, "Ledger entries"
    on Settings, Undo in the toast.  Buttons, not anchors: there is no
    address for "this list, opened", and an <a href="#"> would put one

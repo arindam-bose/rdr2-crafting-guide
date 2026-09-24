@@ -14,7 +14,7 @@
 //   more while this is still being written.
 // ============================================================
 
-const CACHE = 'rdr2-crafting-v11';
+const CACHE = 'rdr2-crafting-v12';
 
 // Fetched once and kept: big, and only ever replaced wholesale.
 // The fonts and the artwork join the runtime and the database here —
@@ -45,6 +45,7 @@ const SHELL = [
   'js/queries.js',
   'js/render.js',
   'js/dialog.js',
+  'js/nav.js',
   'js/toast.js',
   'js/theme.js',
   'js/prefs.js',

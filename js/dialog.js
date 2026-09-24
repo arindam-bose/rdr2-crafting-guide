@@ -10,15 +10,16 @@
 //   const detail = detailDialog({
 //     render: (id) => html | null,   // null: the thing is gone, close
 //     onClick: (event, id) => {},    // anything but the close button
+//     onClose: () => {},             // Esc, the backdrop, the X
 //   });
-//   detail.open(id); detail.refresh(); detail.destroy();
+//   detail.open(id); detail.close(); detail.refresh(); detail.destroy();
 //
 // The rendered body starts with detailHead() from render.js, which
 // supplies the heading and the close button.  Any button that
 // should keep focus across a repaint carries a data-key naming it.
 // ============================================================
 
-export function detailDialog({ render, onClick = () => {} }) {
+export function detailDialog({ render, onClick = () => {}, onClose = () => {} }) {
   // On <body>, not inside the view: the view is an aria-live region,
   // and every refresh of an open dialog would be read out again.
   const dialog = document.createElement('dialog');
@@ -34,6 +35,12 @@ export function detailDialog({ render, onClick = () => {} }) {
 
   let current = null;
   let busy = false;
+
+  // Set while the whole view is being torn down.  A dialog closing
+  // because you left the page is not you dismissing it, and the two
+  // have to be told apart: the address is already somewhere else by
+  // then, and onClose would drag it back.
+  let leaving = false;
 
   /** Repaint; false if there is nothing left to show, which closes it. */
   function paint() {
@@ -60,6 +67,7 @@ export function detailDialog({ render, onClick = () => {} }) {
   dialog.addEventListener('close', () => {
     current = null;
     body.innerHTML = '';
+    if (!leaving) onClose();
   });
 
   dialog.addEventListener('click', async (event) => {
@@ -81,11 +89,21 @@ export function detailDialog({ render, onClick = () => {} }) {
   });
 
   return {
+    /** Show `id`; false if there is no such thing to show. */
     open(id) {
       current = id;
-      if (!paint()) { current = null; return; }
+      if (!paint()) { current = null; return false; }
       if (!dialog.open) dialog.showModal();
       body.querySelector('[data-close]')?.focus();
+      return true;
+    },
+
+    /** What is on screen, or null -- so an address already arrived at
+        is not repainted, which would throw the focus back to the X. */
+    showing: () => current,
+
+    close() {
+      if (dialog.open) dialog.close();
     },
 
     /** Repaint if open -- called on every store change. */
@@ -94,6 +112,7 @@ export function detailDialog({ render, onClick = () => {} }) {
     },
 
     destroy() {
+      leaving = true;
       // `close` fires a task later, after the dialog is gone, so the
       // toast it would have sent home is rescued by hand first.
       const note = document.getElementById('toast');
@@ -108,7 +127,12 @@ export function detailDialog({ render, onClick = () => {} }) {
  * Whether a click on a card should open it: always from its name,
  * and from anywhere else unless the click ended a text selection --
  * that is someone copying a name, not asking for more.
+ *
+ * A cross-link is the exception at the top: tapping the recipe named
+ * on a material's card asks for that recipe, not for the card it was
+ * printed on, and the href already says where to go.
  */
 export function opensCard(event) {
+  if (event.target.closest('a[href]')) return false;
   return Boolean(event.target.closest('[data-open]')) || !String(getSelection());
 }
