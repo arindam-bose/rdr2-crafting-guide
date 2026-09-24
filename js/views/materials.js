@@ -73,7 +73,7 @@ export function mount(root) {
   const state = { search: '', station: null, part: '', show: 'all',
                   group: GROUPS[0].id, shown: PAGE, expanded: new Set(),
                   ...toolbar.restoreSort('materials', SORTS,
-                                         { sort: 'needed', dir: 'desc' }) };
+                                         { sort: 'name', dir: 'asc' }) };
 
   const stations = queries.stations();
   const parts = queries.bodyParts();
