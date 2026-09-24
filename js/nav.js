@@ -29,30 +29,41 @@ export function href(route, id) {
  * main.js sends plain left-clicks on one through here rather than
  * letting the anchor navigate on its own.
  *
- * The entry that lands is stamped as one this app pushed.  That stamp
- * is what `closed` reads: an entry we made is ours to spend, and one
- * we did not -- a bookmark opened cold, a shared link -- is not.
+ * The entry that lands remembers what was underneath it.  That is what
+ * `closed` reads: an entry pushed from this same page with nothing
+ * open can be handed back, and anything else has to be written over.
  */
 export function open(route, id) {
+  const from = location.hash;
   location.hash = href(route, id);
-  history.replaceState({ card: true }, '');
+  history.replaceState({ card: true, from }, '');
 }
 
 /**
- * The card is shut, so take it out of the address.
+ * The card is shut, so take it out of the address -- without moving
+ * the reader off the page they are looking at.  Shutting a recipe you
+ * arrived at from a material is done looking at that recipe, not a
+ * request to be sent back to the material.
  *
- * Going back rather than rewriting, when the entry is one we pushed:
- * rewriting would leave it on the stack pointing at the same place it
- * already was, and Back would then be a press that does nothing --
- * once per card the reader had opened.  Spending it instead means
- * closing a dialog lands exactly where opening it came from, which is
- * what Back would have done anyway.
+ * Which leaves two ways to do it, and the stack decides:
  *
- * Arrived at cold there is nothing to spend, so the address is
- * rewritten in place and the reader keeps a Back that leaves.
+ *   The entry below is this same page, with nothing open.  That is a
+ *   card tapped on the page you were already on, so hand the entry
+ *   back.  Writing over it instead would leave it pointing where it
+ *   already pointed, and Back would be a press that does nothing --
+ *   once per card the reader had opened.
+ *
+ *   Anything else -- a cross-link from the other page, a bookmark
+ *   opened cold -- is written over in place.  The reader stays put,
+ *   and the entry left behind is a real one: Back from it goes
+ *   somewhere, because what is underneath is a different page.
  */
 export function closed(route) {
   if (!parse().id) return;                  // already left by Back
-  if (history.state?.card) history.back();
+
+  const { card, from } = history.state ?? {};
+  const below = parse(from ?? '');
+
+  if (card && below.name === route && !below.id) history.back();
   else history.replaceState(null, '', `#/${route}`);
 }

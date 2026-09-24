@@ -244,16 +244,21 @@ What makes that work is that an open dialog is part of the address.
 `#/recipes/<id>` is a page and a card, and every dialog in the app opens by
 going there — including one opened by tapping a card on the page you are
 already on, so there is one way in rather than two that can drift apart. The
-address is also the way out. Opening a card stamps the history entry it
-pushes as one the app made, and closing spends that entry rather than
-rewriting it — so Back closes an open dialog, and closing a dialog lands
-exactly where opening it came from. Rewriting instead would leave the entry on
-the stack pointing where it already pointed, and Back would then be a press
-that does nothing, once per card the reader had opened. Arrived at cold there
-is nothing to spend, so a bookmarked or shared link still opens, and closing it
-rewrites the address in place and leaves Back free to leave. An id nothing
-answers to — a stale bookmark, a recipe dropped from the reference data —
-leaves the page up and quietly takes itself back out of the address.
+address is also the way out: Back closes an open dialog, and closing one takes
+the card out of the address without moving you off the page you are looking
+at. Shutting a recipe you reached from a material is being done with that
+recipe, not asking to be sent back to the material.
+
+That leaves two ways to drop the card, and the history entry decides. Each one
+the app pushes remembers what was underneath it. If that is the same page with
+nothing open — a card tapped on the page you were already on — the entry is
+handed back, because writing over it would leave it pointing where it already
+pointed and Back would be a press that does nothing, once per card opened.
+Anything else — a cross-link from the other page, a bookmark opened cold — is
+written over in place: you stay put, and the entry left behind is a real one,
+since what is beneath it is a different page. An id nothing answers to — a
+stale bookmark, a recipe dropped from the reference data — leaves the page up
+and quietly takes itself back out of the address.
 
 ### Materials
 
