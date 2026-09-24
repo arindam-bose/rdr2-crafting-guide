@@ -73,7 +73,7 @@ export function mount(root) {
       ])}
       ${toolbar.chipRow('r-show', 'show', [
         { value: 'ready', label: 'Ready to craft' },
-        { value: 'done', label: 'Made' },
+        { value: 'done', label: 'Crafted' },
       ])}
       ${toolbar.sortControl('r', SORTS, 'Sort recipes by', state.sort)}
       <span class="count" id="r-count"></span>

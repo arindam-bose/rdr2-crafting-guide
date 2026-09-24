@@ -38,6 +38,11 @@ const modeToggle = document.getElementById('mode-toggle');
 let current = null;     // the mounted view's { update, destroy }
 let currentName = null;
 
+/** The masthead switch, told which way it is set. */
+function paintMode() {
+  modeToggle.setAttribute('aria-checked', String(store.isPersonal()));
+}
+
 // ------------------------------------------------------------
 // routing
 // ------------------------------------------------------------
@@ -80,14 +85,22 @@ async function start() {
   // chrome catching up, now that the stylesheet has been applied.
   theme.syncBrowserChrome();
 
+  // Before the database, not after: the mode is a preference, not a
+  // row, and waiting on a wasm download to paint it would show the
+  // wrong half of the switch for as long as that took.
+  paintMode();
+  modeToggle.addEventListener('click', () => {
+    store.setPersonal(!store.isPersonal());
+    paintMode();                      // the subscription is not up yet
+  });
+
   await db.open();
   await store.hydrate();
 
-  modeToggle.checked = store.isPersonal();
-  modeToggle.addEventListener('change', () => store.setPersonal(modeToggle.checked));
-
-  // Any write — or a mode flip — refreshes whatever is on screen.
-  store.subscribe(() => current?.update?.());
+  // Any write — or a mode flip — refreshes whatever is on screen, and
+  // repaints the switch, so Settings' own mode button and this one can
+  // never disagree.
+  store.subscribe(() => { paintMode(); current?.update?.(); });
 
   window.addEventListener('hashchange', () => show(routeName()));
   show(routeName());

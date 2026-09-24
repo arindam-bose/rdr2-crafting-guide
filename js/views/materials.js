@@ -80,7 +80,7 @@ export function mount(root) {
 
   root.innerHTML = `
     <div class="toolbar">
-      ${toolbar.searchBox('m-search', 'Search a material, animal or station…')}
+      ${toolbar.searchBox('m-search', 'Search a material by name…')}
       <select class="select" id="m-part" aria-label="Category">
         <option value="">Every category</option>
         ${parts.map((p) => `<option value="${esc(p)}">${esc(p)}</option>`).join('')}
@@ -321,12 +321,13 @@ function matches(card, state, personal) {
     if (state.show === 'all' && !live(card)) return false;
   }
 
-  if (state.search) {
-    const haystack = [card.material, card.animal, card.weapon, card.body_part,
-                      ...card.demands.map((d) => d.station),
-                      ...card.usage.map((u) => u.recipe)]
-      .filter(Boolean).join(' ').toLowerCase();
-    if (!haystack.includes(state.search)) return false;
+  // The material's own name and nothing else.  Typing "talisman" here
+  // used to pull up every pelt that feeds one, which is the question
+  // Recipes answers; on this page you are looking for a material, and
+  // the name already carries the animal and the part -- "Perfect Deer
+  // Pelt" is found by all three words.
+  if (state.search && !card.material.toLowerCase().includes(state.search)) {
+    return false;
   }
   return true;
 }

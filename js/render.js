@@ -79,7 +79,7 @@ export function materialCard(material, { personal, expanded = false }) {
       ${usedIn(material.usage, personal, expanded)}
 
       ${open.length ? `
-        <p class="list-label card-label">Locations</p>
+        <p class="list-label card-label">Vendors</p>
         <div class="demands">${open.map((d) => demandRow(d, personal)).join('')}</div>`
         : ''}
     </article>`;
@@ -183,7 +183,7 @@ export function materialDetail(material, { personal }) {
       <ul class="detail-list detail-recipes">
         ${material.usage.map((u) => recipeLine(u, personal)).join('')}
       </ul>`)}
-    ${detailSection('Locations', demands.length && `
+    ${detailSection('Vendors', demands.length && `
       <div class="detail-stock">
         ${demands.map((d) => stockLine(d, personal)).join('')}
       </div>`)}
