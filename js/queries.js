@@ -9,10 +9,11 @@
 // a recipe is ready when that count is all of them.
 //
 // Campfire recipes (recipes.repeatable = 1) are shown but never
-// crafted or ticked off, so every query in the crafting cycle --
-// demand, readiness, targets, spending -- reads one-time recipes
-// only.  Their ingredients are ordinary ingredients: the inventory
-// queries at the bottom see them like any other.
+// crafted or ticked off.  They ask for no set amount of anything,
+// so they add nothing to a material's demand, are never ready or
+// crafted, and craftSpend will not price them.  A campfire recipe
+// may take alternatives -- rows sharing a `slot` -- so anything
+// that counts a recipe's ingredients counts slots, not rows.
 //
 // These read.  The one that writes — crafting, query 4 — lives
 // in store.js instead, so that every ledger write goes through
@@ -34,9 +35,14 @@ export function materials({ personal = true } = {}) {
   // what every recipe asks for, done and skipped included.  Keeping
   // both means a material whose recipes are all finished can still
   // be listed — as retired, rather than vanishing.
+  //
+  // The Campfire gets a row of its own, needing nothing: it is there
+  // to say the material is used at your fire, and what you hold in
+  // the Satchel it cooks from.
   const open = personal
-    ? "SUM(CASE WHEN COALESCE(t.state, 'wanted') = 'wanted' THEN ri.qty ELSE 0 END)"
-    : 'SUM(ri.qty)';
+    ? `SUM(CASE WHEN r.repeatable = 0 AND COALESCE(t.state, 'wanted') = 'wanted'
+                THEN ri.qty ELSE 0 END)`
+    : 'SUM(CASE WHEN r.repeatable = 0 THEN ri.qty ELSE 0 END)';
 
   return db.all(`
     SELECT     ing.id               AS ingredient_id,
@@ -58,6 +64,7 @@ export function materials({ personal = true } = {}) {
                st.id                AS station_id,
                st.name              AS station,
                st.color             AS color,
+               st.kind = 'campfire' AS campfire,
                loc.id               AS location_id,
                loc.name             AS location,
                ${open}              AS needed,
@@ -70,7 +77,6 @@ export function materials({ personal = true } = {}) {
     LEFT JOIN  targets      t   ON t.recipe_id = r.id
     LEFT JOIN  inventory    inv ON inv.ingredient_id = ing.id
                                AND inv.location_id   = st.location_id
-    WHERE      r.repeatable = 0
     GROUP BY   ing.id, st.id
     ORDER BY   ing.name, st.name
   `);
@@ -78,8 +84,9 @@ export function materials({ personal = true } = {}) {
 
 /**
  * What each material is used in: every recipe that calls for it,
- * with the state that decides its tick or cross.  One query for
- * the whole screen, grouped by material in the view.
+ * with the state that decides its tick or cross -- or 'campfire',
+ * which has neither.  One query for the whole screen, grouped by
+ * material in the view.
  */
 export function materialUsage() {
   return db.all(`
@@ -88,12 +95,12 @@ export function materialUsage() {
                r.name                      AS recipe,
                ri.qty                      AS qty,
                st.name                     AS station,
-               COALESCE(t.state, 'wanted') AS state
+               CASE WHEN r.repeatable THEN 'campfire'
+                    ELSE COALESCE(t.state, 'wanted') END AS state
     FROM       recipe_ingredients ri
     JOIN       recipes  r  ON r.id  = ri.recipe_id
     JOIN       stations st ON st.id = r.station_id
     LEFT JOIN  targets  t  ON t.recipe_id = r.id
-    WHERE      r.repeatable = 0
     ORDER BY   r.name
   `);
 }
@@ -116,12 +123,8 @@ export function stations() {
 
 /** What part of an animal a material is -- Pelt, Hide, Skin -- for the filter. */
 export function bodyParts() {
-  return db.all(`SELECT DISTINCT ing.body_part
-                 FROM   ingredients ing
-                 JOIN   recipe_ingredients ri ON ri.ingredient_id = ing.id
-                 JOIN   recipes r ON r.id = ri.recipe_id
-                 WHERE  ing.body_part IS NOT NULL AND r.repeatable = 0
-                 ORDER BY ing.body_part`)
+  return db.all(`SELECT DISTINCT body_part FROM ingredients
+                 WHERE body_part IS NOT NULL ORDER BY body_part`)
            .map((r) => r.body_part);
 }
 
@@ -130,12 +133,27 @@ export function bodyParts() {
 //
 // Two queries for the whole screen rather than two per card:
 // the list, and every ingredient row in one go, grouped by
-// recipe in the view.  165 recipes and 261 ingredient rows.
+// recipe in the view.  255 recipes and 472 ingredient rows.
 // ------------------------------------------------------------
 export function recipeList() {
+  // One row per slot first: a slot is covered when any one of its
+  // options is stocked to the full amount, since they cannot be mixed.
+  // A one-time recipe's slots are single ingredients, so for those
+  // this is the plain per-ingredient count it always was.
   return db.all(`
+    WITH slots AS (
+      SELECT     ri.recipe_id,
+                 MAX(ri.qty)                         AS qty,
+                 MAX(COALESCE(inv.qty, 0) >= ri.qty) AS covered
+      FROM       recipe_ingredients ri
+      JOIN       recipes  r  ON r.id  = ri.recipe_id
+      JOIN       stations st ON st.id = r.station_id
+      LEFT JOIN  inventory inv ON inv.ingredient_id = ri.ingredient_id
+                              AND inv.location_id   = st.location_id
+      GROUP BY   ri.recipe_id, ri.slot
+    )
     SELECT     r.id, r.name, r.category, r.price_cents, r.description,
-               r.warmth_rank,
+               r.warmth_rank, r.repeatable,
                st.id   AS station_id,
                st.name AS station,
                st.color,
@@ -143,28 +161,30 @@ export function recipeList() {
                loc.name AS location,
                s.name  AS set_name,
                s.set_type,
-               COALESCE(t.state, 'wanted')             AS state,
-               COUNT(ri.ingredient_id)                 AS needs,
-               COALESCE(SUM(ri.qty), 0)                AS total_qty,
-               SUM(COALESCE(inv.qty, 0) >= ri.qty)     AS satisfied
+               CASE WHEN r.repeatable THEN 'wanted'
+                    ELSE COALESCE(t.state, 'wanted') END AS state,
+               COUNT(sl.recipe_id)                 AS needs,
+               COALESCE(SUM(sl.qty), 0)            AS total_qty,
+               SUM(sl.covered)                     AS satisfied
     FROM       recipes  r
     LEFT JOIN  stations st ON st.id = r.station_id
     LEFT JOIN  locations loc ON loc.id = st.location_id
     LEFT JOIN  sets     s  ON s.id  = r.set_id
     LEFT JOIN  targets  t  ON t.recipe_id = r.id
-    LEFT JOIN  recipe_ingredients ri ON ri.recipe_id = r.id
-    LEFT JOIN  inventory          inv ON inv.ingredient_id = ri.ingredient_id
-                                     AND inv.location_id   = st.location_id
-    WHERE      r.repeatable = 0
+    LEFT JOIN  slots    sl ON sl.recipe_id = r.id
     GROUP BY   r.id
     ORDER BY   r.name
   `);
 }
 
-/** Every ingredient of every recipe, with the marker's two numbers. */
+/**
+ * Every ingredient of every recipe, with the marker's two numbers.
+ * Rows sharing a recipe and a slot are alternatives.
+ */
 export function recipeIngredients() {
   return db.all(`
     SELECT     ri.recipe_id,
+               ri.slot,
                ing.id          AS ingredient_id,
                ing.name        AS name,
                ing.source_type AS source_type,
@@ -178,17 +198,18 @@ export function recipeIngredients() {
     JOIN       ingredients ing ON ing.id = ri.ingredient_id
     LEFT JOIN  inventory   inv ON inv.ingredient_id = ing.id
                               AND inv.location_id   = st.location_id
-    WHERE      r.repeatable = 0
     ORDER BY   ing.name
   `);
 }
 
-/** The categories in use, for the filter. */
+/**
+ * The categories in use, for the filter, each with the kind of recipe
+ * it holds: the two tabs on Recipes have no category in common.
+ */
 export function categories() {
-  return db.all(`SELECT DISTINCT category FROM recipes
-                 WHERE category IS NOT NULL AND repeatable = 0
-                 ORDER BY category`)
-           .map((r) => r.category);
+  return db.all(`SELECT DISTINCT category, repeatable FROM recipes
+                 WHERE category IS NOT NULL
+                 ORDER BY category`);
 }
 
 // ------------------------------------------------------------

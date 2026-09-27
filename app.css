@@ -96,6 +96,9 @@
   --station-blue:   #4e6a82;
   --station-yellow: #9a7519;
   --station-pink:   #8f3f2a;
+  /* The campfire: sage rather than the tick's green, so "made at your
+     own fire" never reads as "you have enough". */
+  --station-green:  #5b6a3e;
 
   --shadow: 0 8px 24px rgb(64 44 20 / .22);
 }
@@ -135,6 +138,7 @@
   --station-blue:   #93a8b8;
   --station-yellow: #ddb455;
   --station-pink:   #c26a45;
+  --station-green:  #a9b58a;
 
   --shadow: 0 8px 24px rgb(0 0 0 / .45);
 }
@@ -479,6 +483,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   .card.recipe.blue:hover   { border-left-color: var(--station-blue); }
   .card.recipe.yellow:hover { border-left-color: var(--station-yellow); }
   .card.recipe.pink:hover   { border-left-color: var(--station-pink); }
+  .card.recipe.green:hover  { border-left-color: var(--station-green); }
 }
 
 .card.ghost {
@@ -545,6 +550,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .badge.station.blue   { color: var(--station-blue); }
 .badge.station.yellow { color: var(--station-yellow); }
 .badge.station.pink   { color: var(--station-pink); }
+.badge.station.green  { color: var(--station-green); }
 
 /* Crafted and Skipped: settled, so in the quiet ink rather than a colour. */
 .badge.state { color: var(--ink-faint); border-style: dashed; }
@@ -565,6 +571,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .demand.blue   { border-left-color: var(--station-blue); }
 .demand.yellow { border-left-color: var(--station-yellow); }
 .demand.pink   { border-left-color: var(--station-pink); }
+.demand.green  { border-left-color: var(--station-green); }
 
 .demand .station { color: var(--ink-dim); }
 .demand .qty { font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -857,6 +864,7 @@ body:has(dialog.detail[open]) { overflow: hidden; }
 .card.recipe.blue   { border-left-color: var(--station-blue); }
 .card.recipe.yellow { border-left-color: var(--station-yellow); }
 .card.recipe.pink   { border-left-color: var(--station-pink); }
+.card.recipe.green  { border-left-color: var(--station-green); }
 .card.recipe.settled { opacity: .62; }
 
 .recipe-head {
@@ -929,6 +937,20 @@ ul.buff li::before {
 .ingredients li.short .what  { color: var(--ink-dim); }
 
 .ingredients .qty { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
+
+/* A campfire slot that takes any one of several: "any of" as a small
+   caption, and how many of each you hold beside its name. */
+.ingredients .any-of {
+  font-size: .72rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.ingredients .opt-have {
+  color: var(--ink-faint);
+  font-size: .78rem;
+  font-variant-numeric: tabular-nums;
+}
 .ingredients .tally {
   color: var(--ink-faint);
   font-size: .78rem;
@@ -945,6 +967,8 @@ ul.buff li::before {
   font-variant-numeric: tabular-nums;
   color: var(--ink);
 }
+
+.detail-ingredients + .hint { margin-top: 8px; }
 
 .detail-ingredients {
   padding: 10px 12px;

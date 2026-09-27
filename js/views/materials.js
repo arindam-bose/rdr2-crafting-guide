@@ -3,12 +3,16 @@
 //
 // One card per material: the recipes it goes into, and a row for
 // every station that still wants it.  A card opens a dialog with
-// the rest, where stock can be logged a tap at a time.  Two
-// tabs, because the 100 animal materials and the 9 things you
-// pick up off the ground are collected in completely different
-// ways: one is a hunting trip, the other is a detour.  Each tab
-// carries the count that matches the current filters, so what is
-// on the other one is never a surprise.
+// the rest, where stock can be logged a tap at a time.  Three
+// tabs, because the three are collected in completely different
+// ways: animal materials are a hunting trip, plants a walk, and
+// supplies -- ammunition, liquor, the odd trinket -- a shop or a
+// detour.  Each tab carries the count that matches the current
+// filters, so what is on the others is never a surprise.
+//
+// A material used only at the campfire is never needed and never
+// done: nothing asks for a set amount of it.  It shows under All,
+// with what you hold in the Satchel, and nowhere else.
 //
 // A view exports mount(root) and gets back { update, destroy }.
 // The chrome is built once; a store change refills the groups
@@ -24,15 +28,22 @@ import { detailDialog, opensCard } from '../dialog.js';
 import * as nav from '../nav.js';
 import * as toolbar from './toolbar.js';
 
-// The category filter's one entry that is not a body part: misc
-// items have none, so they get a category of their own.  A value no
-// body part can collide with, since the rest come from the data.
-const MISC = ':misc';
+// The category filter's entries that are not body parts: the kinds
+// of supply, which have none.  Values no body part can collide with,
+// since the rest come from the data.
+const KINDS = [
+  { value: ':ammo',    type: 'ammo',    label: 'Ammo & throwables' },
+  { value: ':alcohol', type: 'alcohol', label: 'Liquor' },
+  { value: ':misc',    type: 'misc',    label: 'Misc. items' },
+];
 
 const GROUPS = [
-  { id: 'animal', title: 'Animal Materials' },
-  { id: 'misc',   title: 'Misc. Items' },
+  { id: 'animal',   title: 'Animal Materials', types: ['animal'] },
+  { id: 'plant',    title: 'Plants',           types: ['plant'] },
+  { id: 'supplies', title: 'Supplies',         types: ['ammo', 'alcohol', 'misc'] },
 ];
+const groupOf = (card) =>
+  GROUPS.find((g) => g.types.includes(card.source_type))?.id;
 
 // Legendary first: it is the rarest and the most annoying to go get.
 const QUALITY_RANK = { Legendary: 0, Perfect: 1 };
@@ -85,7 +96,7 @@ export function mount(root) {
       <select class="select" id="m-part" aria-label="Category">
         <option value="">Every category</option>
         ${parts.map((p) => `<option value="${esc(p)}">${esc(p)}</option>`).join('')}
-        <option value="${MISC}">Misc. items</option>
+        ${KINDS.map((k) => `<option value="${k.value}">${esc(k.label)}</option>`).join('')}
       </select>
       ${toolbar.chipRow('m-stations', 'station', [
         { value: '', label: 'All', pressed: true },
@@ -127,12 +138,13 @@ export function mount(root) {
   toolbar.wirePicker(root.querySelector('#m-stations'), 'station', state, refilter);
   toolbar.wireToggles(showChips, 'show', state, refilter);
 
-  // A category belongs to one tab or the other, so choosing one takes
-  // you to the tab its materials are on rather than leaving you on an
-  // empty one.
+  // A category belongs to one tab, so choosing one takes you to the
+  // tab its materials are on rather than leaving you on an empty one.
   root.querySelector('#m-part').addEventListener('change', (event) => {
     state.part = event.target.value;
-    if (state.part) selectGroup(state.part === MISC ? 'misc' : 'animal');
+    if (state.part) {
+      selectGroup(KINDS.some((k) => k.value === state.part) ? 'supplies' : 'animal');
+    }
     refilter();
   });
 
@@ -219,12 +231,12 @@ export function mount(root) {
     // a search that landed on the other tab is visible, not lost.
     const counts = {};
     for (const g of GROUPS) {
-      counts[g.id] = matched.filter((m) => m.source_type === g.id).length;
+      counts[g.id] = matched.filter((m) => groupOf(m) === g.id).length;
       groupTabs.querySelector(`[data-group="${g.id}"] .tab-count`).textContent =
         counts[g.id];
     }
 
-    const cards = matched.filter((m) => m.source_type === state.group);
+    const cards = matched.filter((m) => groupOf(m) === state.group);
     cards.sort(toolbar.comparator(SORTS, state));
     toolbar.paintDir(dirButton, SORTS, state);
 
@@ -247,9 +259,10 @@ export function mount(root) {
 }
 
 function emptyMessage(state, personal, counts) {
-  const other = GROUPS.find((g) => g.id !== state.group);
-  if (counts[other.id]) {
-    return `Nothing here -- ${counts[other.id]} under ${other.title}.`;
+  const others = GROUPS.filter((g) => g.id !== state.group && counts[g.id]);
+  if (others.length) {
+    return `Nothing here -- ${others.map((g) => `${counts[g.id]} under ${g.title}`)
+      .join(', ')}.`;
   }
   if (state.show === 'done' && personal) return 'Nothing is finished with yet.';
   if (state.search || state.station || state.part || state.show !== 'all') {
@@ -286,6 +299,7 @@ function group(rows, usage) {
       station_id: row.station_id,
       station: row.station,
       color: row.color,
+      campfire: Boolean(row.campfire),
       location_id: row.location_id,
       location: row.location,
       needed: row.needed,
@@ -307,21 +321,29 @@ const outstanding = (card) =>
 // Wanted at all: some recipe that is neither made nor skipped needs it.
 const live = (card) => card.demands.some((d) => d.needed > 0);
 
+// Worked towards at all: some vendor recipe uses it, wanted or not.
+const tracked = (card) => card.demands.some((d) => !d.campfire);
+
+// Used at your own fire, which never runs out of wanting it.
+const atCampfire = (card) => card.demands.some((d) => d.campfire);
+
 function matches(card, state, personal) {
   if (state.station && !card.demands.some(
         (d) => d.station_id === state.station && (d.needed > 0 || !personal))) {
     return false;
   }
 
-  if (state.part === MISC ? card.source_type !== 'misc'
+  const kind = KINDS.find((k) => k.value === state.part);
+  if (kind ? card.source_type !== kind.type
       : state.part && card.body_part !== state.part) return false;
 
   if (personal) {
     // Done: you have enough of it, or nothing is asking for it any
-    // more.  Everything else hides what you are finished with.
-    if (state.show === 'done' && outstanding(card)) return false;
+    // more.  Everything else hides what you are finished with --
+    // unless the campfire still uses it, which it always will.
+    if (state.show === 'done' && (outstanding(card) || !tracked(card))) return false;
     if (state.show === 'short' && !outstanding(card)) return false;
-    if (state.show === 'all' && !live(card)) return false;
+    if (state.show === 'all' && !live(card) && !atCampfire(card)) return false;
   }
 
   // The material's own name and nothing else.  Typing "talisman" here

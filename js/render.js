@@ -51,12 +51,21 @@ export function plural(n, word, suffix = 's') {
 
 /**
  * A station's colour, as the database spells it.  Guarded because it
- * reaches the stylesheet as a class name, and only these three have a
+ * reaches the stylesheet as a class name, and only these four have a
  * rule behind them.
  */
 export function stationColour(colour) {
-  return ['blue', 'yellow', 'pink'].includes(colour) ? colour : '';
+  return ['blue', 'yellow', 'pink', 'green'].includes(colour) ? colour : '';
 }
+
+/** What a material is, as a dialog's kicker names it. */
+const KIND_LABEL = {
+  animal: 'Animal material',
+  plant: 'Plant',
+  ammo: 'Ammo & throwables',
+  alcohol: 'Liquor',
+  misc: 'Misc. item',
+};
 
 /**
  * How many recipes a material card lists before it offers the rest.
@@ -79,7 +88,9 @@ const USAGE_SHOWN = 6;
 export function materialCard(material, { personal, expanded = false }) {
   const { material: name, quality } = material;
 
+  // The Campfire never needs anything, so it is never among these.
   const open = material.demands.filter((d) => d.needed > 0);
+  const fire = personal && material.demands.find((d) => d.campfire);
 
   // The name is a real button, so the card opens from the keyboard
   // too; a click anywhere else on the card is forwarded to it.
@@ -94,7 +105,24 @@ export function materialCard(material, { personal, expanded = false }) {
         <p class="list-label card-label">Vendors</p>
         <div class="demands">${open.map((d) => demandRow(d, personal)).join('')}</div>`
         : ''}
+
+      ${fire ? `
+        <p class="list-label card-label">Campfire</p>
+        <div class="demands">${campfireRow(fire)}</div>` : ''}
     </article>`;
+}
+
+/**
+ * What a campfire recipe asks of you: nothing in particular.  All the
+ * row can say is how many you hold where the fire cooks from.
+ */
+function campfireRow(d) {
+  return `
+    <div class="demand ${stationColour(d.color)}">
+      <span class="station">${esc(heldAt(d.location_id, d.location))}:</span>
+      <span class="qty">${d.have}</span>
+      <span></span>
+    </div>`;
 }
 
 // ------------------------------------------------------------
@@ -176,26 +204,35 @@ export function materialDetail(material, { personal }) {
   const { material: name, quality, source_type, animal, weapon, body_part } = material;
   const isAnimal = source_type === 'animal';
 
+  // Fat, meat and the common feathers come off a dozen animals, so the
+  // label counts them.
   const facts = isAnimal
-    ? [['Animal', esc(animal)], ['Quality', qualityBadge(quality)],
+    ? [[animal?.includes(',') ? 'Animals' : 'Animal', esc(animal)],
+       ['Quality', qualityBadge(quality)],
        ['Type', esc(body_part)], ['Weapon', esc(weapon)]]
-    : [['Source', 'Found out in the world'], ['Quality', qualityBadge(quality)]];
+    : source_type === 'misc'
+      ? [['Source', 'Found out in the world'], ['Quality', qualityBadge(quality)]]
+      : [];
 
   // Stations with nothing left to make still show in personal mode --
   // faded, as "needs no more" -- because you may be holding some there
-  // to sell.
+  // to sell.  The Campfire shows only then: it needs nothing, so all
+  // it has to say is what you hold.
   const demands = personal
     ? material.demands
     : material.demands.filter((d) => d.needed > 0);
+  const fire = demands.some((d) => d.campfire);
+  const stockTitle = !fire ? 'Vendors'
+    : demands.length > 1 ? 'Vendors and campfire' : 'Campfire';
 
   return `
-    ${detailHead(isAnimal ? 'Animal material' : 'Misc. item', name)}
+    ${detailHead(KIND_LABEL[source_type] ?? 'Material', name)}
     ${traits(facts)}
     ${detailSection('Recipes used in', material.usage.length && `
       <ul class="detail-list detail-recipes">
         ${material.usage.map((u) => recipeLine(u, personal)).join('')}
       </ul>`)}
-    ${detailSection('Vendors', demands.length && `
+    ${detailSection(stockTitle, demands.length && `
       <div class="detail-stock">
         ${demands.map((d) => stockLine(d, personal)).join('')}
       </div>`)}
@@ -211,7 +248,7 @@ function forQty(qty) {
 function recipeLine(u, personal) {
   // The same three words Recipes uses for the same three states, so a
   // recipe does not change its name on the way across.
-  const [state, label] = !personal ? ['plain', '']
+  const [state, label] = !personal || u.state === 'campfire' ? ['plain', '']
     : u.state === 'done' ? ['made', 'Crafted']
     : u.state === 'skipped' ? ['retired', 'Skipped']
     : ['open', 'Not crafted'];
@@ -246,9 +283,11 @@ function stockLine(d, personal) {
       </div>`;
   }
 
-  const enough = d.have >= d.needed;
-  const retired = d.needed === 0;
-  const needs = retired ? 'needs no more' : `needs ${d.needed}`;
+  // The Campfire takes any amount, so it is never short or retired.
+  const enough = d.campfire || d.have >= d.needed;
+  const retired = !d.campfire && d.needed === 0;
+  const needs = d.campfire ? 'uses it'
+    : retired ? 'needs no more' : `needs ${d.needed}`;
 
   return `
     <div class="stock-line demand ${colour}${retired ? ' retired' : ''}"
@@ -289,8 +328,16 @@ function verdict(material, personal) {
   // to weigh what the stations want against.
   if (!personal) return '';
 
-  const totalNeeded = material.demands.reduce((n, d) => n + d.needed, 0);
-  const have = material.demands.reduce((n, d) => n + d.have, 0);
+  // Only vendors are weighed.  The Campfire asks for no set amount,
+  // and it cooks from the Satchel the Fence also draws on, so counting
+  // its row would count the same stock twice.
+  const vendors = material.demands.filter((d) => !d.campfire);
+  if (!vendors.length) {
+    return '<p class="hint">No vendor wants this. It goes into campfire recipes, as many as you care to make.</p>';
+  }
+
+  const totalNeeded = vendors.reduce((n, d) => n + d.needed, 0);
+  const have = vendors.reduce((n, d) => n + d.have, 0);
   const moreNeeded = totalNeeded - have;
   const animal = material.source_type === 'animal';
 
@@ -317,7 +364,7 @@ function usedIn(usage = [], personal, expanded = false) {
   const over = usage.length > USAGE_SHOWN;
 
   const line = (u) => {
-    const state = !personal ? 'plain'
+    const state = !personal || u.state === 'campfire' ? 'plain'
       : u.state === 'done' ? 'made'
       : u.state === 'skipped' ? 'retired'
       : 'open';

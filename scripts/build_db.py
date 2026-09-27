@@ -48,7 +48,7 @@ STATIONS = {
     "Trapper":  ("merchant", "blue",   "Trapper"),
     "Pearson":  ("merchant", "yellow", "Pearson"),
     "Fence":    ("merchant", "pink",   "Satchel"),
-    "Campfire": ("campfire", None,     "Satchel"),
+    "Campfire": ("campfire", "green",  "Satchel"),
 }
 
 # workbook sheet -> ingredients.source_type for the rows it lists

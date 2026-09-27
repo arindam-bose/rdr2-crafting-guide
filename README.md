@@ -296,16 +296,36 @@ batch as Inventory does: here you are logging one thing and looking straight
 at the result. In personal mode a station with nothing left to make still
 shows, as *needs no more*, since you may be holding some there to sell.
 
-The tabs are Animal Materials and Misc. Items — one is a hunting trip, the
-other a detour — each carrying the count that matches the current filters, so
-a search that landed on the other tab is visible rather than lost. The
-category filter lists the animal parts (Pelt, Hide, Skin, Feather, …) and a
-**Misc. items** entry of its own, since misc items have no part; picking a
-category also switches to the tab its materials are on.
+The tabs are Animal Materials, Plants and Supplies — a hunting trip, a walk,
+and a shop or a detour — each carrying the count that matches the current
+filters, so a search that landed on another tab is visible rather than lost.
+Supplies holds ammunition and throwables, liquor, and the misc items. The
+category filter lists the animal parts (Pelt, Hide, Meat, Fat, Feather, …) and
+the three kinds of supply, which have no part; picking a category also
+switches to the tab its materials are on.
+
+A material used in campfire recipes gets a **Campfire** block on its card
+showing how many you hold in the Satchel, and a Campfire row in the dialog
+with the same `-` / `+ Add to Satchel` buttons. The Campfire never *needs*
+anything, so it adds nothing to the verdict, and a material used only there
+is never Still needed or Done: it shows under All, always.
 
 ### Recipes
 
-A recipe card has its name, a tag for its vendor, its price, its buff and an
+Two tabs: **Vendor recipes**, made once and worked towards, and **Campfire**,
+made at your own fire as often as you have the ingredients. Each tab carries
+its count of the current matches, and has its own categories. The vendor chips
+and the Ready / Crafted chips only appear on the vendor tab.
+
+A campfire recipe is only ever looked up. It has no switch and no Craft
+button, is never crafted or skipped, and its price is labelled *Recipe*: it is
+what the recipe cost to buy, once. Where it takes any one of several
+ingredients the line reads `2x ANY OF Blackcurrant (1) / Golden Currant (0) /
+Prairie Poppy (2)`, with how many of each you hold in the Satchel; the tick
+means one of them alone covers the amount, since a slot cannot be made up from
+a mix.
+
+A vendor recipe card has its name, a tag for its vendor, its price, its buff and an
 **Ingredients** list with have/need tallies. A crafted or skipped recipe is
 dimmed, carries a dashed *Crafted* or *Skipped* tag, and sorts to the bottom.
 The card has no buttons.

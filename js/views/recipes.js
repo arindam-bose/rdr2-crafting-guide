@@ -3,13 +3,19 @@
 //
 // Two queries feed the whole screen: the list, and every
 // ingredient row in one go.  Filtering and grouping happen here
-// rather than in SQL, because 165 recipes is nothing and a chip
+// rather than in SQL, because 255 recipes is nothing and a chip
 // should not cost a round trip to the database.
 //
+// Two tabs, because there are two kinds of recipe.  A vendor recipe
+// is made once, at Pearson, the Trapper or the Fence, and is worked
+// towards.  A campfire recipe is made at your own fire as often as
+// you have the ingredients: it is only ever looked up, never crafted
+// or ticked off, and may take any one of several ingredients.
+//
 // The cards are for scanning.  Crafting, skipping and putting back
-// happen in the dialog a card opens: crafting spends the ingredients
-// from the station's own stock and marks the recipe done, as one
-// commit with an undo.
+// happen in the dialog a vendor card opens: crafting spends the
+// ingredients from the station's own stock and marks the recipe
+// done, as one commit with an undo.
 // ============================================================
 
 import * as queries from '../queries.js';
@@ -40,9 +46,15 @@ const RANK = { wanted: 0, done: 1, skipped: 2 };
 // three wanting one pelt each.
 const byName = (a, b) => a.name.localeCompare(b.name);
 
-// Ready to craft: still wanted -- not made, not skipped -- and every
-// ingredient is in the station's stock.
-const ready = (r) => r.state === 'wanted' && r.satisfied === r.needs;
+// Ready to craft: a vendor recipe still wanted -- not made, not
+// skipped -- with every ingredient in the station's stock.
+const ready = (r) => !r.repeatable && r.state === 'wanted' && r.satisfied === r.needs;
+
+const KINDS = [
+  { id: 'vendor',   title: 'Vendor recipes', repeatable: 0 },
+  { id: 'campfire', title: 'Campfire',       repeatable: 1 },
+];
+const kindOf = (r) => (r.repeatable ? 'campfire' : 'vendor');
 
 const SORTS = {
   materials: {
@@ -61,7 +73,7 @@ const SORTS = {
 
 export function mount(root) {
   const state = { search: '', station: null, category: '', show: 'all',
-                  shown: PAGE,
+                  kind: KINDS[0].id, shown: PAGE,
                   ...toolbar.restoreSort('recipes', SORTS,
                                          { sort: 'name', dir: 'asc' }) };
   const stations = queries.stations();
@@ -70,10 +82,7 @@ export function mount(root) {
   root.innerHTML = `
     <div class="toolbar">
       ${toolbar.searchBox('r-search', 'Search a recipe, set or material…')}
-      <select class="select" id="r-category" aria-label="Category">
-        <option value="">Every category</option>
-        ${categories.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join('')}
-      </select>
+      <select class="select" id="r-category" aria-label="Category"></select>
       ${toolbar.chipRow('r-stations', 'station', [
         { value: '', label: 'All', pressed: true },
         ...stations.map((s) => ({ value: s.id, label: s.name })),
@@ -85,12 +94,20 @@ export function mount(root) {
       ${toolbar.sortControl('r', SORTS, 'Sort recipes by', state.sort)}
       <span class="count" id="r-count"></span>
     </div>
+    <div class="segmented" role="tablist" id="r-kinds">
+      ${KINDS.map((k, i) => `
+        <button role="tab" data-kind="${k.id}" aria-selected="${i === 0}">
+          ${esc(k.title)}<span class="tab-count"></span></button>`).join('')}
+    </div>
     <div class="gallery" id="r-gallery"></div>
     <div id="r-pager"></div>`;
 
   const gallery = root.querySelector('#r-gallery');
   const count = root.querySelector('#r-count');
   const showChips = root.querySelector('#r-show');
+  const stationChips = root.querySelector('#r-stations');
+  const categorySelect = root.querySelector('#r-category');
+  const kindTabs = root.querySelector('#r-kinds');
   const pagerBox = root.querySelector('#r-pager');
   const dirButton = root.querySelector('#r-dir');
 
@@ -107,8 +124,31 @@ export function mount(root) {
   toolbar.wirePicker(root.querySelector('#r-stations'), 'station', state, refilter);
   toolbar.wireToggles(showChips, 'show', state, refilter);
 
-  root.querySelector('#r-category').addEventListener('change', (event) => {
+  categorySelect.addEventListener('change', (event) => {
     state.category = event.target.value;
+    refilter();
+  });
+
+  // The two kinds share no category, so the list is the tab's own,
+  // and a category chosen on one tab is dropped on the way to the other.
+  function fillCategories() {
+    const repeatable = KINDS.find((k) => k.id === state.kind).repeatable;
+    categorySelect.innerHTML = `
+      <option value="">Every category</option>
+      ${categories.filter((c) => c.repeatable === repeatable)
+        .map((c) => `<option value="${esc(c.category)}">${esc(c.category)}</option>`)
+        .join('')}`;
+  }
+
+  kindTabs.addEventListener('click', (event) => {
+    const tab = event.target.closest('[data-kind]');
+    if (!tab || tab.dataset.kind === state.kind) return;
+    state.kind = tab.dataset.kind;
+    state.category = '';
+    for (const t of kindTabs.children) {
+      t.setAttribute('aria-selected', String(t.dataset.kind === state.kind));
+    }
+    fillCategories();
     refilter();
   });
 
@@ -157,14 +197,28 @@ export function mount(root) {
 
   function update() {
     const personal = store.isPersonal();
-    showChips.hidden = !personal;
+    const vendor = state.kind === 'vendor';
+
+    // Vendors and progress mean nothing at your own fire.
+    stationChips.hidden = !vendor;
+    showChips.hidden = !personal || !vendor;
 
     const ingredients = group(queries.recipeIngredients());
     const all = queries.recipeList()
       .map((r) => ({ ...r, ingredients: ingredients.get(r.id) ?? [] }));
 
     lastAll = all;
-    const list = all.filter((r) => matches(r, state, personal));
+    const matched = all.filter((r) => matches(r, state, personal));
+
+    // Every tab shows how many of the current matches it holds, so a
+    // search that landed on the other tab is visible, not lost.
+    const counts = {};
+    for (const k of KINDS) {
+      counts[k.id] = matched.filter((r) => kindOf(r) === k.id).length;
+      kindTabs.querySelector(`[data-kind="${k.id}"] .tab-count`).textContent = counts[k.id];
+    }
+
+    const list = matched.filter((r) => kindOf(r) === state.kind);
 
     // Crafted and skipped sink to the bottom whatever the field, so a
     // Skip visibly does something.
@@ -177,18 +231,26 @@ export function mount(root) {
 
     gallery.innerHTML = list.length
       ? list.slice(0, state.shown).map((r) => card(r, personal)).join('')
-      : empty('Nothing matches those filters.');
+      : empty(emptyMessage(state, counts));
     pagerBox.innerHTML = pager(state.shown, list.length);
 
-    const readyCount = personal ? all.filter(ready).length : 0;
+    const readyCount = personal && vendor ? all.filter(ready).length : 0;
     count.textContent = plural(list.length, 'recipe')
       + (readyCount ? ` - ${readyCount} ready` : '');
 
     detail.refresh();
   }
 
+  fillCategories();
   update();
   return { update, focus: detail.focus, destroy: detail.destroy };
+}
+
+function emptyMessage(state, counts) {
+  const other = KINDS.find((k) => k.id !== state.kind);
+  return counts[other.id]
+    ? `Nothing here -- ${counts[other.id]} under ${other.title}.`
+    : 'Nothing matches those filters.';
 }
 
 function group(rows) {
@@ -200,11 +262,19 @@ function group(rows) {
   return byRecipe;
 }
 
+/**
+ * Everything but the tab: the tabs count what matches on each side.
+ * The vendor chips and the progress chips are hidden on the campfire
+ * tab, so they only ever narrow vendor recipes.
+ */
 function matches(r, state, personal) {
-  if (state.station && r.station_id !== state.station) return false;
   if (state.category && r.category !== state.category) return false;
 
-  if (personal) {
+  if (!r.repeatable) {
+    if (state.station && r.station_id !== state.station) return false;
+  }
+
+  if (personal && !r.repeatable) {
     if (state.show === 'ready' && !ready(r)) return false;
     if (state.show === 'done' && r.state !== 'done') return false;
   }
@@ -235,7 +305,7 @@ function card(r, personal) {
         <h3><button type="button" class="card-open" data-open
               aria-haspopup="dialog">${esc(r.name)}</button>${
           stationBadge(r.station, r.color)}${settled ? stateBadge(r.state) : ''}</h3>
-        ${r.price_cents ? `<span class="price">${money(r.price_cents)}</span>` : ''}
+        ${r.price_cents ? `<span class="price">${priceLabel(r)}</span>` : ''}
       </header>
 
       ${buff(r.description)}
@@ -243,9 +313,62 @@ function card(r, personal) {
       ${r.ingredients.length ? `
         <p class="list-label card-label">Ingredients</p>
         <ul class="ingredients">
-          ${r.ingredients.map((i) => ingredient(i, tally(r, personal))).join('')}
+          ${slots(r).map((s) => slotLine(s, tally(r, personal))).join('')}
         </ul>` : ''}
     </article>`;
+}
+
+/**
+ * A vendor's price is what the item costs to make; a campfire recipe's
+ * is what the recipe itself cost to buy, once, so it says so.
+ */
+function priceLabel(r) {
+  return r.repeatable ? `Recipe ${money(r.price_cents)}` : money(r.price_cents);
+}
+
+/**
+ * A recipe's ingredients as slots: each slot one ingredient, or the
+ * alternatives any one of which will do.  Vendor recipes keep the
+ * alphabetical order they have always had; a campfire recipe keeps
+ * the order it is written in, main ingredient first.
+ */
+function slots(r) {
+  const bySlot = new Map();
+  for (const i of r.ingredients) {
+    if (!bySlot.has(i.slot)) bySlot.set(i.slot, []);
+    bySlot.get(i.slot).push(i);
+  }
+  const list = [...bySlot.entries()];
+  if (r.repeatable) list.sort(([a], [b]) => a - b);
+  return list.map(([, options]) => options);
+}
+
+/**
+ * One slot.  A single ingredient is the line it always was.  A choice
+ * shows every option, with how many of each you hold in personal mode;
+ * the tick means one of them alone covers the amount, since a slot
+ * cannot be filled half with one and half with another.
+ */
+function slotLine(options, personal) {
+  if (options.length === 1) return ingredient(options[0], personal);
+
+  const { qty } = options[0];
+  const names = options.map((o) => `${crossLink('materials', o.ingredient_id, o.name)}${
+    personal ? ` <span class="opt-have">(${o.have})</span>` : ''}`).join(' / ');
+  const what = `<span class="what"><span class="any-of">any of</span> ${names}</span>`;
+
+  if (!personal) {
+    return `<li class="any"><span class="qty">${qty}x</span>${what}</li>`;
+  }
+
+  const covered = options.some((o) => o.satisfied);
+  return `
+    <li class="any ${covered ? 'have' : 'short'}">
+      <span class="mark" aria-hidden="true">${covered ? '✓' : '✗'}</span>
+      <span class="qty">${qty}x</span>
+      ${what}
+      <span class="tally"></span>
+    </li>`;
 }
 
 /** "Crafted" or "Skipped", beside the vendor, once a recipe is settled. */
@@ -308,6 +431,7 @@ function ingredient(i, personal) {
  * your mind about wanting it.
  */
 function recipeDetail(r, personal) {
+  if (r.repeatable) return campfireDetail(r, personal);
   const buffs = buffLines(r.description);
 
   return `
@@ -324,9 +448,41 @@ function recipeDetail(r, personal) {
       </ul>`)}
     ${detailSection('Ingredients', r.ingredients.length && `
       <ul class="ingredients detail-ingredients">
-        ${r.ingredients.map((i) => ingredient(i, tally(r, personal))).join('')}
+        ${slots(r).map((s) => slotLine(s, tally(r, personal))).join('')}
       </ul>`)}
     ${personal ? craftRow(r) : ''}`;
+}
+
+/**
+ * A campfire recipe, opened.  Nothing to switch and nothing to craft:
+ * it is made at your own fire, as often as you like, and the app
+ * keeps no count of it.  What you hold is what is in your Satchel.
+ */
+function campfireDetail(r, personal) {
+  const buffs = buffLines(r.description);
+  const choice = r.ingredients.length > slots(r).length;
+
+  return `
+    ${detailHead('Campfire recipe', r.name)}
+    ${traits([
+      ['Type', esc(r.category)],
+      ['Made at', stationBadge(r.station, r.color)],
+      ['Recipe cost', r.price_cents && money(r.price_cents)],
+    ])}
+    ${detailSection('Effect', buffs.length && `
+      <ul class="detail-list detail-buffs">
+        ${buffs.map((b) => `<li>${buffLine(b)}</li>`).join('')}
+      </ul>`)}
+    ${detailSection('Ingredients', r.ingredients.length && `
+      <ul class="ingredients detail-ingredients">
+        ${slots(r).map((s) => slotLine(s, personal)).join('')}
+      </ul>
+      ${choice ? `<p class="hint">"Any of" means all of one kind: the amount
+        cannot be made up from a mix.</p>` : ''}`)}
+    ${detailSection('Comments', `<p class="hint">Made at your own campfire, as
+      often as you have the ingredients${personal
+        ? `. The counts are what is in ${esc(placeName(r.location_id, r.location))}.`
+        : '.'}</p>`)}`;
 }
 
 /**
