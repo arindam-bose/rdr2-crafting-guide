@@ -85,12 +85,18 @@ CREATE TABLE targets (
 --    Demand is per STATION, stock is per LOCATION (the Fence
 --    draws from the Satchel).
 --    Drop the targets join for the general, non-personal mode.
+--    Weapon is a subquery, not a join: a material can come from
+--    many animals, and joining them would multiply SUM(ri.qty).
 -- ------------------------------------------------------------
 -- SELECT     ing.name                        AS material,
 --            st.name                         AS station,
 --            SUM(ri.qty)                     AS needed,
 --            COALESCE(inv.qty, 0)            AS have,
---            w.name                          AS weapon,
+--            (SELECT GROUP_CONCAT(DISTINCT w.name)
+--             FROM   ingredient_animals ia
+--             JOIN   animals a ON a.id = ia.animal_id
+--             JOIN   weapons w ON w.id = a.weapon_id
+--             WHERE  ia.ingredient_id = ing.id) AS weapon,
 --            CASE ing.source_type
 --                 WHEN 'animal' THEN 'You need to go hunting!'
 --                 ELSE               'You need to go find it!'
@@ -99,12 +105,11 @@ CREATE TABLE targets (
 -- JOIN       recipes      r   ON r.id  = ri.recipe_id
 -- JOIN       stations     st  ON st.id = r.station_id
 -- JOIN       ingredients  ing ON ing.id = ri.ingredient_id
--- LEFT JOIN  animals      a   ON a.id  = ing.animal_id
--- LEFT JOIN  weapons      w   ON w.id  = a.weapon_id
 -- LEFT JOIN  targets      t   ON t.recipe_id = r.id
 -- LEFT JOIN  inventory    inv ON inv.ingredient_id = ing.id
 --                            AND inv.location_id   = st.location_id
 -- WHERE      COALESCE(t.state, 'wanted') <> 'done'
+--   AND      r.repeatable = 0
 -- GROUP BY   ing.id, st.id;
 
 -- ------------------------------------------------------------

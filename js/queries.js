@@ -8,6 +8,12 @@
 // own: recipeList() counts each recipe's stocked ingredients, and
 // a recipe is ready when that count is all of them.
 //
+// Campfire recipes (recipes.repeatable = 1) are shown but never
+// crafted or ticked off, so every query in the crafting cycle --
+// demand, readiness, targets, spending -- reads one-time recipes
+// only.  Their ingredients are ordinary ingredients: the inventory
+// queries at the bottom see them like any other.
+//
 // These read.  The one that writes — crafting, query 4 — lives
 // in store.js instead, so that every ledger write goes through
 // the single path that also persists it.  What stays here is
@@ -38,8 +44,17 @@ export function materials({ personal = true } = {}) {
                ing.source_type      AS source_type,
                ing.quality          AS quality,
                ing.body_part        AS body_part,
-               a.name               AS animal,
-               w.name               AS weapon,
+               (SELECT GROUP_CONCAT(name, ', ') FROM (
+                  SELECT a.name FROM ingredient_animals ia
+                  JOIN   animals a ON a.id = ia.animal_id
+                  WHERE  ia.ingredient_id = ing.id ORDER BY a.name))
+                                    AS animal,
+               (SELECT GROUP_CONCAT(name, ', ') FROM (
+                  SELECT DISTINCT w.name FROM ingredient_animals ia
+                  JOIN   animals a ON a.id = ia.animal_id
+                  JOIN   weapons w ON w.id = a.weapon_id
+                  WHERE  ia.ingredient_id = ing.id ORDER BY w.name))
+                                    AS weapon,
                st.id                AS station_id,
                st.name              AS station,
                st.color             AS color,
@@ -52,11 +67,10 @@ export function materials({ personal = true } = {}) {
     JOIN       stations     st  ON st.id  = r.station_id
     JOIN       locations    loc ON loc.id = st.location_id
     JOIN       ingredients  ing ON ing.id = ri.ingredient_id
-    LEFT JOIN  animals      a   ON a.id   = ing.animal_id
-    LEFT JOIN  weapons      w   ON w.id   = a.weapon_id
     LEFT JOIN  targets      t   ON t.recipe_id = r.id
     LEFT JOIN  inventory    inv ON inv.ingredient_id = ing.id
                                AND inv.location_id   = st.location_id
+    WHERE      r.repeatable = 0
     GROUP BY   ing.id, st.id
     ORDER BY   ing.name, st.name
   `);
@@ -79,17 +93,21 @@ export function materialUsage() {
     JOIN       recipes  r  ON r.id  = ri.recipe_id
     JOIN       stations st ON st.id = r.station_id
     LEFT JOIN  targets  t  ON t.recipe_id = r.id
+    WHERE      r.repeatable = 0
     ORDER BY   r.name
   `);
 }
 
 /**
- * The stations, for the filter chips: Pearson, Trapper, Fence, a
- * chosen order rather than the alphabet's.  Anything new sorts after.
+ * The merchant stations, for the filter chips: Pearson, Trapper,
+ * Fence, a chosen order rather than the alphabet's.  Anything new
+ * sorts after.  The campfire is not one: nothing made there is
+ * tracked.
  */
 export function stations() {
   return db.all(`
     SELECT   id, name, color FROM stations
+    WHERE    kind = 'merchant'
     ORDER BY CASE id WHEN 'station-pearson' THEN 0
                      WHEN 'station-trapper' THEN 1
                      WHEN 'station-fence'   THEN 2
@@ -98,8 +116,12 @@ export function stations() {
 
 /** What part of an animal a material is -- Pelt, Hide, Skin -- for the filter. */
 export function bodyParts() {
-  return db.all(`SELECT DISTINCT body_part FROM ingredients
-                 WHERE body_part IS NOT NULL ORDER BY body_part`)
+  return db.all(`SELECT DISTINCT ing.body_part
+                 FROM   ingredients ing
+                 JOIN   recipe_ingredients ri ON ri.ingredient_id = ing.id
+                 JOIN   recipes r ON r.id = ri.recipe_id
+                 WHERE  ing.body_part IS NOT NULL AND r.repeatable = 0
+                 ORDER BY ing.body_part`)
            .map((r) => r.body_part);
 }
 
@@ -133,6 +155,7 @@ export function recipeList() {
     LEFT JOIN  recipe_ingredients ri ON ri.recipe_id = r.id
     LEFT JOIN  inventory          inv ON inv.ingredient_id = ri.ingredient_id
                                      AND inv.location_id   = st.location_id
+    WHERE      r.repeatable = 0
     GROUP BY   r.id
     ORDER BY   r.name
   `);
@@ -155,6 +178,7 @@ export function recipeIngredients() {
     JOIN       ingredients ing ON ing.id = ri.ingredient_id
     LEFT JOIN  inventory   inv ON inv.ingredient_id = ing.id
                               AND inv.location_id   = st.location_id
+    WHERE      r.repeatable = 0
     ORDER BY   ing.name
   `);
 }
@@ -162,7 +186,8 @@ export function recipeIngredients() {
 /** The categories in use, for the filter. */
 export function categories() {
   return db.all(`SELECT DISTINCT category FROM recipes
-                 WHERE category IS NOT NULL ORDER BY category`)
+                 WHERE category IS NOT NULL AND repeatable = 0
+                 ORDER BY category`)
            .map((r) => r.category);
 }
 
@@ -175,7 +200,7 @@ export function craftSpend(recipeId) {
     FROM   recipes r
     JOIN   stations           st ON st.id = r.station_id
     JOIN   recipe_ingredients ri ON ri.recipe_id = r.id
-    WHERE  r.id = :recipe_id
+    WHERE  r.id = :recipe_id AND r.repeatable = 0
   `, { recipe_id: recipeId });
 }
 

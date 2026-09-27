@@ -11,10 +11,18 @@ own inventory lives in your browser.
 
 ## Two layers
 
-**Reference** — `data/rdr2.db`, built from a Notion export by
-`scripts/build_db.py`. Recipes, ingredients, animals, the weapon that leaves
-each pelt unspoiled, and which station crafts what. Read-only, rebuilt from
-source rather than edited.
+**Reference** — `data/rdr2.db`, built from a Notion export and the
+campfire-recipe workbook by `scripts/build_db.py`. Recipes, ingredients, the
+animals each one comes from, the weapon that leaves each pelt unspoiled, and
+which station crafts what. Read-only, rebuilt from source rather than edited.
+
+Recipes come in two kinds. A **one-time** recipe is made once at Pearson, the
+Trapper or the Fence, and is tracked: crafted, skipped, still wanted. A
+**repeatable** one (`recipes.repeatable = 1`) is made at your own campfire as
+often as you have the ingredients; it is shown, never crafted or ticked off,
+and its `price_cents` is what the recipe itself costs to buy. A repeatable
+recipe may take alternatives -- any one sage will do -- which
+`recipe_ingredients` records as rows sharing a `slot`.
 
 **Personal** — `database/personal_schema.sql`, created at runtime in the same
 sql.js connection so the two can be joined without an `ATTACH`. It is an
@@ -36,13 +44,21 @@ opened as a file, because the modules and the database are fetched.
 
 ## Rebuilding the database
 
-    python3 scripts/build_db.py <export_dir> -o data/rdr2.db
+    pip install pandas openpyxl
+    python3 scripts/build_db.py --check-ids data/rdr2.db
+
+Its sources live in `data/raw/`: the five Notion CSVs and the campfire-recipe
+workbook, `consumable_recipes_rdr2.xlsx`. Pass a folder to read the CSVs from
+elsewhere, and `-c` for another workbook. `--check-ids` names the build being replaced: every ingredient,
+recipe and location id in it must survive, because the personal layer stores
+those strings, and the build fails if one is gone.
 
 The build stamps a `meta` table with the date and schema version, which the
 Settings page reports and every export records.
 
-`<export_dir>` holds the five CSVs from the Notion export: Animals, Animal
-Materials, Misc Materials, Craftable Items, Recipe Ingredients. Ids are slugs
+The CSVs are the Notion export with the hash taken off each name:
+`Animals.csv`, `Animal Materials.csv`, `Misc Materials.csv`,
+`Craftable Items.csv`, `Recipe Ingredients.csv`. Ids are slugs
 derived from names (`ing-perfect-beaver-pelt`), so they survive rows being
 added, removed or reordered — which matters, because the personal layer stores
 those strings.
