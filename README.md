@@ -368,6 +368,9 @@ at *that* station: a material two recipes want still shows for the other one.
 Both galleries share one toolbar: the search box on a row of its own, then a
 category dropdown, the stations in the order Pearson, Trapper, Fence, the
 personal filters, and the sort, all left-aligned, with the count on the right.
+The Materials search matches a material's name and the animals it comes from,
+so *wolf* finds Big Game Meat and *perch* Flaky Fish Meat as well as the pelts;
+the Recipes search also reads sets, vendors, buffs and ingredients.
 In personal mode Materials filters to **Still needed** or **Done** — a
 material whose recipes are all crafted or skipped moves to Done rather than
 vanishing — and Recipes to **Ready to craft** or **Crafted**.

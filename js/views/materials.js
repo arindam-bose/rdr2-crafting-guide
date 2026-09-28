@@ -92,7 +92,7 @@ export function mount(root) {
 
   root.innerHTML = `
     <div class="toolbar">
-      ${toolbar.searchBox('m-search', 'Search a material by name…')}
+      ${toolbar.searchBox('m-search', 'Search a material or animal…')}
       <select class="select" id="m-part" aria-label="Category">
         <option value="">Every category</option>
         ${parts.map((p) => `<option value="${esc(p)}">${esc(p)}</option>`).join('')}
@@ -350,13 +350,16 @@ function matches(card, state, personal) {
     if (state.show === 'all' && !live(card) && !atCampfire(card)) return false;
   }
 
-  // The material's own name and nothing else.  Typing "talisman" here
-  // used to pull up every pelt that feeds one, which is the question
-  // Recipes answers; on this page you are looking for a material, and
-  // the name already carries the animal and the part -- "Perfect Deer
-  // Pelt" is found by all three words.
-  if (state.search && !card.material.toLowerCase().includes(state.search)) {
-    return false;
+  // The material's own name, and the animals it comes from -- nothing
+  // about recipes.  Typing "talisman" here used to pull up every pelt
+  // that feeds one, which is the question Recipes answers; on this page
+  // you are looking for a material, or for what an animal you have in
+  // your sights is good for.  A pelt's name already carries its animal,
+  // but Big Game Meat does not say Wolf, and Flaky Fish Meat does not
+  // say Perch.
+  if (state.search) {
+    const names = [card.material, ...card.animals.map((a) => a.name)];
+    if (!names.some((n) => n.toLowerCase().includes(state.search))) return false;
   }
   return true;
 }
