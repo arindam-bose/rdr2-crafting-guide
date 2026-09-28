@@ -1,2 +1,10 @@
 # Screenshots and headless-browser profiles from local UI checks.
 .shots/
+
+# Build output: bytecode, and the file a build stages before swapping it in.
+__pycache__/
+*.pyc
+data/*.building
+
+# A local safety copy of the reference database, kept out of history.
+data/rdr2_bkp.db

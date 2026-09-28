@@ -80,7 +80,10 @@ served network-first, so edits show up on reload without a cache bump.
 
     index.html            shell: masthead, tabs, toast, footer
     app.css               one layout for phone and desktop, and the theme
-    data/rdr2.db          reference data, read-only
+    data/rdr2.db          reference data, read-only, built from data/raw/
+    data/raw/             its sources: the Notion CSVs, the campfire
+                          workbook and the patch workbook
+    scripts/build_db.py   the build
     fonts/
       chinese_rocks/      Chinese Rocks, the display face, with its licence
       fb_remington/       FB Remington, the body face
@@ -165,6 +168,8 @@ always named in words beside its stripe. The colour reinforces the label; it is
 never the only thing carrying it. The same three colours draw the station tags
 on recipe cards — Pearson, Trapper, Fence — which share the outlined-chip shape
 of the Legendary and Perfect tags, so a tag reads as a tag whatever it names.
+The Campfire takes a fourth, a muted sage, kept clear of the green of a tick so
+that "made at your own fire" never reads as "you have enough".
 
 The theme is a preference rather than data, so it lives in `localStorage` and
 is per device — the same person reads this on a bright phone outdoors and a
@@ -368,9 +373,12 @@ at *that* station: a material two recipes want still shows for the other one.
 Both galleries share one toolbar: the search box on a row of its own, then a
 category dropdown, the stations in the order Pearson, Trapper, Fence, the
 personal filters, and the sort, all left-aligned, with the count on the right.
-The Materials search matches a material's name and the animals it comes from,
-so *wolf* finds Big Game Meat and *perch* Flaky Fish Meat as well as the pelts;
-the Recipes search also reads sets, vendors, buffs and ingredients.
+The Materials search matches a material's name, and the animals it comes from
+from the start of a word, so *wolf* finds Big Game Meat as well as the wolf
+pelts and *perch* finds Flaky Fish Meat, while *ox* finds Prime Beef Joint
+through the Ox without dragging in Stringy Meat through the Fox. Inventory's
+search follows the same rule. The Recipes search also reads sets,
+vendors, buffs and ingredients.
 In personal mode Materials filters to **Still needed** or **Done** — a
 material whose recipes are all crafted or skipped moves to Done rather than
 vanishing — and Recipes to **Ready to craft** or **Crafted**.

@@ -271,13 +271,23 @@ const STOCK_AT = `
   LEFT JOIN  inventory_totals tot ON tot.ingredient_id = ing.id
                                  AND tot.location_id   = :location_id`;
 
-/** Materials whose name matches, for the search box. */
+/**
+ * Materials matching the search box: by name anywhere in it, or by one
+ * of the animals it comes from, from the start of a word -- the same
+ * rule Materials uses, so "wolf" finds Big Game Meat on both pages
+ * and "ox" finds the Ox without the Fox.
+ */
 export function searchMaterials(term, locationId, limit = 40) {
   return db.all(`${STOCK_AT}
-    WHERE     ing.name LIKE :term
+    WHERE     ing.name LIKE :anywhere
+       OR     EXISTS (SELECT 1 FROM ingredient_animals ia
+                      JOIN   animals a ON a.id = ia.animal_id
+                      WHERE  ia.ingredient_id = ing.id
+                        AND  (a.name LIKE :start OR a.name LIKE :word))
     ORDER BY  ing.name
     LIMIT     :limit`,
-    { location_id: locationId, term: `%${term}%`, limit });
+    { location_id: locationId, anywhere: `%${term}%`, start: `${term}%`,
+      word: `% ${term}%`, limit });
 }
 
 /**

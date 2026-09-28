@@ -94,11 +94,7 @@ export function mount(root) {
       ${toolbar.sortControl('r', SORTS, 'Sort recipes by', state.sort)}
       <span class="count" id="r-count"></span>
     </div>
-    <div class="segmented" role="tablist" id="r-kinds">
-      ${KINDS.map((k, i) => `
-        <button role="tab" data-kind="${k.id}" aria-selected="${i === 0}">
-          ${esc(k.title)}<span class="tab-count"></span></button>`).join('')}
-    </div>
+    ${toolbar.tabRow('r-kinds', 'kind', KINDS)}
     <div class="gallery" id="r-gallery"></div>
     <div id="r-pager"></div>`;
 
@@ -140,14 +136,8 @@ export function mount(root) {
         .join('')}`;
   }
 
-  kindTabs.addEventListener('click', (event) => {
-    const tab = event.target.closest('[data-kind]');
-    if (!tab || tab.dataset.kind === state.kind) return;
-    state.kind = tab.dataset.kind;
+  toolbar.wireTabs(kindTabs, 'kind', state, () => {
     state.category = '';
-    for (const t of kindTabs.children) {
-      t.setAttribute('aria-selected', String(t.dataset.kind === state.kind));
-    }
     fillCategories();
     refilter();
   });
@@ -210,13 +200,7 @@ export function mount(root) {
     lastAll = all;
     const matched = all.filter((r) => matches(r, state, personal));
 
-    // Every tab shows how many of the current matches it holds, so a
-    // search that landed on the other tab is visible, not lost.
-    const counts = {};
-    for (const k of KINDS) {
-      counts[k.id] = matched.filter((r) => kindOf(r) === k.id).length;
-      kindTabs.querySelector(`[data-kind="${k.id}"] .tab-count`).textContent = counts[k.id];
-    }
+    const counts = toolbar.countTabs(kindTabs, 'kind', KINDS, matched, kindOf);
 
     const list = matched.filter((r) => kindOf(r) === state.kind);
 
@@ -231,7 +215,8 @@ export function mount(root) {
 
     gallery.innerHTML = list.length
       ? list.slice(0, state.shown).map((r) => card(r, personal)).join('')
-      : empty(emptyMessage(state, counts));
+      : empty(toolbar.elsewhere(KINDS, state.kind, counts)
+              || 'Nothing matches those filters.');
     pagerBox.innerHTML = pager(state.shown, list.length);
 
     const readyCount = personal && vendor ? all.filter(ready).length : 0;
@@ -244,13 +229,6 @@ export function mount(root) {
   fillCategories();
   update();
   return { update, focus: detail.focus, destroy: detail.destroy };
-}
-
-function emptyMessage(state, counts) {
-  const other = KINDS.find((k) => k.id !== state.kind);
-  return counts[other.id]
-    ? `Nothing here -- ${counts[other.id]} under ${other.title}.`
-    : 'Nothing matches those filters.';
 }
 
 function group(rows) {

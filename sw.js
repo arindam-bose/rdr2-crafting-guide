@@ -14,7 +14,7 @@
 //   more while this is still being written.
 // ============================================================
 
-const CACHE = 'rdr2-crafting-v16';
+const CACHE = 'rdr2-crafting-v17';
 
 // Fetched once and kept: big, and only ever replaced wholesale.
 // The fonts and the artwork join the runtime and the database here —

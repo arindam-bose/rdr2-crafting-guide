@@ -43,6 +43,21 @@ export function chipRow(id, attr, chips) {
 }
 
 /**
+ * Tabs across the top of a gallery, each with room for a count of the
+ * matches it holds.  `tabs` are { id, title }; the first starts chosen.
+ *
+ *   tabRow('r-kinds', 'kind', [{ id: 'vendor', title: 'Vendor recipes' }, …])
+ */
+export function tabRow(id, attr, tabs) {
+  return `
+    <div class="segmented" role="tablist" id="${esc(id)}">
+      ${tabs.map((t, i) => `
+        <button role="tab" data-${esc(attr)}="${esc(t.id)}" aria-selected="${i === 0}">
+          ${esc(t.title)}<span class="tab-count"></span></button>`).join('')}
+    </div>`;
+}
+
+/**
  * The sort field and the button that reverses it.
  *
  * `current` has to be marked selected: without it the browser shows
@@ -110,6 +125,49 @@ export function wirePicker(el, attr, state, onChange) {
     }
     onChange();
   });
+}
+
+/** Make `value` the chosen tab, on screen and in the state. */
+export function selectTab(el, attr, state, value) {
+  state[attr] = value;
+  for (const t of el.children) {
+    t.setAttribute('aria-selected', String(t.dataset[attr] === value));
+  }
+}
+
+/** Pick a tab.  `onChange` runs only when the tab actually changes. */
+export function wireTabs(el, attr, state, onChange) {
+  el.addEventListener('click', (event) => {
+    const tab = event.target.closest(`[data-${attr}]`);
+    if (!tab || tab.dataset[attr] === state[attr]) return;
+    selectTab(el, attr, state, tab.dataset[attr]);
+    onChange();
+  });
+}
+
+/**
+ * Share the matches out between the tabs: each tab shows how many it
+ * holds, so a search that landed on another tab is visible rather than
+ * lost.  Returns the counts, keyed by tab id.
+ */
+export function countTabs(el, attr, tabs, items, tabOf) {
+  const counts = {};
+  for (const t of tabs) {
+    counts[t.id] = items.filter((x) => tabOf(x) === t.id).length;
+    el.querySelector(`[data-${attr}="${t.id}"] .tab-count`).textContent = counts[t.id];
+  }
+  return counts;
+}
+
+/**
+ * What an empty tab says when the matches are on the others --
+ * "Nothing here -- 8 under Campfire." -- or '' when there are none.
+ */
+export function elsewhere(tabs, current, counts) {
+  const others = tabs.filter((t) => t.id !== current && counts[t.id]);
+  return others.length
+    ? `Nothing here -- ${others.map((t) => `${counts[t.id]} under ${t.title}`).join(', ')}.`
+    : '';
 }
 
 /**

@@ -295,7 +295,11 @@ def parse_slots(cell):
         if not m:
             problems.append(part)
             continue
-        options = [clean(o) for o in m.group(2).strip("() ").split("/")]
+        # Brackets around the whole choice go; any inside a name stay.
+        choice = m.group(2).strip()
+        if choice.startswith("(") and choice.endswith(")"):
+            choice = choice[1:-1]
+        options = [clean(o) for o in choice.split("/")]
         slots.append((int(m.group(1)), [o for o in options if o]))
     return slots, problems
 
@@ -449,16 +453,27 @@ def build(export_dir, consumables, patch, out_path):
         "INSERT INTO recipe_ingredients(recipe_id, slot, ingredient_id, qty) "
         "VALUES (?,?,?,?)", rows)
 
+    # The patch is read before the campfire workbook, though applied
+    # after it, so that the workbook can name an animal by either name
+    # it has had: "Bear" as Notion knows it, or "Grizzly Bear" as the
+    # patch renames it.  Both are the one animal, animal-bear.
+    book = load_patch(patch) if patch else None
+    aliases = {}
+    if book is not None:
+        for _, r in book["animals"].iterrows():
+            if blank(r.get("id")) and blank(r.get("name")):
+                aliases[blank(r.get("name"))] = blank(r.get("id"))
+
     if consumables:
-        build_consumables(db, consumables, animal_id,
+        build_consumables(db, consumables, animal_id, aliases,
                           station_id["Campfire"], warnings, added)
 
     notes = []
     if added:
         notes.append(f"the campfire workbook added {len(added)} animals: "
                      + ", ".join(sorted(added)))
-    if patch:
-        apply_patch(db, patch, warnings, notes)
+    if book is not None:
+        apply_patch(db, book, warnings, notes)
 
     db.commit()
     return db, warnings, notes
@@ -471,16 +486,20 @@ def blank(value):
     return str(value).strip() or None
 
 
-def apply_patch(db, path, warnings, notes):
-    """
-    Apply the patch workbook: corrections made by hand, kept as a source
-    so that a rebuild keeps them.  See the module docstring.
-    """
+def load_patch(path):
+    """The patch workbook's two sheets, or a clean exit if one is missing."""
     book = pd.read_excel(path, sheet_name=None, dtype=str)
     for sheet in ("animals", "ingredient_animals"):
         if sheet not in book:
             sys.exit(f"error: no {sheet!r} sheet in {path}")
+    return book
 
+
+def apply_patch(db, book, warnings, notes):
+    """
+    Apply the patch workbook: corrections made by hand, kept as a source
+    so that a rebuild keeps them.  See the module docstring.
+    """
     # ---- animals: update by id, insert what is new -------------------------
     known = {i: n for i, n in db.execute("SELECT id, name FROM animals")}
     weapons = {i for (i,) in db.execute("SELECT id FROM weapons")}
@@ -533,7 +552,7 @@ def apply_patch(db, path, warnings, notes):
                    "VALUES (?,?)", sorted(links))
 
 
-def build_consumables(db, path, animal_id, campfire, warnings, added):
+def build_consumables(db, path, animal_id, aliases, campfire, warnings, added):
     """
     Add the workbook's campfire recipes and the ingredients they call for.
 
@@ -581,14 +600,20 @@ def build_consumables(db, path, animal_id, campfire, warnings, added):
                     warnings.append(f"{name!r}: already a {have} material, "
                                     f"{sheet} calls it {source_type}")
             for animal in split_list(r.get("animals_to_source_from")):
-                if animal not in animal_id:
-                    animal_id[animal] = mkid("animal", animal)
-                    db.execute("INSERT INTO animals(id, name) VALUES (?,?)",
-                               (animal_id[animal], animal))
-                    added.append(animal)
+                # Known by this name already; else by the patch, under the
+                # id the patch gives it -- which may already be here under
+                # its old name; else new, with an id made from the name.
+                aid = animal_id.get(animal)
+                if aid is None:
+                    aid = aliases.get(animal) or mkid("animal", animal)
+                    if aid not in animal_id.values():
+                        db.execute("INSERT INTO animals(id, name) VALUES (?,?)",
+                                   (aid, animal))
+                        added.append(animal)
+                    animal_id[animal] = aid
                 db.execute("INSERT OR IGNORE INTO ingredient_animals"
                            "(ingredient_id, animal_id) VALUES (?,?)",
-                           (iid, animal_id[animal]))
+                           (iid, aid))
 
     # ---- recipes ----------------------------------------------------------
     uses = {}                     # ingredient name -> recipe ids, per recipes
@@ -607,6 +632,12 @@ def build_consumables(db, path, animal_id, campfire, warnings, added):
             (rid, name, clean(r.get("category")), campfire,
              parse_price(r.get("price")), description))
 
+        # The sheet's own ids are ignored as ids, but the index sheets
+        # name recipes by them, so they are what the cross-check compares.
+        sheet_id = clean(r.get("id"))
+        if not sheet_id:
+            warnings.append(f"{name!r}: no id in the sheet, not cross-checked")
+
         slots, problems = parse_slots(r["ingredients"])
         for p in problems:
             warnings.append(f"{name!r}: cannot read ingredient {p!r}")
@@ -616,7 +647,8 @@ def build_consumables(db, path, animal_id, campfire, warnings, added):
                 if iid is None:
                     warnings.append(f"{name!r}: unknown ingredient {option!r}")
                     continue
-                uses.setdefault(option, set()).add(clean(r["id"]))
+                if sheet_id:
+                    uses.setdefault(option, set()).add(sheet_id)
                 try:
                     db.execute(
                         "INSERT INTO recipe_ingredients"
@@ -643,6 +675,9 @@ def baseline_ids(path):
     """The ids an earlier build handed out, which this one must keep."""
     if not path:
         return None
+    # connect() would create an empty file at a mistyped path.
+    if not os.path.exists(path):
+        sys.exit(f"error: --check-ids: no database at {path}")
     old = sqlite3.connect(path)
     ids = {t: {i for (i,) in old.execute(f"SELECT id FROM {t}")}
            for t in ("ingredients", "recipes", "locations")}

@@ -45,7 +45,7 @@ export function mount(root) {
   root.innerHTML = `
     <div class="toolbar">
       <input type="search" class="search" id="i-search"
-             placeholder="Search a material…" autocomplete="off" spellcheck="false">
+             placeholder="Search a material or animal…" autocomplete="off" spellcheck="false">
     </div>
     <div class="segmented" role="tablist" id="i-locations">
       ${locations.map((l) => `

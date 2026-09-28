@@ -90,6 +90,10 @@ export function mount(root) {
   const stations = queries.stations();
   const parts = queries.bodyParts();
 
+  // Reference data, fixed for the life of the page: read once, not on
+  // every tap of a stepper.
+  const animals = queries.materialAnimals();
+
   root.innerHTML = `
     <div class="toolbar">
       ${toolbar.searchBox('m-search', 'Search a material or animal…')}
@@ -109,11 +113,7 @@ export function mount(root) {
       ${toolbar.sortControl('m', SORTS, 'Sort materials by', state.sort)}
       <span class="count" id="m-count"></span>
     </div>
-    <div class="segmented" role="tablist" id="m-groups">
-      ${GROUPS.map((g, i) => `
-        <button role="tab" data-group="${g.id}" aria-selected="${i === 0}">
-          ${esc(g.title)}<span class="tab-count"></span></button>`).join('')}
-    </div>
+    ${toolbar.tabRow('m-groups', 'group', GROUPS)}
     <div class="gallery" id="m-gallery"></div>
     <div id="m-pager"></div>`;
 
@@ -143,7 +143,8 @@ export function mount(root) {
   root.querySelector('#m-part').addEventListener('change', (event) => {
     state.part = event.target.value;
     if (state.part) {
-      selectGroup(KINDS.some((k) => k.value === state.part) ? 'supplies' : 'animal');
+      toolbar.selectTab(groupTabs, 'group', state,
+        KINDS.some((k) => k.value === state.part) ? 'supplies' : 'animal');
     }
     refilter();
   });
@@ -206,36 +207,17 @@ export function mount(root) {
     },
   });
 
-  groupTabs.addEventListener('click', (event) => {
-    const tab = event.target.closest('[data-group]');
-    if (!tab) return;
-    selectGroup(tab.dataset.group);
-    refilter();
-  });
-
-  function selectGroup(id) {
-    state.group = id;
-    for (const t of groupTabs.children) {
-      t.setAttribute('aria-selected', String(t.dataset.group === id));
-    }
-  }
+  toolbar.wireTabs(groupTabs, 'group', state, refilter);
 
   function update() {
     const personal = store.isPersonal();
     showChips.hidden = !personal;
 
     lastCards = group(queries.materials({ personal }), queries.materialUsage(),
-                      queries.materialAnimals());
+                      animals);
     const matched = lastCards.filter((m) => matches(m, state, personal));
 
-    // Every tab shows how many of the current matches it holds, so
-    // a search that landed on the other tab is visible, not lost.
-    const counts = {};
-    for (const g of GROUPS) {
-      counts[g.id] = matched.filter((m) => groupOf(m) === g.id).length;
-      groupTabs.querySelector(`[data-group="${g.id}"] .tab-count`).textContent =
-        counts[g.id];
-    }
+    const counts = toolbar.countTabs(groupTabs, 'group', GROUPS, matched, groupOf);
 
     const cards = matched.filter((m) => groupOf(m) === state.group);
     cards.sort(toolbar.comparator(SORTS, state));
@@ -260,11 +242,8 @@ export function mount(root) {
 }
 
 function emptyMessage(state, personal, counts) {
-  const others = GROUPS.filter((g) => g.id !== state.group && counts[g.id]);
-  if (others.length) {
-    return `Nothing here -- ${others.map((g) => `${counts[g.id]} under ${g.title}`)
-      .join(', ')}.`;
-  }
+  const elsewhere = toolbar.elsewhere(GROUPS, state.group, counts);
+  if (elsewhere) return elsewhere;
   if (state.show === 'done' && personal) return 'Nothing is finished with yet.';
   if (state.search || state.station || state.part || state.show !== 'all') {
     return 'Nothing matches those filters.';
@@ -331,6 +310,12 @@ const tracked = (card) => card.demands.some((d) => !d.campfire);
 // Used at your own fire, which never runs out of wanting it.
 const atCampfire = (card) => card.demands.some((d) => d.campfire);
 
+/** Whether `term` begins `name` or any word in it: "bear" in "Black Bear". */
+function startsWord(name, term) {
+  const n = name.toLowerCase();
+  return n.startsWith(term) || n.includes(` ${term}`);
+}
+
 function matches(card, state, personal) {
   if (state.station && !card.demands.some(
         (d) => d.station_id === state.station && (d.needed > 0 || !personal))) {
@@ -356,10 +341,11 @@ function matches(card, state, personal) {
   // you are looking for a material, or for what an animal you have in
   // your sights is good for.  A pelt's name already carries its animal,
   // but Big Game Meat does not say Wolf, and Flaky Fish Meat does not
-  // say Perch.
-  if (state.search) {
-    const names = [card.material, ...card.animals.map((a) => a.name)];
-    if (!names.some((n) => n.toLowerCase().includes(state.search))) return false;
+  // say Perch.  Animals match from the start of a word, as they do on
+  // Inventory, so "ox" is the Ox and not the Fox a dozen meats share.
+  if (state.search && !card.material.toLowerCase().includes(state.search)
+      && !card.animals.some((a) => startsWord(a.name, state.search))) {
+    return false;
   }
   return true;
 }

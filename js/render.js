@@ -325,10 +325,10 @@ function stockLine(d, personal) {
       <span class="stock-text"><span class="station">${esc(d.station)}</span>
         ${needs}, has <span class="${enough ? 'have' : 'short'}">${d.have}</span>${where}</span>
       <span class="stepper">
-        <button type="button" data-delta="-1" data-key="${esc(d.location_id)}-less"
+        <button type="button" data-delta="-1" data-key="${esc(d.station_id)}-less"
                 ${d.have <= 0 ? 'disabled' : ''}
                 aria-label="One fewer with ${esc(place)}">-</button>
-        <button type="button" class="add" data-delta="1" data-key="${esc(d.location_id)}-more"
+        <button type="button" class="add" data-delta="1" data-key="${esc(d.station_id)}-more"
                 aria-label="Add one to ${esc(place)}">+ Add to ${esc(d.location)}</button>
       </span>
     </div>`;
@@ -372,14 +372,21 @@ function verdict(material, personal) {
   const animal = material.source_type === 'animal';
   const fish = material.animals.length > 0 && material.animals.every((a) => a.bait);
 
+  // A material the campfire also uses is never finished with, and a
+  // surplus of it is better cooked than sold.
+  const fire = material.demands.some((d) => d.campfire);
+
   const [state, words] =
     animal && totalNeeded === 0
-      ? ['done', "You are done with this item, you don't need more!!"]
+      ? fire ? ['enough', 'No vendor needs more. It still goes into campfire recipes.']
+             : ['done', "You are done with this item, you don't need more!!"]
     : moreNeeded === 0
       ? ['enough', 'You have what you need!']
     : moreNeeded > 0
       ? ['short', fish ? 'You need to go fishing!'
                 : animal ? 'You need to go hunting!' : 'You need to go find it!']
+    : fire
+      ? ['spare', 'You have more than any vendor needs. The rest can go on the fire.']
     : animal
       ? ['spare', "You're already golden! If you have more, sell them to Butcher!!"]
       : ['spare', 'You may sell the rest!'];
@@ -466,7 +473,7 @@ function demandRow(d, personal) {
 
 /**
  * How many cards a gallery shows before you ask for more.  Both
- * galleries run to three figures, and a phone rendering 165 cards
+ * galleries run to three figures, and a phone rendering 255 cards
  * to show you the first four is work nobody asked for.
  */
 export const PAGE = 20;
