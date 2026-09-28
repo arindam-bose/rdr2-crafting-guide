@@ -825,6 +825,17 @@ body:has(dialog.detail[open]) { overflow: hidden; }
 .detail-recipes li.made .what,
 .detail-recipes li.retired .what  { color: var(--ink-faint); }
 
+/* The animals a material comes from: the name, and how to take it --
+   a weapon, or the bait for a fish -- set to the right. */
+.detail-animals li { align-items: baseline; background: var(--surface); }
+.detail-animals .what { flex: 1; min-width: 0; }
+.detail-animals .how {
+  flex: 0 1 auto;
+  text-align: right;
+  font-size: .78rem;
+  color: var(--ink-dim);
+}
+
 .detail-stock { display: flex; flex-direction: column; gap: 10px; }
 
 .stock-line {

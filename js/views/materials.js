@@ -224,7 +224,8 @@ export function mount(root) {
     const personal = store.isPersonal();
     showChips.hidden = !personal;
 
-    lastCards = group(queries.materials({ personal }), queries.materialUsage());
+    lastCards = group(queries.materials({ personal }), queries.materialUsage(),
+                      queries.materialAnimals());
     const matched = lastCards.filter((m) => matches(m, state, personal));
 
     // Every tab shows how many of the current matches it holds, so
@@ -272,11 +273,12 @@ function emptyMessage(state, personal, counts) {
 }
 
 // ------------------------------------------------------------
-// The demand query returns one row per (material, station), and
-// the usage query one row per (material, recipe).  Cards are per
-// material, so fold both in.
+// The demand query returns one row per (material, station), the
+// usage query one row per (material, recipe), and the animals query
+// one per (material, animal).  Cards are per material, so fold all
+// three in.
 // ------------------------------------------------------------
-function group(rows, usage) {
+function group(rows, usage, animals) {
   const byIngredient = new Map();
 
   for (const row of rows) {
@@ -288,8 +290,7 @@ function group(rows, usage) {
         quality: row.quality,
         source_type: row.source_type,
         body_part: row.body_part,
-        animal: row.animal,
-        weapon: row.weapon,
+        animals: [],
         demands: [],
         usage: [],
       };
@@ -309,6 +310,9 @@ function group(rows, usage) {
 
   for (const u of usage) {
     byIngredient.get(u.ingredient_id)?.usage.push(u);
+  }
+  for (const a of animals) {
+    byIngredient.get(a.ingredient_id)?.animals.push(a);
   }
 
   return [...byIngredient.values()];

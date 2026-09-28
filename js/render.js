@@ -18,6 +18,17 @@ export function crossLink(route, id, text) {
   return `<a class="xlink" href="${esc(nav.href(route, id))}">${esc(text)}</a>`;
 }
 
+/**
+ * A name that leads off the site -- an animal's wiki page -- in a new
+ * tab, drawn like a cross-link.  Only a web address becomes a link: the
+ * value comes from a spreadsheet, and a `javascript:` one would run.
+ */
+export function webLink(url, text) {
+  if (!/^https?:\/\//i.test(url ?? '')) return esc(text);
+  return `<a class="xlink" href="${esc(url)}" target="_blank" rel="noopener noreferrer"
+            title="${esc(text)} on the Red Dead wiki">${esc(text)}</a>`;
+}
+
 export function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (c) => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -79,7 +90,7 @@ const USAGE_SHOWN = 6;
  * the whole card opens.
  *
  *   material = { ingredient_id, material, quality, source_type,
- *                animal, weapon, body_part, demands: [...],
+ *                body_part, animals: [...], demands: [...],
  *                usage: [...] }
  *
  * `personal` decides whether the card talks about what you have, and
@@ -201,15 +212,20 @@ export function heldAt(id, name) {
  * what you just brought in can be logged without leaving the page.
  */
 export function materialDetail(material, { personal }) {
-  const { material: name, quality, source_type, animal, weapon, body_part } = material;
+  const { material: name, quality, source_type, body_part, animals } = material;
   const isAnimal = source_type === 'animal';
 
-  // Fat, meat and the common feathers come off a dozen animals, so the
-  // label counts them.
+  // A pelt comes off one animal, and its weapon or bait sits in the
+  // facts beside it.  Fat, meat and the common feathers come off a
+  // dozen, each taken its own way, so they get a list instead: one
+  // merged "Weapon" line could not say which animal wants which.
+  const [only] = animals.length === 1 ? animals : [];
   const facts = isAnimal
-    ? [[animal?.includes(',') ? 'Animals' : 'Animal', esc(animal)],
+    ? [['Animal', only && webLink(only.link, only.name)],
        ['Quality', qualityBadge(quality)],
-       ['Type', esc(body_part)], ['Weapon', esc(weapon)]]
+       ['Type', esc(body_part)],
+       ['Weapon', only && esc(only.weapon)],
+       ['Bait', only && esc(only.bait)]]
     : source_type === 'misc'
       ? [['Source', 'Found out in the world'], ['Quality', qualityBadge(quality)]]
       : [];
@@ -228,6 +244,10 @@ export function materialDetail(material, { personal }) {
   return `
     ${detailHead(KIND_LABEL[source_type] ?? 'Material', name)}
     ${traits(facts)}
+    ${detailSection('Animals', animals.length > 1 && `
+      <ul class="detail-list detail-animals">
+        ${animals.map(animalLine).join('')}
+      </ul>`)}
     ${detailSection('Recipes used in', material.usage.length && `
       <ul class="detail-list detail-recipes">
         ${material.usage.map((u) => recipeLine(u, personal)).join('')}
@@ -237,6 +257,16 @@ export function materialDetail(material, { personal }) {
         ${demands.map((d) => stockLine(d, personal)).join('')}
       </div>`)}
     ${detailSection('Comments', verdict(material, personal))}`;
+}
+
+/** One animal a material comes from, and how to take it. */
+function animalLine(a) {
+  const how = a.bait ? `Bait: ${a.bait}` : a.weapon;
+  return `
+    <li>
+      <span class="what">${webLink(a.link, a.name)}</span>
+      ${how ? `<span class="how">${esc(how)}</span>` : ''}
+    </li>`;
 }
 
 /** "2x for " when a recipe takes more than one of this; nothing for one. */
@@ -340,6 +370,7 @@ function verdict(material, personal) {
   const have = vendors.reduce((n, d) => n + d.have, 0);
   const moreNeeded = totalNeeded - have;
   const animal = material.source_type === 'animal';
+  const fish = material.animals.length > 0 && material.animals.every((a) => a.bait);
 
   const [state, words] =
     animal && totalNeeded === 0
@@ -347,7 +378,8 @@ function verdict(material, personal) {
     : moreNeeded === 0
       ? ['enough', 'You have what you need!']
     : moreNeeded > 0
-      ? ['short', animal ? 'You need to go hunting!' : 'You need to go find it!']
+      ? ['short', fish ? 'You need to go fishing!'
+                : animal ? 'You need to go hunting!' : 'You need to go find it!']
     : animal
       ? ['spare', "You're already golden! If you have more, sell them to Butcher!!"]
       : ['spare', 'You may sell the rest!'];

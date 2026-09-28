@@ -47,9 +47,18 @@ opened as a file, because the modules and the database are fetched.
     pip install pandas openpyxl
     python3 scripts/build_db.py --check-ids data/rdr2.db
 
-Its sources live in `data/raw/`: the five Notion CSVs and the campfire-recipe
-workbook, `consumable_recipes_rdr2.xlsx`. Pass a folder to read the CSVs from
-elsewhere, and `-c` for another workbook. `--check-ids` names the build being replaced: every ingredient,
+Its sources live in `data/raw/`: the five Notion CSVs, the campfire-recipe
+workbook, `consumable_recipes_rdr2.xlsx`, and the patch workbook,
+`rdr2_patch.xlsx`. Pass a folder to read the CSVs from elsewhere, `-c` for
+another campfire workbook and `-p` for another patch.
+
+Corrections go in the patch, never in `rdr2.db` — every build replaces the
+database, so an edit made there is lost on the next one. The patch is applied
+last. Its `animals` sheet updates animals by id: name, the weapon that leaves
+the pelt unspoiled, the `bait` or lure that catches a fish, and a wiki `link`.
+An animal's id stays put when its name changes (`animal-bear` is the Grizzly
+Bear). Its `ingredient_animals` sheet is the whole of that table, and the build
+lists every link it adds or drops against the other sources. `--check-ids` names the build being replaced: every ingredient,
 recipe and location id in it must survive, because the personal layer stores
 those strings, and the build fails if one is gone.
 
@@ -287,7 +296,10 @@ still wants it — `Pearson: 0/2` — with that vendor's colour down the left ed
 and a progress bar on the right.
 
 The dialog adds what the card leaves out: the animal, quality, type and the
-weapon that leaves it unspoiled; every recipe with a Crafted / Not crafted /
+weapon that leaves it unspoiled — or, for a fish, the bait or lure that
+catches it. A material that comes off several animals (fat, the meats, Flight
+Feather) lists them instead, each with its own weapon or bait. Every animal's
+name links to its page on the Red Dead wiki, in a new tab. Then every recipe with a Crafted / Not crafted /
 Skipped tag; each vendor's demand against what you hold where it draws from — the
 Fence names your Satchel — and the verdict, *You need to go hunting!* and its
 siblings. Each station row has `-` and `+ Add to Trapper` buttons. These write

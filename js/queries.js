@@ -50,17 +50,6 @@ export function materials({ personal = true } = {}) {
                ing.source_type      AS source_type,
                ing.quality          AS quality,
                ing.body_part        AS body_part,
-               (SELECT GROUP_CONCAT(name, ', ') FROM (
-                  SELECT a.name FROM ingredient_animals ia
-                  JOIN   animals a ON a.id = ia.animal_id
-                  WHERE  ia.ingredient_id = ing.id ORDER BY a.name))
-                                    AS animal,
-               (SELECT GROUP_CONCAT(name, ', ') FROM (
-                  SELECT DISTINCT w.name FROM ingredient_animals ia
-                  JOIN   animals a ON a.id = ia.animal_id
-                  JOIN   weapons w ON w.id = a.weapon_id
-                  WHERE  ia.ingredient_id = ing.id ORDER BY w.name))
-                                    AS weapon,
                st.id                AS station_id,
                st.name              AS station,
                st.color             AS color,
@@ -102,6 +91,28 @@ export function materialUsage() {
     JOIN       stations st ON st.id = r.station_id
     LEFT JOIN  targets  t  ON t.recipe_id = r.id
     ORDER BY   r.name
+  `);
+}
+
+/**
+ * Where each material comes from: one row per (material, animal),
+ * with the weapon that takes the animal cleanly or -- for a fish --
+ * the bait or lure that catches it, and its wiki page.  Its own query
+ * rather than columns on materials(): a material can come from a
+ * dozen animals, and joining them there would multiply its demand.
+ */
+export function materialAnimals() {
+  return db.all(`
+    SELECT     ia.ingredient_id,
+               a.id    AS animal_id,
+               a.name  AS name,
+               a.link  AS link,
+               a.bait  AS bait,
+               w.name  AS weapon
+    FROM       ingredient_animals ia
+    JOIN       animals a ON a.id = ia.animal_id
+    LEFT JOIN  weapons w ON w.id = a.weapon_id
+    ORDER BY   a.name
   `);
 }
 

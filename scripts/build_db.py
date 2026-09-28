@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Build rdr2.db from the Notion 'RDR2 Databases' CSV export and the
-campfire-recipe workbook.
+Build rdr2.db from the Notion 'RDR2 Databases' CSV export, the
+campfire-recipe workbook, and a patch workbook of corrections.
 
 Usage:
-    python3 build_db.py [export_dir] [-c workbook.xlsx]
+    python3 build_db.py [export_dir] [-c workbook.xlsx] [-p patch.xlsx]
                         [-o data/rdr2.db] [--check-ids data/rdr2.db]
 
 [export_dir] is the folder holding the five exported CSVs, renamed
@@ -15,6 +15,14 @@ defaults to data/raw, where the workbook lives too.
 The workbook holds the consumable recipes -- made at your own campfire,
 as often as you have the ingredients -- and four index sheets of the
 ingredients they call for.
+
+The patch workbook is applied last, and is where the reference data is
+corrected rather than in the database itself, which every build
+replaces.  Its 'animals' sheet updates animals by id -- name, weapon,
+bait for the fish, a wiki link -- and adds any it names that are new.
+Its 'ingredient_animals' sheet is the whole of that table: the build
+reports every link it adds or drops against what the other sources
+said.
 
 --check-ids names an earlier build.  Every ingredient, recipe and
 location id in it must still be produced, because the personal layer
@@ -38,7 +46,7 @@ import pandas as pd
 # --------------------------------------------------------------------------
 
 # Bumped when the shape of the generated database changes.
-SCHEMA_VERSION = "2"
+SCHEMA_VERSION = "3"
 
 # where materials are stored
 LOCATIONS = ["Satchel", "Trapper", "Pearson"]
@@ -100,10 +108,15 @@ CREATE TABLE weapons (
     name  TEXT NOT NULL UNIQUE
 );
 
+-- An animal is hunted with a weapon, or -- a fish -- caught with a bait
+-- or lure; bait is free text ("River lures, Worm, Cricket").  The id
+-- stays put when a name is corrected (animal-bear is the Grizzly Bear).
 CREATE TABLE animals (
     id         TEXT PRIMARY KEY,     -- animal-bear
     name       TEXT NOT NULL UNIQUE,
-    weapon_id  TEXT REFERENCES weapons(id)
+    weapon_id  TEXT REFERENCES weapons(id),
+    bait       TEXT,
+    link       TEXT                  -- the animal's wiki page
 );
 
 -- where materials are stored
@@ -306,7 +319,7 @@ def load(export_dir, stem):
 # build
 # --------------------------------------------------------------------------
 
-def build(export_dir, consumables, out_path):
+def build(export_dir, consumables, patch, out_path):
     animals_df  = load(export_dir, "Animals")
     animal_mat  = load(export_dir, "Animal Materials")
     misc_mat    = load(export_dir, "Misc Materials")
@@ -327,7 +340,8 @@ def build(export_dir, consumables, out_path):
         ("schema_version", SCHEMA_VERSION),
         ("built_at", datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d")),
         ("source", "Notion 'RDR2 Databases' export"
-                   + (f" + {os.path.basename(consumables)}" if consumables else "")),
+                   + (f" + {os.path.basename(consumables)}" if consumables else "")
+                   + (f" + {os.path.basename(patch)}" if patch else "")),
     ])
 
     # ---- weapons ------------------------------------------------------
@@ -439,8 +453,84 @@ def build(export_dir, consumables, out_path):
         build_consumables(db, consumables, animal_id,
                           station_id["Campfire"], warnings, added)
 
+    notes = []
+    if added:
+        notes.append(f"the campfire workbook added {len(added)} animals: "
+                     + ", ".join(sorted(added)))
+    if patch:
+        apply_patch(db, patch, warnings, notes)
+
     db.commit()
-    return db, warnings, added
+    return db, warnings, notes
+
+
+def blank(value):
+    """A spreadsheet cell as a value: None for empty, trimmed text otherwise."""
+    if value is None or pd.isna(value):
+        return None
+    return str(value).strip() or None
+
+
+def apply_patch(db, path, warnings, notes):
+    """
+    Apply the patch workbook: corrections made by hand, kept as a source
+    so that a rebuild keeps them.  See the module docstring.
+    """
+    book = pd.read_excel(path, sheet_name=None, dtype=str)
+    for sheet in ("animals", "ingredient_animals"):
+        if sheet not in book:
+            sys.exit(f"error: no {sheet!r} sheet in {path}")
+
+    # ---- animals: update by id, insert what is new -------------------------
+    known = {i: n for i, n in db.execute("SELECT id, name FROM animals")}
+    weapons = {i for (i,) in db.execute("SELECT id FROM weapons")}
+    seen = set()
+    for _, r in book["animals"].iterrows():
+        aid, name = blank(r.get("id")), blank(r.get("name"))
+        if not aid or not name:
+            continue
+        seen.add(aid)
+        weapon, bait, link = (blank(r.get(c)) for c in ("weapon_id", "bait", "link"))
+        if weapon and weapon not in weapons:
+            warnings.append(f"{name!r}: unknown weapon {weapon!r}, left blank")
+            weapon = None
+        if not weapon and not bait:
+            warnings.append(f"{name!r}: neither a weapon nor a bait")
+        if aid in known:
+            if known[aid] != name:
+                notes.append(f"renamed {known[aid]!r} -> {name!r} ({aid})")
+            db.execute("UPDATE animals SET name = ?, weapon_id = ?, bait = ?, "
+                       "link = ? WHERE id = ?", (name, weapon, bait, link, aid))
+        else:
+            notes.append(f"new animal {name!r} ({aid})")
+            db.execute("INSERT INTO animals(id, name, weapon_id, bait, link) "
+                       "VALUES (?,?,?,?,?)", (aid, name, weapon, bait, link))
+    for aid in sorted(set(known) - seen):
+        warnings.append(f"{known[aid]!r} ({aid}) is not in the patch: "
+                        "no bait or link")
+
+    # ---- ingredient_animals: the patch is the whole table -------------------
+    animals = {i for (i,) in db.execute("SELECT id FROM animals")}
+    ingredients = {i for (i,) in db.execute("SELECT id FROM ingredients")}
+    links = set()
+    for _, r in book["ingredient_animals"].iterrows():
+        iid, aid = blank(r.get("ingredient_id")), blank(r.get("animal_id"))
+        if not iid or not aid:
+            continue
+        if iid not in ingredients or aid not in animals:
+            warnings.append(f"link {iid} -> {aid}: unknown "
+                            f"{'ingredient' if iid not in ingredients else 'animal'}")
+            continue
+        links.add((iid, aid))
+
+    before = set(db.execute("SELECT ingredient_id, animal_id FROM ingredient_animals"))
+    for iid, aid in sorted(links - before):
+        notes.append(f"link added: {iid} <- {aid}")
+    for iid, aid in sorted(before - links):
+        warnings.append(f"link dropped: {iid} <- {aid}")
+    db.execute("DELETE FROM ingredient_animals")
+    db.executemany("INSERT INTO ingredient_animals(ingredient_id, animal_id) "
+                   "VALUES (?,?)", sorted(links))
 
 
 def build_consumables(db, path, animal_id, campfire, warnings, added):
@@ -566,14 +656,14 @@ def lost_ids(db, baseline):
             for i in sorted(ids - {i for (i,) in db.execute(f"SELECT id FROM {t}")})]
 
 
-def report(db, warnings, added, lost, out_path):
+def report(db, warnings, notes, lost, out_path):
     tables = ("weapons", "animals", "locations", "stations", "sets",
               "ingredients", "ingredient_animals", "recipes",
               "recipe_ingredients", "meta")
     counts = [(t, db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0])
               for t in tables]
     width = max(len(t) for t, _ in counts)
-    print(f"wrote {out_path}\n")
+    print(f"built {out_path}\n")
     for table, n in counts:
         print(f"  {table:<{width}}  {n:>5}")
     for repeatable, n in db.execute("SELECT repeatable, COUNT(*) FROM recipes "
@@ -589,9 +679,10 @@ def report(db, warnings, added, lost, out_path):
         for (n,) in unused[:10]:
             print(f"    - {n}")
 
-    if added:
-        print(f"\n  animals added by the workbook, with no weapon: {len(added)}")
-        print("    " + ", ".join(sorted(added)))
+    if notes:
+        print(f"\n  notes: {len(notes)}")
+        for n in notes:
+            print(f"    - {n}")
 
     if lost is not None:
         print(f"\n  ids lost against the baseline: {len(lost)}")
@@ -612,18 +703,43 @@ def main():
     ap.add_argument("-c", "--consumables",
                     default="data/raw/consumable_recipes_rdr2.xlsx",
                     help="the campfire-recipe workbook ('' to leave it out)")
+    ap.add_argument("-p", "--patch", default="data/raw/rdr2_patch.xlsx",
+                    help="the corrections workbook ('' to leave it out)")
     ap.add_argument("-o", "--output", default="data/rdr2.db")
     ap.add_argument("--check-ids", metavar="DB",
                     help="an earlier build whose ids must all survive")
     args = ap.parse_args()
 
+    # pandas only reaches for openpyxl once it opens a workbook, halfway
+    # through a build; say so up front instead.
+    if args.consumables or args.patch:
+        try:
+            import openpyxl  # noqa: F401
+        except ImportError:
+            sys.exit("error: reading the workbooks needs openpyxl "
+                     "(pip install openpyxl)")
+
+    # Built beside the output and swapped in only once it has succeeded
+    # and kept every id, so a failed build leaves the old database as it
+    # was.  The swap is a rename, so the app never sees half a file.
     baseline = baseline_ids(args.check_ids)
-    db, warnings, added = build(args.export_dir, args.consumables, args.output)
-    lost = lost_ids(db, baseline) if baseline else None
-    report(db, warnings, added, lost, args.output)
-    db.close()
+    staging = args.output + ".building"
+    try:
+        db, warnings, notes = build(args.export_dir, args.consumables,
+                                    args.patch, staging)
+        lost = lost_ids(db, baseline) if baseline else None
+        report(db, warnings, notes, lost, args.output)
+        db.close()
+    except BaseException:
+        if os.path.exists(staging):
+            os.remove(staging)
+        raise
+
     if lost:
-        sys.exit(f"error: {len(lost)} ids from {args.check_ids} are gone")
+        os.remove(staging)
+        sys.exit(f"error: {len(lost)} ids from {args.check_ids} are gone; "
+                 f"{args.output} left as it was")
+    os.replace(staging, args.output)
 
 
 if __name__ == "__main__":
