@@ -288,7 +288,7 @@ function card(r, personal) {
               aria-haspopup="dialog">${nameWith(r.name,
           stationMark(r.station_id, r.station, r.color)
           + (settled ? stateBadge(r.state) : ''))}</button></h3>
-        ${r.price_cents ? `<span class="price">${priceLabel(r)}</span>` : ''}
+        <span class="price">${r.price_cents ? priceLabel(r) : ''}</span>
       </header>
 
       ${buff(r.description)}

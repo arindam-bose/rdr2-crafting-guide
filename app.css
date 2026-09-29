@@ -750,8 +750,22 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
    .card) rather than fighting it: the negative bottom closes most of
    that gap, the positive top adds to it.  `.list-label.card-label`
    rather than `.card-label` alone so this outranks the plain
-   `.list-label` rule regardless of which comes later in the file. */
-.list-label.card-label { margin: 12px 0 -6px; text-transform: none; }
+   `.list-label` rule regardless of which comes later in the file.
+   The rule trails the caption on its own line, filling what is left
+   of it, rather than sitting above or below as a full border. */
+.list-label.card-label {
+  margin: 12px 0 -6px;
+  text-transform: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.list-label.card-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
 
 .used-in {
   margin: 0;
@@ -1024,11 +1038,28 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   gap: 2px;
 }
 
+/* Flush right as before, but with a rule leading into it on the same
+   line, filling whatever room the name above did not need.  A free
+   recipe has no price text, so the row would otherwise be nothing but
+   the rule's own 1px and collapse -- min-height pins it to the same
+   line height a priced row gets from its text, so the rule sits the
+   same distance under the name either way, and whatever comes after
+   the card starts at the same height as its neighbours. */
 .price {
-  align-self: flex-end;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 1.5em;
   font-size: .82rem;
   font-variant-numeric: tabular-nums;
   color: var(--ink-dim);
+}
+.price::before {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
 }
 
 /* Buff text is one line for most recipes.  The saddles list five stats,
