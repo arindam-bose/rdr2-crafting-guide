@@ -35,17 +35,6 @@ export function esc(value) {
   }[c]));
 }
 
-/**
- * The quality chip beside a material's name, as an inventory row
- * writes it out.  A card and a recipe's ingredients draw the stars
- * instead; see qualityStars.
- */
-export function qualityBadge(quality) {
-  if (!quality) return '';
-  const legendary = quality === 'Legendary' ? ' legendary' : '';
-  return `<span class="badge${legendary}">${esc(quality)}</span>`;
-}
-
 /** The stamp of stars itself: grey for Perfect, gold for Legendary. */
 function stars(quality, label) {
   const named = label
@@ -55,9 +44,9 @@ function stars(quality, label) {
 }
 
 /**
- * Quality as the game marks it, beside a material's name on a card or
- * in a recipe's ingredients: the stars alone, labelled, so a screen
- * reader still says which.
+ * Quality as the game marks it, beside a material's name wherever one
+ * is listed -- a card, a recipe's ingredients, an inventory row: the
+ * stars alone, labelled, so a screen reader still says which.
  */
 export function qualityStars(quality) {
   return quality ? stars(quality, true) : '';

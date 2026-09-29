@@ -17,7 +17,7 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { esc, empty, heldAt, plural, qualityBadge } from '../render.js';
+import { esc, empty, heldAt, nameWith, plural, qualityStars } from '../render.js';
 import * as toolbar from './toolbar.js';
 import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
@@ -230,8 +230,6 @@ function row(m, pending) {
   const delta = pending?.delta ?? 0;
   const shown = m.qty + delta;
 
-  const badge = qualityBadge(m.quality);
-
   const mark = delta
     ? `<small>${delta > 0 ? '+' : '-'}${Math.abs(delta)}</small>`
     : '';
@@ -239,7 +237,7 @@ function row(m, pending) {
   return `
     <div class="row${delta ? ' staged' : ''}" data-ingredient="${esc(m.ingredient_id)}"
          data-name="${esc(m.name)}" data-source="${esc(m.source_type)}">
-      <span class="name">${esc(m.name)}${badge}${history(m)}</span>
+      <span class="name">${nameWith(m.name, qualityStars(m.quality))}${history(m)}</span>
       <span class="stepper">
         <button type="button" data-delta="-1" ${shown <= 0 ? 'disabled' : ''}
                 aria-label="One fewer ${esc(m.name)}">-</button>

@@ -109,9 +109,6 @@
   --ok:          #46621f;
   --warn:        #7d5a12;
 
-  --perfect:    #3f3a33;
-  --legendary:  #8a6a12;
-
   /* Trapper, Pearson, Fence.  Two warm, one cool -- three warm stripes
      at 3px are hard to tell apart, so the Trapper keeps a blue, pulled
      towards slate so it sits in the same world as the other two. */
@@ -153,9 +150,6 @@
   --danger-text: #ec6a5a;            /* the raw red is 2.9:1 here */
   --ok:          #9cb86c;
   --warn:        #e0b155;
-
-  --perfect:    #e8e8e6;
-  --legendary:  #e0bb45;
 
   --station-blue:   #93a8b8;
   --station-yellow: #ddb455;
@@ -647,14 +641,13 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   text-transform: uppercase;
   border-radius: 999px;
   border: 1px solid currentColor;
-  color: var(--perfect);
+  color: var(--ink-dim);
   vertical-align: 1px;
 }
-.badge.legendary { color: var(--legendary); }
 
-/* Quality as the game stamps it: three stars, grey or gold, where a
-   card or an ingredient would otherwise spell it out in a chip.  The
-   box is the stars' own proportions, a little wider than tall. */
+/* Quality as the game stamps it: three stars, grey or gold, beside a
+   material's name wherever one is listed.  The box is the stars' own
+   proportions, a little wider than tall. */
 .stars {
   display: inline-block;
   width: 1.5em;
@@ -1526,7 +1519,7 @@ ul.buff li::before {
   gap: 10px;
   font-size: .86rem;
 }
-.facts dt { flex: 1; color: var(--ink-dim); }
+.facts dt { flex: 1; color: var(--ink-dim); white-space: nowrap; }
 .facts dd {
   margin: 0;
   color: var(--ink);
