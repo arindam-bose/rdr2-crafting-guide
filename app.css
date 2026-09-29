@@ -460,7 +460,9 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .icon-pearson   { background-image: url('images/icons/parchment/pearson-inverse.png'); }
 .icon-trapper   { background-image: url('images/icons/parchment/trapper-inverse.png'); }
 .icon-fence     { background-image: url('images/icons/parchment/fence-inverse.png'); }
+.icon-crafted   { background-image: url('images/icons/parchment/checkbox-checked.png'); }
 
+:root[data-theme="leather"] .icon-crafted   { background-image: url('images/icons/leather/checkbox-checked.png'); }
 :root[data-theme="leather"] .icon-animals   { background-image: url('images/icons/leather/animals-inverse.png'); }
 :root[data-theme="leather"] .icon-plants    { background-image: url('images/icons/leather/plants-inverse.png'); }
 :root[data-theme="leather"] .icon-supplies  { background-image: url('images/icons/leather/supplies-inverse.png'); }
@@ -1036,6 +1038,25 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+/* The name on the left, the crafted checkbox pinned to the right on
+   the same line -- top-aligned, so a name that wraps to two lines
+   grows downward under it rather than pushing it off centre. */
+.recipe-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.recipe-title h3 { flex: 1; min-width: 0; }
+
+.crafted-mark {
+  flex: none;
+  width: 1.3em;
+  height: 1.3em;
+  margin: 0;
+  vertical-align: 0;
 }
 
 /* Flush right as before, but with a rule leading into it on the same

@@ -273,21 +273,27 @@ function matches(r, state, personal) {
 function card(r, personal) {
   const colour = stationColour(r.color);
   const settled = personal && r.state !== 'wanted';
+  const crafted = r.state === 'done';
 
   // The name is a real button, so the card opens from the keyboard
   // too; a click anywhere else on the card is forwarded to it.  The
   // station and the state go inside it: a button is a box, and a name
   // that wraps widens it to the whole line, so anything after it would
   // drop to a line of its own even with room beside the last word.
-  // nameWith keeps them with that word when there is none.
+  // nameWith keeps them with that word when there is none.  Crafted
+  // gets the checkbox instead, held apart from the name so a long one
+  // wrapping never drags it down with it.
   return `
     <article class="card recipe ${colour}${settled ? ' settled' : ''}"
              data-recipe="${esc(r.id)}">
       <header class="recipe-head">
-        <h3><button type="button" class="card-open" data-open
-              aria-haspopup="dialog">${nameWith(r.name,
-          stationMark(r.station_id, r.station, r.color)
-          + (settled ? stateBadge(r.state) : ''))}</button></h3>
+        <div class="recipe-title">
+          <h3><button type="button" class="card-open" data-open
+                aria-haspopup="dialog">${nameWith(r.name,
+            stationMark(r.station_id, r.station, r.color)
+            + (settled && !crafted ? stateBadge(r.state) : ''))}</button></h3>
+          ${crafted ? craftedMark() : ''}
+        </div>
         <span class="price">${r.price_cents ? priceLabel(r) : ''}</span>
       </header>
 
@@ -357,6 +363,13 @@ function slotLine(options, personal) {
 /** "Crafted" or "Skipped", beside the vendor, once a recipe is settled. */
 function stateBadge(state) {
   return `<span class="badge state ${state}">${esc(STATE_LABEL[state])}</span>`;
+}
+
+/** The checkbox stamped on a card once it is crafted, at the name's side
+    rather than glued to it, so it stays put whatever the name does. */
+function craftedMark() {
+  return `<span class="icon icon-crafted crafted-mark" role="img"
+            aria-label="Crafted" title="Crafted"></span>`;
 }
 
 /**
