@@ -659,6 +659,13 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .stars-perfect   { background-image: url('images/icons/stars-perfect.png'); }
 .stars-legendary { background-image: url('images/icons/stars-legendary.png'); }
 
+/* Perfect's grey sits at 6:1 on paper but under 2:1 on leather, so
+   leather takes a silver of its own: about 5:1, clear without glaring
+   brighter than Legendary's gold. */
+:root[data-theme="leather"] .stars-perfect {
+  background-image: url('images/icons/leather/stars-perfect.png');
+}
+
 /* In a dialog's facts the stars lead the word instead of trailing a name. */
 .trait .stars { margin: 0 .4em 0 0; }
 
