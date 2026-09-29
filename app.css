@@ -659,11 +659,15 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .stars-perfect   { background-image: url('images/icons/stars-perfect.png'); }
 .stars-legendary { background-image: url('images/icons/stars-legendary.png'); }
 
-/* Perfect's grey sits at 6:1 on paper but under 2:1 on leather, so
-   leather takes a silver of its own: about 5:1, clear without glaring
-   brighter than Legendary's gold. */
+/* Both greys and golds are pitched for paper: on leather Perfect falls
+   under 2:1 and Legendary under 3:1.  Leather takes its own pair, a
+   silver at about 5:1 and a gold a notch above it, so Legendary still
+   reads as the rarer of the two. */
 :root[data-theme="leather"] .stars-perfect {
   background-image: url('images/icons/leather/stars-perfect.png');
+}
+:root[data-theme="leather"] .stars-legendary {
+  background-image: url('images/icons/leather/stars-legendary.png');
 }
 
 /* In a dialog's facts the stars lead the word instead of trailing a name. */
