@@ -656,13 +656,13 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   vertical-align: -.25em;
   background: no-repeat center / contain;
 }
-.stars-perfect   { background-image: url('images/icons/stars-perfect.png'); }
-.stars-legendary { background-image: url('images/icons/stars-legendary.png'); }
+.stars-perfect   { background-image: url('images/icons/parchment/stars-perfect.png'); }
+.stars-legendary { background-image: url('images/icons/parchment/stars-legendary.png'); }
 
-/* Both greys and golds are pitched for paper: on leather Perfect falls
-   under 2:1 and Legendary under 3:1.  Leather takes its own pair, a
-   silver at about 5:1 and a gold a notch above it, so Legendary still
-   reads as the rarer of the two. */
+/* Each theme takes its own pair rather than sharing one: a grey and a
+   gold pitched for paper read as the same muddy smudge on leather, and
+   the other way round.  Cool grey against warm gold in both, so the
+   two are never just two shades of the one colour. */
 :root[data-theme="leather"] .stars-perfect {
   background-image: url('images/icons/leather/stars-perfect.png');
 }
