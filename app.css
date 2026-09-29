@@ -436,25 +436,48 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   background-position: center;
 }
 
-.icon-animals   { background-image: url('images/icons/parchment/animals.png'); }
-.icon-plants    { background-image: url('images/icons/parchment/plants.png'); }
-.icon-supplies  { background-image: url('images/icons/parchment/supplies.png'); }
-.icon-crafting  { background-image: url('images/icons/parchment/crafting.png'); }
-.icon-campfire  { background-image: url('images/icons/parchment/campfire.png'); }
-.icon-satchel   { background-image: url('images/icons/parchment/satchel.png'); }
-.icon-pearson   { background-image: url('images/icons/parchment/pearson.png'); }
-.icon-trapper   { background-image: url('images/icons/parchment/trapper.png'); }
-.icon-fence     { background-image: url('images/icons/parchment/fence.png'); }
+.icon-animals   { background-image: url('images/icons/parchment/animals-inverse.png'); }
+.icon-plants    { background-image: url('images/icons/parchment/plants-inverse.png'); }
+.icon-supplies  { background-image: url('images/icons/parchment/supplies-inverse.png'); }
+.icon-crafting  { background-image: url('images/icons/parchment/crafting-inverse.png'); }
+.icon-campfire  { background-image: url('images/icons/parchment/campfire-inverse.png'); }
+.icon-satchel   { background-image: url('images/icons/parchment/satchel-inverse.png'); }
+.icon-pearson   { background-image: url('images/icons/parchment/pearson-inverse.png'); }
+.icon-trapper   { background-image: url('images/icons/parchment/trapper-inverse.png'); }
+.icon-fence     { background-image: url('images/icons/parchment/fence-inverse.png'); }
 
-:root[data-theme="leather"] .icon-animals   { background-image: url('images/icons/leather/animals.png'); }
-:root[data-theme="leather"] .icon-plants    { background-image: url('images/icons/leather/plants.png'); }
-:root[data-theme="leather"] .icon-supplies  { background-image: url('images/icons/leather/supplies.png'); }
-:root[data-theme="leather"] .icon-crafting  { background-image: url('images/icons/leather/crafting.png'); }
-:root[data-theme="leather"] .icon-campfire  { background-image: url('images/icons/leather/campfire.png'); }
-:root[data-theme="leather"] .icon-satchel   { background-image: url('images/icons/leather/satchel.png'); }
-:root[data-theme="leather"] .icon-pearson   { background-image: url('images/icons/leather/pearson.png'); }
-:root[data-theme="leather"] .icon-trapper   { background-image: url('images/icons/leather/trapper.png'); }
-:root[data-theme="leather"] .icon-fence     { background-image: url('images/icons/leather/fence.png'); }
+:root[data-theme="leather"] .icon-animals   { background-image: url('images/icons/leather/animals-inverse.png'); }
+:root[data-theme="leather"] .icon-plants    { background-image: url('images/icons/leather/plants-inverse.png'); }
+:root[data-theme="leather"] .icon-supplies  { background-image: url('images/icons/leather/supplies-inverse.png'); }
+:root[data-theme="leather"] .icon-crafting  { background-image: url('images/icons/leather/crafting-inverse.png'); }
+:root[data-theme="leather"] .icon-campfire  { background-image: url('images/icons/leather/campfire-inverse.png'); }
+:root[data-theme="leather"] .icon-satchel   { background-image: url('images/icons/leather/satchel-inverse.png'); }
+:root[data-theme="leather"] .icon-pearson   { background-image: url('images/icons/leather/pearson-inverse.png'); }
+:root[data-theme="leather"] .icon-trapper   { background-image: url('images/icons/leather/trapper-inverse.png'); }
+:root[data-theme="leather"] .icon-fence     { background-image: url('images/icons/leather/fence-inverse.png'); }
+
+/* A pressed chip or a chosen tab turns its label over -- pale on
+   parchment, dark on leather -- and the medallion's disc follows the
+   label, so the other colourway takes its place. */
+:is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-animals  { background-image: url('images/icons/parchment/animals.png'); }
+:is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-plants   { background-image: url('images/icons/parchment/plants.png'); }
+:is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-supplies { background-image: url('images/icons/parchment/supplies.png'); }
+:is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-crafting { background-image: url('images/icons/parchment/crafting.png'); }
+:is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-campfire { background-image: url('images/icons/parchment/campfire.png'); }
+:is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-satchel  { background-image: url('images/icons/parchment/satchel.png'); }
+:is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-pearson  { background-image: url('images/icons/parchment/pearson.png'); }
+:is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-trapper  { background-image: url('images/icons/parchment/trapper.png'); }
+:is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-fence    { background-image: url('images/icons/parchment/fence.png'); }
+
+:root[data-theme="leather"] :is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-animals  { background-image: url('images/icons/leather/animals.png'); }
+:root[data-theme="leather"] :is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-plants   { background-image: url('images/icons/leather/plants.png'); }
+:root[data-theme="leather"] :is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-supplies { background-image: url('images/icons/leather/supplies.png'); }
+:root[data-theme="leather"] :is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-crafting { background-image: url('images/icons/leather/crafting.png'); }
+:root[data-theme="leather"] :is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-campfire { background-image: url('images/icons/leather/campfire.png'); }
+:root[data-theme="leather"] :is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-satchel  { background-image: url('images/icons/leather/satchel.png'); }
+:root[data-theme="leather"] :is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-pearson  { background-image: url('images/icons/leather/pearson.png'); }
+:root[data-theme="leather"] :is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-trapper  { background-image: url('images/icons/leather/trapper.png'); }
+:root[data-theme="leather"] :is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-fence    { background-image: url('images/icons/leather/fence.png'); }
 
 /* A dropdown filter: category on both galleries. */
 .select {
