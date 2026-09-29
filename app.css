@@ -1481,6 +1481,32 @@ ul.buff li::before {
   color: var(--ink-faint);
 }
 
+/* A licence, credited: a name and a sentence, not a single link, so
+   unlike .refs the row itself is not the tap target -- the links
+   inside it are. */
+.credits {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.credits li {
+  padding: 7px 0;
+  font-size: .86rem;
+  line-height: 1.4;
+  color: var(--ink-dim);
+  border-bottom: 1px solid var(--line);
+}
+.credits li:last-child { border-bottom: 0; }
+.credits strong { color: var(--ink); }
+.credits a {
+  color: var(--accent-text);
+  text-decoration: none;
+}
+.credits a:hover { text-decoration: underline; }
+
 .paste summary {
   font-size: .82rem;
   color: var(--ink-dim);

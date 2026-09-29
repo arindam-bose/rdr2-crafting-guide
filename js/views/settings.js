@@ -44,6 +44,19 @@ const REFERENCES = [
     url: 'https://www.reddit.com/r/reddeadredemption/comments/kunnbu/rdr2_hunting_and_crafting_guide_story_mode/' },
 ];
 
+// The three faces the page sets type in, and the licence each one is
+// used under.  Hand-built HTML rather than another `url`/`title` pair
+// like REFERENCES above: a licence line reads as a sentence with a
+// couple of links in it, not a single link with a caption.
+const FONT_CREDITS = [
+  { name: 'Chinese Rocks',
+    html: 'Fonts downloaded from <a href="https://www.dafont.com/chinese-rocks.font" target="_blank" rel="noopener noreferrer">DaFont</a> is licensed under the <a href="https://typodermicfonts.com/license/" target="_blank" rel="noopener noreferrer">Typodermic Desktop License</a>.' },
+  { name: 'RDR2 Lino Regular',
+    html: 'Fonts made from <a href="http://www.onlinewebfonts.com" target="_blank" rel="noopener noreferrer">Web Fonts</a> is licensed by CC BY 4.0.' },
+  { name: 'FB Remington',
+    html: 'Fonts downloaded from <a href="https://www.dafont.com/fb_remington.font" target="_blank" rel="noopener noreferrer">DaFont</a> is free for professional usage.' },
+];
+
 export function mount(root) {
   root.innerHTML = `
     <div class="settings">
@@ -130,13 +143,19 @@ export function mount(root) {
       </section>
 
       <section class="panel">
-        <h3>References</h3>
+        <h3>Acknowledgements</h3>
         <p class="note">Where the reference data came from. None of this is
           mine; the guide is only the table they add up to.</p>
         <ul class="refs">
           ${REFERENCES.map((r) => `
             <li><a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer"
                    >${esc(r.title)}<small>${esc(r.source)}</small></a></li>`).join('')}
+        </ul>
+
+        <p class="list-label">Fonts used:</p>
+        <ul class="credits">
+          ${FONT_CREDITS.map((f) => `
+            <li><strong>${esc(f.name)}:</strong> ${f.html}</li>`).join('')}
         </ul>
       </section>
     </div>`;
