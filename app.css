@@ -370,6 +370,27 @@ body {
   }
 }
 
+/* ---------- cover art ---------- */
+
+/* A letterbox cut from the key art: the sun and the riders, with the
+   sky above and the ground below cropped away.  The foot fades out
+   into the page, so the art sits on either theme without a hard edge. */
+.cover {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 16px 16px 0;
+}
+.cover img {
+  display: block;
+  width: 100%;
+  height: clamp(120px, 22vw, 280px);
+  object-fit: cover;
+  object-position: 50% 68%;
+  border-radius: var(--radius);
+  -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent);
+          mask-image: linear-gradient(to bottom, #000 72%, transparent);
+}
+
 /* ---------- layout ---------- */
 
 main { padding: 16px; max-width: 1400px; margin: 0 auto; }

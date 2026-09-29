@@ -425,7 +425,7 @@ function recipeDetail(r, personal) {
       ['Set', esc(r.set_name)],
       ['Price', r.price_cents && money(r.price_cents)],
     ])}
-    ${detailSection('Buffs', buffs.length && `
+    ${detailSection('Description', buffs.length && `
       <ul class="detail-list detail-buffs">
         ${buffs.map((b) => `<li>${buffLine(b)}</li>`).join('')}
       </ul>`)}
@@ -452,7 +452,7 @@ function campfireDetail(r, personal) {
       ['Made at', stationLabel(r.station_id, r.station)],
       ['Recipe cost', r.price_cents && money(r.price_cents)],
     ])}
-    ${detailSection('Effect', buffs.length && `
+    ${detailSection('Description', buffs.length && `
       <ul class="detail-list detail-buffs">
         ${buffs.map((b) => `<li>${buffLine(b)}</li>`).join('')}
       </ul>`)}
