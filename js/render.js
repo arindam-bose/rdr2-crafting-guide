@@ -77,6 +77,18 @@ export function stationBadge(name, colour) {
   return `<span class="badge station ${stationColour(colour)}">${esc(name)}</span>`;
 }
 
+/**
+ * A card's name with whatever trails it -- the stars, a station, a
+ * state -- held to its last word, so a name that fills its line takes
+ * that word down with them rather than leaving them on a line alone.
+ */
+export function nameWith(name, trailing) {
+  if (!trailing) return esc(name);
+  const cut = name.lastIndexOf(' ') + 1;
+  return `${esc(name.slice(0, cut))}<span class="keep">${
+    esc(name.slice(cut))}${trailing}</span>`;
+}
+
 /** "1 material", "2 materials", "3 matches". */
 export function plural(n, word, suffix = 's') {
   return `${n} ${word}${n === 1 ? '' : suffix}`;
@@ -92,13 +104,31 @@ export function stationColour(colour) {
 }
 
 /**
- * The icon that matches a merchant station's id, for the filter chips
- * on Materials and Recipes.  Guarded the same way as stationColour:
- * an id with no icon behind it draws no icon rather than a broken one.
+ * The icon that matches a station's id: the filter chips, the demand
+ * rows, a recipe's card and its dialog.  Guarded the same way as
+ * stationColour: an id with no icon behind it draws no icon rather
+ * than a broken one.
  */
 export function stationIcon(id) {
   return { 'station-pearson': 'pearson', 'station-trapper': 'trapper',
-           'station-fence': 'fence' }[id];
+           'station-fence': 'fence', 'station-campfire': 'campfire' }[id];
+}
+
+/**
+ * A station by its icon alone, where a recipe's card once named it in
+ * a chip: labelled, so a screen reader and a hover still say which.
+ * A station with no icon keeps the chip.
+ */
+export function stationMark(id, name, colour) {
+  const which = stationIcon(id);
+  if (!which) return stationBadge(name, colour);
+  return `<span class="icon icon-${which} station-mark" role="img"
+            aria-label="${esc(name)}" title="${esc(name)}"></span>`;
+}
+
+/** A station in a dialog's facts: its icon, then its name in plain type. */
+export function stationLabel(id, name) {
+  return name ? `${icon(stationIcon(id))}${esc(name)}` : '';
 }
 
 /**
@@ -146,11 +176,12 @@ export function materialCard(material, { personal, expanded = false }) {
   const fire = personal && material.demands.find((d) => d.campfire);
 
   // The name is a real button, so the card opens from the keyboard
-  // too; a click anywhere else on the card is forwarded to it.
+  // too; a click anywhere else on the card is forwarded to it.  The
+  // stars sit inside it, for the reason a recipe card's station does.
   return `
     <article class="card material" data-ingredient="${esc(material.ingredient_id)}">
       <h3><button type="button" class="card-open" data-open
-            aria-haspopup="dialog">${esc(name)}</button>${qualityStars(quality)}</h3>
+            aria-haspopup="dialog">${nameWith(name, qualityStars(quality))}</button></h3>
 
       ${usedIn(material.usage, personal, expanded)}
 
@@ -172,7 +203,7 @@ export function materialCard(material, { personal, expanded = false }) {
 function campfireRow(d) {
   return `
     <div class="demand ${stationColour(d.color)}">
-      <span class="station">${esc(heldAt(d.location_id, d.location))}:</span>
+      <span class="station">${icon('campfire')}${esc(heldAt(d.location_id, d.location))}:</span>
       <span class="qty">${d.have}</span>
       <span></span>
     </div>`;
@@ -350,7 +381,7 @@ function stockLine(d, personal) {
   if (!personal) {
     return `
       <div class="stock-line demand ${colour}">
-        <span class="stock-text"><span class="station">${esc(d.station)}</span>
+        <span class="stock-text"><span class="station">${icon(stationIcon(d.station_id))}${esc(d.station)}</span>
           needs ${d.needed}${where}</span>
       </div>`;
   }
@@ -364,7 +395,7 @@ function stockLine(d, personal) {
   return `
     <div class="stock-line demand ${colour}${retired ? ' retired' : ''}"
          data-location="${esc(d.location_id)}">
-      <span class="stock-text"><span class="station">${esc(d.station)}</span>
+      <span class="stock-text"><span class="station">${icon(stationIcon(d.station_id))}${esc(d.station)}</span>
         ${needs}, has <span class="${enough ? 'have' : 'short'}">${d.have}</span>${where}</span>
       <span class="stepper">
         <button type="button" data-delta="-1" data-key="${esc(d.station_id)}-less"
@@ -492,7 +523,7 @@ function demandRow(d, personal) {
   if (!personal) {
     return `
       <div class="demand ${colour}">
-        <span class="station">${esc(d.station)}:</span>
+        <span class="station">${icon(stationIcon(d.station_id))}${esc(d.station)}:</span>
         <span class="qty">${d.needed}</span>
         <span></span>
       </div>`;
@@ -503,7 +534,7 @@ function demandRow(d, personal) {
 
   return `
     <div class="demand ${colour}">
-      <span class="station">${esc(d.station)}:</span>
+      <span class="station">${icon(stationIcon(d.station_id))}${esc(d.station)}:</span>
       <span class="qty">
         <span class="${enough ? 'have' : 'short'}">${d.have}</span>/${d.needed}
       </span>

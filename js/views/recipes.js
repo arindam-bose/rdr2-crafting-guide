@@ -20,8 +20,8 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { esc, empty, pager, plural, qualityStars, stationBadge, stationColour,
-         stationIcon, detailHead, detailSection, placeName, traits, crossLink,
+import { esc, empty, nameWith, pager, plural, qualityStars, stationColour,
+         stationIcon, stationLabel, stationMark, detailHead, detailSection, placeName, traits, crossLink,
          PAGE } from '../render.js';
 import * as nav from '../nav.js';
 import * as toolbar from './toolbar.js';
@@ -275,14 +275,19 @@ function card(r, personal) {
   const settled = personal && r.state !== 'wanted';
 
   // The name is a real button, so the card opens from the keyboard
-  // too; a click anywhere else on the card is forwarded to it.
+  // too; a click anywhere else on the card is forwarded to it.  The
+  // station and the state go inside it: a button is a box, and a name
+  // that wraps widens it to the whole line, so anything after it would
+  // drop to a line of its own even with room beside the last word.
+  // nameWith keeps them with that word when there is none.
   return `
     <article class="card recipe ${colour}${settled ? ' settled' : ''}"
              data-recipe="${esc(r.id)}">
       <header class="recipe-head">
         <h3><button type="button" class="card-open" data-open
-              aria-haspopup="dialog">${esc(r.name)}</button>${
-          stationBadge(r.station, r.color)}${settled ? stateBadge(r.state) : ''}</h3>
+              aria-haspopup="dialog">${nameWith(r.name,
+          stationMark(r.station_id, r.station, r.color)
+          + (settled ? stateBadge(r.state) : ''))}</button></h3>
         ${r.price_cents ? `<span class="price">${priceLabel(r)}</span>` : ''}
       </header>
 
@@ -416,7 +421,7 @@ function recipeDetail(r, personal) {
     ${detailHead('Recipe', r.name, personal ? wantSwitch(r) : '')}
     ${traits([
       ['Type', esc(r.category)],
-      ['Vendor', stationBadge(r.station, r.color)],
+      ['Vendor', stationLabel(r.station_id, r.station)],
       ['Set', esc(r.set_name)],
       ['Price', r.price_cents && money(r.price_cents)],
     ])}
@@ -444,7 +449,7 @@ function campfireDetail(r, personal) {
     ${detailHead('Campfire recipe', r.name)}
     ${traits([
       ['Type', esc(r.category)],
-      ['Made at', stationBadge(r.station, r.color)],
+      ['Made at', stationLabel(r.station_id, r.station)],
       ['Recipe cost', r.price_cents && money(r.price_cents)],
     ])}
     ${detailSection('Effect', buffs.length && `

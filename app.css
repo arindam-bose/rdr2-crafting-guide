@@ -479,6 +479,13 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 :root[data-theme="leather"] :is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-trapper  { background-image: url('images/icons/leather/trapper.png'); }
 :root[data-theme="leather"] :is(.chip[aria-pressed="true"], .segmented button[aria-selected="true"]) .icon-fence    { background-image: url('images/icons/leather/fence.png'); }
 
+/* A card name's last word and the marks after it, wrapped as one. */
+.keep { white-space: nowrap; }
+
+/* A recipe card's station, as its icon alone after the name: it trails
+   the name, so the gap goes before it rather than after. */
+.station-mark { margin: 0 0 0 6px; }
+
 /* A dropdown filter: category on both galleries. */
 .select {
   flex: 0 1 auto;
@@ -983,16 +990,17 @@ body:has(dialog.detail[open]) { overflow: hidden; }
 .card.recipe.green  { border-left-color: var(--station-green); }
 .card.recipe.settled { opacity: .62; }
 
+/* The name gets the whole width, and the price sits under it, flush
+   right: beside the name it took the room a long name needed, and
+   pushed the station's icon down to a line of its own. */
 .recipe-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
+  flex-direction: column;
+  gap: 2px;
 }
-.recipe-head h3 { flex: 1; }
 
 .price {
-  flex: 0 0 auto;
+  align-self: flex-end;
   font-size: .82rem;
   font-variant-numeric: tabular-nums;
   color: var(--ink-dim);
