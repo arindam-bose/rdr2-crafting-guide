@@ -159,7 +159,7 @@ const USAGE_SHOWN = 6;
  * `personal` decides whether the card talks about what you have, and
  * `expanded` whether its "used in" list is showing every entry.
  */
-export function materialCard(material, { personal, expanded = false }) {
+export function materialCard(material, { personal, expanded = false, done = false }) {
   const { material: name, quality } = material;
 
   // The Campfire never needs anything, so it is never among these.
@@ -171,8 +171,11 @@ export function materialCard(material, { personal, expanded = false }) {
   // stars sit inside it, for the reason a recipe card's station does.
   return `
     <article class="card material" data-ingredient="${esc(material.ingredient_id)}">
-      <h3><button type="button" class="card-open" data-open
-            aria-haspopup="dialog">${nameWith(name, qualityStars(quality))}</button></h3>
+      <div class="card-title">
+        <h3><button type="button" class="card-open" data-open
+              aria-haspopup="dialog">${nameWith(name, qualityStars(quality))}</button></h3>
+        ${done ? doneMark('Done') : ''}
+      </div>
 
       ${usedIn(material.usage, personal, expanded)}
 
@@ -367,6 +370,17 @@ function recipeLine(u, personal) {
 function checkbox(done) {
   return `<span class="icon ${done ? 'icon-crafted' : 'icon-uncrafted'} state-icon"
             role="img" aria-label="${done ? 'Crafted' : 'Not crafted'}"></span>`;
+}
+
+/**
+ * The checked box stamped in a card's corner once the thing it names
+ * is done -- a recipe crafted, a material finished with -- in place
+ * of a text badge.  `label` is what a screen reader says, since the
+ * mark itself is always the same checked box either way.
+ */
+export function doneMark(label) {
+  return `<span class="icon icon-crafted crafted-mark" role="img"
+            aria-label="${esc(label)}" title="${esc(label)}"></span>`;
 }
 
 /**

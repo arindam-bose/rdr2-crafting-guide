@@ -228,6 +228,7 @@ export function mount(root) {
     gallery.innerHTML = cards.length
       ? cards.slice(0, state.shown).map((m) => materialCard(m, {
           personal, expanded: state.expanded.has(m.ingredient_id),
+          done: personal && tracked(m) && !outstanding(m),
         })).join('')
       : empty(emptyMessage(state, personal, counts));
     pagerBox.innerHTML = pager(state.shown, cards.length);
@@ -329,10 +330,14 @@ function matches(card, state, personal) {
   if (personal) {
     // Done: you have enough of it, or nothing is asking for it any
     // more.  Everything else hides what you are finished with --
-    // unless the campfire still uses it, which it always will.
+    // unless the campfire still uses it, which it always will.  A
+    // search is a deliberate look-up by name, though, not a browse:
+    // Recipes never hides a crafted match from a search either, so a
+    // material you searched for should not vanish just because you
+    // finished with it since the last time you looked.
     if (state.show === 'done' && (outstanding(card) || !tracked(card))) return false;
     if (state.show === 'short' && !outstanding(card)) return false;
-    if (state.show === 'all' && !live(card) && !atCampfire(card)) return false;
+    if (state.show === 'all' && !state.search && !live(card) && !atCampfire(card)) return false;
   }
 
   // The material's own name, and the animals it comes from -- nothing

@@ -1077,16 +1077,18 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   gap: 2px;
 }
 
-/* The name on the left, the crafted checkbox pinned to the right on
-   the same line -- top-aligned, so a name that wraps to two lines
-   grows downward under it rather than pushing it off centre. */
-.recipe-title {
+/* The name on the left, the done checkbox pinned to the right on the
+   same line -- top-aligned, so a name that wraps to two lines grows
+   downward under it rather than pushing it off centre.  Shared by a
+   recipe card and a material card alike: whichever is done gets the
+   same mark, in the same place. */
+.card-title {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
 }
-.recipe-title h3 { flex: 1; min-width: 0; }
+.card-title h3 { flex: 1; min-width: 0; }
 
 .crafted-mark {
   flex: none;

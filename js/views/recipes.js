@@ -22,7 +22,7 @@ import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { esc, empty, nameWith, pager, plural, qualityStars, stationColour,
          stationIcon, stationLabel, stationMark, detailHead, detailSection, placeName, traits, crossLink,
-         PAGE } from '../render.js';
+         doneMark, PAGE } from '../render.js';
 import * as nav from '../nav.js';
 import * as toolbar from './toolbar.js';
 import { toast } from '../toast.js';
@@ -287,12 +287,12 @@ function card(r, personal) {
     <article class="card recipe ${colour}${settled ? ' settled' : ''}"
              data-recipe="${esc(r.id)}">
       <header class="recipe-head">
-        <div class="recipe-title">
+        <div class="card-title">
           <h3><button type="button" class="card-open" data-open
                 aria-haspopup="dialog">${nameWith(r.name,
             stationMark(r.station_id, r.station, r.color)
             + (settled && !crafted ? stateBadge(r.state) : ''))}</button></h3>
-          ${crafted ? craftedMark() : ''}
+          ${crafted ? doneMark('Crafted') : ''}
         </div>
         <span class="price">${r.price_cents ? priceLabel(r) : ''}</span>
       </header>
@@ -363,13 +363,6 @@ function slotLine(options, personal) {
 /** "Crafted" or "Skipped", beside the vendor, once a recipe is settled. */
 function stateBadge(state) {
   return `<span class="badge state ${state}">${esc(STATE_LABEL[state])}</span>`;
-}
-
-/** The checkbox stamped on a card once it is crafted, at the name's side
-    rather than glued to it, so it stays put whatever the name does. */
-function craftedMark() {
-  return `<span class="icon icon-crafted crafted-mark" role="img"
-            aria-label="Crafted" title="Crafted"></span>`;
 }
 
 /**
