@@ -278,6 +278,27 @@ def classify_set(name, categories):
 SLOT_RE = re.compile(r"^(\d+)\s*x\s+(.+)$")
 
 
+def balanced(text):
+    """Every bracket closes, and none closes before it opens."""
+    depth = 0
+    for ch in text:
+        depth += {"(": 1, ")": -1}.get(ch, 0)
+        if depth < 0:
+            return False
+    return depth == 0
+
+
+def closes_at_end(text):
+    """'(A / B)' -> True ; '(A) / (B)' -> False: the first bracket's pair
+    is the last character, so the brackets wrap the whole of it."""
+    depth = 0
+    for i, ch in enumerate(text):
+        depth += {"(": 1, ")": -1}.get(ch, 0)
+        if depth == 0:
+            return i == len(text) - 1
+    return False
+
+
 def parse_slots(cell):
     """
     '1x Arrow + 2x (Eagle Feather / Hawk Feather)'
@@ -296,8 +317,13 @@ def parse_slots(cell):
             problems.append(part)
             continue
         # Brackets around the whole choice go; any inside a name stay.
+        # A bracket left open or closed twice is a typo in the sheet, and
+        # would otherwise end up inside a name, so it is reported too.
         choice = m.group(2).strip()
-        if choice.startswith("(") and choice.endswith(")"):
+        if not balanced(choice):
+            problems.append(part)
+            continue
+        if choice.startswith("(") and closes_at_end(choice):
             choice = choice[1:-1]
         options = [clean(o) for o in choice.split("/")]
         slots.append((int(m.group(1)), [o for o in options if o]))
@@ -464,16 +490,17 @@ def build(export_dir, consumables, patch, out_path):
             if blank(r.get("id")) and blank(r.get("name")):
                 aliases[blank(r.get("name"))] = blank(r.get("id"))
 
+    fresh = set()                 # ids the workbook made that the patch names
     if consumables:
         build_consumables(db, consumables, animal_id, aliases,
-                          station_id["Campfire"], warnings, added)
+                          station_id["Campfire"], warnings, added, fresh)
 
     notes = []
     if added:
         notes.append(f"the campfire workbook added {len(added)} animals: "
                      + ", ".join(sorted(added)))
     if book is not None:
-        apply_patch(db, book, warnings, notes)
+        apply_patch(db, book, warnings, notes, fresh)
 
     db.commit()
     return db, warnings, notes
@@ -495,10 +522,14 @@ def load_patch(path):
     return book
 
 
-def apply_patch(db, book, warnings, notes):
+def apply_patch(db, book, warnings, notes, fresh=frozenset()):
     """
     Apply the patch workbook: corrections made by hand, kept as a source
     so that a rebuild keeps them.  See the module docstring.
+
+    `fresh` are animals the campfire workbook had to add bare, under the
+    id the patch gives them: they are the patch's new animals, and are
+    reported as that, though their rows already exist.
     """
     # ---- animals: update by id, insert what is new -------------------------
     known = {i: n for i, n in db.execute("SELECT id, name FROM animals")}
@@ -516,7 +547,9 @@ def apply_patch(db, book, warnings, notes):
         if not weapon and not bait:
             warnings.append(f"{name!r}: neither a weapon nor a bait")
         if aid in known:
-            if known[aid] != name:
+            if aid in fresh:
+                notes.append(f"new animal {name!r} ({aid})")
+            elif known[aid] != name:
                 notes.append(f"renamed {known[aid]!r} -> {name!r} ({aid})")
             db.execute("UPDATE animals SET name = ?, weapon_id = ?, bait = ?, "
                        "link = ? WHERE id = ?", (name, weapon, bait, link, aid))
@@ -552,7 +585,8 @@ def apply_patch(db, book, warnings, notes):
                    "VALUES (?,?)", sorted(links))
 
 
-def build_consumables(db, path, animal_id, aliases, campfire, warnings, added):
+def build_consumables(db, path, animal_id, aliases, campfire, warnings, added,
+                      fresh):
     """
     Add the workbook's campfire recipes and the ingredients they call for.
 
@@ -569,6 +603,7 @@ def build_consumables(db, path, animal_id, aliases, campfire, warnings, added):
 
     ingredient_id = dict(db.execute("SELECT name, id FROM ingredients"))
     used_in = {}                  # ingredient name -> recipe names, per index
+    known_as = {aid: name for name, aid in animal_id.items()}   # id -> a name
 
     # ---- ingredients ----------------------------------------------------
     for sheet, source_type in INGREDIENT_SHEETS.items():
@@ -603,13 +638,26 @@ def build_consumables(db, path, animal_id, aliases, campfire, warnings, added):
                 # Known by this name already; else by the patch, under the
                 # id the patch gives it -- which may already be here under
                 # its old name; else new, with an id made from the name.
+                # An id made from a name can land on an animal already
+                # here under another spelling ("bear", "Bear"): that is
+                # taken to be the one animal, but said, since it may be
+                # a typo that happens to collide.
                 aid = animal_id.get(animal)
                 if aid is None:
-                    aid = aliases.get(animal) or mkid("animal", animal)
-                    if aid not in animal_id.values():
+                    alias = aliases.get(animal)
+                    aid = alias or mkid("animal", animal)
+                    if aid not in known_as:
                         db.execute("INSERT INTO animals(id, name) VALUES (?,?)",
                                    (aid, animal))
-                        added.append(animal)
+                        known_as[aid] = animal
+                        # One the patch names is the patch's to report.
+                        if alias:
+                            fresh.add(aid)
+                        else:
+                            added.append(animal)
+                    elif not alias:
+                        warnings.append(f"{animal!r}: taken to be "
+                                        f"{known_as[aid]!r} ({aid})")
                     animal_id[animal] = aid
                 db.execute("INSERT OR IGNORE INTO ingredient_animals"
                            "(ingredient_id, animal_id) VALUES (?,?)",
@@ -617,6 +665,7 @@ def build_consumables(db, path, animal_id, aliases, campfire, warnings, added):
 
     # ---- recipes ----------------------------------------------------------
     uses = {}                     # ingredient name -> recipe ids, per recipes
+    skipped = set()               # sheet ids of recipes not loaded
     for _, r in book["consumable-recipes"].iterrows():
         name = clean(r["name"])
         if not name:
@@ -624,6 +673,9 @@ def build_consumables(db, path, animal_id, aliases, campfire, warnings, added):
         rid = mkid("recipe", name)
         if db.execute("SELECT 1 FROM recipes WHERE id = ?", (rid,)).fetchone():
             warnings.append(f"{name!r}: already a one-time recipe, skipped")
+            # Its ingredients are never read, so the index rows that list
+            # it must not be held against the recipe text below.
+            skipped.add(clean(r.get("id")))
             continue
         description = clean(r.get("description")) or None
         db.execute(
@@ -662,7 +714,7 @@ def build_consumables(db, path, animal_id, aliases, campfire, warnings, added):
     # the recipe's own text, and in the ingredient's row.  Either can be
     # the one that is wrong, so say which way round they differ.
     for name in sorted(set(uses) | set(used_in)):
-        text, index = uses.get(name, set()), used_in.get(name, set())
+        text, index = uses.get(name, set()), used_in.get(name, set()) - skipped
         if text - index:
             warnings.append(f"{name!r}: recipes name it, its index row does "
                             f"not: {', '.join(sorted(text - index))}")

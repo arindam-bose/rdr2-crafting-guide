@@ -278,16 +278,20 @@ const STOCK_AT = `
  * and "ox" finds the Ox without the Fox.
  */
 export function searchMaterials(term, locationId, limit = 40) {
+  // What you type is taken literally, as Materials takes it: a % or _
+  // is a character to find, not a LIKE wildcard matching everything.
+  const t = term.replace(/[\\%_]/g, '\\$&');
   return db.all(`${STOCK_AT}
-    WHERE     ing.name LIKE :anywhere
+    WHERE     ing.name LIKE :anywhere ESCAPE '\\'
        OR     EXISTS (SELECT 1 FROM ingredient_animals ia
                       JOIN   animals a ON a.id = ia.animal_id
                       WHERE  ia.ingredient_id = ing.id
-                        AND  (a.name LIKE :start OR a.name LIKE :word))
+                        AND  (a.name LIKE :start ESCAPE '\\'
+                              OR a.name LIKE :word ESCAPE '\\'))
     ORDER BY  ing.name
     LIMIT     :limit`,
-    { location_id: locationId, anywhere: `%${term}%`, start: `${term}%`,
-      word: `% ${term}%`, limit });
+    { location_id: locationId, anywhere: `%${t}%`, start: `${t}%`,
+      word: `% ${t}%`, limit });
 }
 
 /**

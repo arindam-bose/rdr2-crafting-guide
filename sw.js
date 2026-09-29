@@ -14,7 +14,7 @@
 //   more while this is still being written.
 // ============================================================
 
-const CACHE = 'rdr2-crafting-v18';
+const CACHE = 'rdr2-crafting-v19';
 
 // Fetched once and kept: big, and only ever replaced wholesale.
 // The fonts and the artwork join the runtime and the database here —
@@ -26,6 +26,7 @@ const IMMUTABLE = [
   'data/rdr2.db',
   'fonts/chinese_rocks/chinese-rocks-rg.otf',
   'fonts/fb_remington/FBRemington-Regular.ttf',
+  'fonts/rdr2_lino_regular/RDR Lino Regular.ttf',
   'images/logo.png',
   'images/logo-128.png',
   'images/favicon-32.png',
@@ -86,7 +87,9 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  const path = url.pathname.replace(/^\//, '');
+  // Decoded, since a request spells a space as %20 and the list above
+  // spells it as a space: RDR Lino's file name has two.
+  const path = decodeURIComponent(url.pathname).replace(/^\//, '');
   const immutable = IMMUTABLE.some((file) => path.endsWith(file));
 
   event.respondWith(immutable ? cacheFirst(request) : networkFirst(request));

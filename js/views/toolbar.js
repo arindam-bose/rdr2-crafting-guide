@@ -45,18 +45,20 @@ export function chipRow(id, attr, chips) {
 }
 
 /**
- * Tabs across the top of a gallery, each with room for a count of the
+ * Tabs across the top of a page, each with room for a count of the
  * matches it holds.  `tabs` are { id, title, icon }, the icon optional
- * and drawn before the title; the first tab starts chosen.
+ * and drawn before the title.  `selected` starts chosen, the first tab
+ * unless it says otherwise; `counts: false` leaves the count out, for
+ * tabs that are places rather than shares of a search.
  *
  *   tabRow('r-kinds', 'kind', [{ id: 'vendor', title: 'Vendor recipes' }, …])
  */
-export function tabRow(id, attr, tabs) {
+export function tabRow(id, attr, tabs, { selected = tabs[0]?.id, counts = true } = {}) {
   return `
     <div class="segmented" role="tablist" id="${esc(id)}">
-      ${tabs.map((t, i) => `
-        <button role="tab" data-${esc(attr)}="${esc(t.id)}" aria-selected="${i === 0}">
-          ${icon(t.icon)}${esc(t.title)}<span class="tab-count"></span></button>`).join('')}
+      ${tabs.map((t) => `
+        <button role="tab" data-${esc(attr)}="${esc(t.id)}" aria-selected="${t.id === selected}">
+          ${icon(t.icon)}${esc(t.title)}${counts ? '<span class="tab-count"></span>' : ''}</button>`).join('')}
     </div>`;
 }
 

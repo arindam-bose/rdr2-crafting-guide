@@ -69,10 +69,11 @@ export function qualityLabel(quality) {
 }
 
 /**
- * A station as a chip, the same shape as the quality one, in the
- * station's own colour -- the one its stripe and demand rows use.
+ * A station as a chip, in the station's own colour -- the one its
+ * stripe and demand rows use.  Only for a station with no icon: see
+ * stationMark.
  */
-export function stationBadge(name, colour) {
+function stationBadge(name, colour) {
   if (!name) return '';
   return `<span class="badge station ${stationColour(colour)}">${esc(name)}</span>`;
 }
@@ -132,9 +133,10 @@ export function stationLabel(id, name) {
 }
 
 /**
- * An icon before a chip or tab's label.  The image itself is swapped
- * by theme in CSS -- parchment or leather -- so this only ever names
- * which one, not where it lives.
+ * A station's or a place's icon, beside its name: on a chip or a tab,
+ * a demand row, a dialog's facts.  The image itself is swapped by theme
+ * in CSS -- parchment or leather -- so this only ever names which one,
+ * not where it lives.
  */
 export function icon(name) {
   if (!name) return '';
@@ -446,13 +448,15 @@ function verdict(material, personal) {
   const fish = material.animals.length > 0 && material.animals.every((a) => a.bait);
 
   // A material the campfire also uses is never finished with, and a
-  // surplus of it is better cooked than sold.
+  // surplus of it is better cooked than sold.  That holds for a plant
+  // or a supply as much as for a pelt, so the fire is asked first.
   const fire = material.demands.some((d) => d.campfire);
 
   const [state, words] =
-    animal && totalNeeded === 0
-      ? fire ? ['enough', 'No vendor needs more. It still goes into campfire recipes.']
-             : ['done', "You are done with this item, you don't need more!!"]
+    fire && totalNeeded === 0
+      ? ['enough', 'No vendor needs more. It still goes into campfire recipes.']
+    : animal && totalNeeded === 0
+      ? ['done', "You are done with this item, you don't need more!!"]
     : moreNeeded === 0
       ? ['enough', 'You have what you need!']
     : moreNeeded > 0

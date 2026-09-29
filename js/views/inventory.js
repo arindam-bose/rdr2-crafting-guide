@@ -17,7 +17,8 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { esc, empty, heldAt, icon, plural, qualityBadge } from '../render.js';
+import { esc, empty, heldAt, plural, qualityBadge } from '../render.js';
+import * as toolbar from './toolbar.js';
 import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
 
@@ -47,18 +48,13 @@ export function mount(root) {
     state.location = locations[0].id;
   }
 
+  const tabs = locations.map((l) => ({ id: l.id, title: l.name, icon: LOCATION_ICON[l.id] }));
   root.innerHTML = `
     <div class="toolbar">
-      <input type="search" class="search" id="i-search"
-             placeholder="Search a material or animal…" autocomplete="off" spellcheck="false">
+      ${toolbar.searchBox('i-search', 'Search a material or animal…')}
     </div>
-    <div class="segmented" role="tablist" id="i-locations">
-      ${locations.map((l) => `
-        <button role="tab" data-location="${esc(l.id)}"
-                aria-selected="${l.id === state.location}"
-          >${icon(LOCATION_ICON[l.id])}${esc(l.name)}</button>`)
-        .join('')}
-    </div>
+    ${toolbar.tabRow('i-locations', 'location', tabs,
+                     { selected: state.location, counts: false })}
     <div id="i-sections"></div>
     <div class="savebar" id="i-savebar" hidden>
       <span class="pending-count" id="i-pending"></span>
@@ -72,14 +68,8 @@ export function mount(root) {
   const savebar = root.querySelector('#i-savebar');
   const pending = root.querySelector('#i-pending');
 
-  segmented.addEventListener('click', (event) => {
-    const button = event.target.closest('[data-location]');
-    if (!button) return;
-    state.location = button.dataset.location;
+  toolbar.wireTabs(segmented, 'location', state, () => {
     prefs.set(LOCATION_KEY, state.location);
-    for (const b of segmented.children) {
-      b.setAttribute('aria-selected', String(b === button));
-    }
     update();
   });
 
@@ -145,7 +135,7 @@ export function mount(root) {
       // The title is already the count here.
       sections.innerHTML = section(
         plural(hits.length, 'match', 'es'),
-        hits, 'No material by that name.', false);
+        hits, 'No material or animal by that name.', false);
     } else {
       // What you are holding here first, then the quick way back to
       // whatever you were logging lately.

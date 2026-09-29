@@ -442,7 +442,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border-color: var(--ink);
 }
 
-/* A station or a tab's icon, before its label.  Each is a stamped
+/* A station's or a place's icon, beside its name.  Each is a stamped
    medallion -- a filled disc with the glyph cut from it -- generated
    in two colourways, so the ones drawn here are only ever named, never
    pathed: which image loads is decided below, by theme. */
@@ -913,7 +913,6 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   color: var(--ink-label);
 }
 .trait dd { margin: 0; font-size: .92rem; }
-.trait .badge { margin-left: 0; }
 
 /* A dialog's captions are written as they are said, "Recipes used in",
    the way a card's are, rather than shouted like the page's own. */

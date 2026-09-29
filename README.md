@@ -87,7 +87,9 @@ served network-first, so edits show up on reload without a cache bump.
     fonts/
       chinese_rocks/      Chinese Rocks, the display face, with its licence
       fb_remington/       FB Remington, the body face
-    images/               the logo, and the favicons cut from it
+      rdr2_lino_regular/  RDR Lino Regular, the heading face
+    images/               the logo and the favicons cut from it, the cover
+                          art, and the station and quality icons
     database/
       personal_schema.sql the personal layer's DDL, and the four queries
     js/
@@ -95,7 +97,7 @@ served network-first, so edits show up on reload without a cache bump.
       store.js            ledger writes, IndexedDB, export/import, crafting
       queries.js          every read, as functions
       render.js           card and material-detail templates, and the
-                          pieces they share (quality and station tags)
+                          pieces they share (quality stars, station icons)
       dialog.js           the detail dialog every card opens: close
                           button, Esc, backdrop, repaint on a store change
       nav.js              the address: which page, and which card is open
@@ -139,7 +141,7 @@ away.
 The line that keeps this working is that **red and amber are never decoration**.
 Everything else warm on the page — `--ink-name` for the name of a material or a
 recipe, `--ink-label` for the USED IN / LOCATIONS / INGREDIENTS captions, the
-station stripes and tags, the hover edge — is chrome, and chrome never carries
+station stripes and icons, the hover edge — is chrome, and chrome never carries
 status. A
 name is a name whether or not you own the thing. Spend red on a heading and the
 red `✗` on the card below it stops meaning *you are short of this*.
@@ -165,9 +167,11 @@ to signal, and three warm hues at 3px are harder to tell apart than the blue,
 yellow and pink they replaced. They are picked to separate in lightness as well
 as hue — no two are closer than 1.26:1 — and, more to the point, the station is
 always named in words beside its stripe. The colour reinforces the label; it is
-never the only thing carrying it. The same three colours draw the station tags
-on recipe cards — Pearson, Trapper, Fence — which share the outlined-chip shape
-of the Legendary and Perfect tags, so a tag reads as a tag whatever it names.
+never the only thing carrying it. Each station also has its own icon — a
+stamped medallion, drawn in two colourways so its disc always matches the
+text beside it — which stands in for the station's name after a recipe card's
+title, and leads it on a demand row and in a dialog. Quality is drawn the
+game's way, as a stamp of stars: grey for Perfect, gold for Legendary.
 The Campfire takes a fourth, a muted sage, kept clear of the green of a tick so
 that "made at your own fire" never reads as "you have enough".
 
@@ -342,13 +346,13 @@ Prairie Poppy (2)`, with how many of each you hold in the Satchel; the tick
 means one of them alone covers the amount, since a slot cannot be made up from
 a mix.
 
-A vendor recipe card has its name, a tag for its vendor, its price, its buff and an
+A vendor recipe card has its name with its vendor's icon, its price, its buff and an
 **Ingredients** list with have/need tallies. A crafted or skipped recipe is
 dimmed, carries a dashed *Crafted* or *Skipped* tag, and sorts to the bottom.
 The card has no buttons.
 
-The dialog lays out the type, vendor, set and price, the buffs as a two-column
-table, the ingredients, and the two things you can do:
+The dialog lays out the type, vendor, set and price, the description, the
+ingredients, and the two things you can do:
 
 - **Craft** spends the ingredients from the station's own stock and marks the
   recipe done, as one commit with undo. It is always present and disabled when
