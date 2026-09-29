@@ -20,9 +20,13 @@ import * as prefs from '../prefs.js';
 
 export function searchBox(id, placeholder) {
   return `
-    <input type="search" class="search" id="${esc(id)}"
-           placeholder="${esc(placeholder)}"
-           autocomplete="off" spellcheck="false">`;
+    <div class="search-wrap">
+      <input type="search" class="search" id="${esc(id)}"
+             placeholder="${esc(placeholder)}"
+             autocomplete="off" spellcheck="false">
+      <button type="button" class="search-clear" data-clear
+              tabindex="-1" aria-label="Clear search" hidden>&times;</button>
+    </div>`;
 }
 
 /**
@@ -116,6 +120,33 @@ export function wireSearch(input, state, onChange) {
     state.search = input.value.trim().toLowerCase();
     onChange();
   });
+  wireClear(input);
+}
+
+/**
+ * The × beside a search box: shown only once there is something to
+ * clear.  A click empties the box and fires a real `input` event
+ * rather than calling back into the view directly, so it runs
+ * through the exact same listener a keystroke would have -- state
+ * and all -- instead of a second path that could clear the box
+ * without clearing `state.search` to match.  Exported on its own for
+ * Inventory, which wires its search box by hand instead of through
+ * `wireSearch`.
+ */
+export function wireClear(input) {
+  const clear = input.parentElement.querySelector('[data-clear]');
+  if (!clear) return;
+
+  const sync = () => { clear.hidden = !input.value; };
+  input.addEventListener('input', sync);
+
+  clear.addEventListener('click', () => {
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.focus();
+  });
+
+  sync();
 }
 
 /** Pick exactly one.  An empty value means "no filter". */

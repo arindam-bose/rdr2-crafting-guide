@@ -121,6 +121,7 @@ export function mount(root) {
     state.search = searchBox.value.trim();
     update();
   });
+  toolbar.wireClear(searchBox);
 
   // One listener for every stepper: the rows are replaced on each
   // change, so per-row listeners would not survive anyway.  A
@@ -213,16 +214,19 @@ export function mount(root) {
 
     if (searching) {
       const hits = queries.searchMaterials(state.search, state.location);
-      // The title is already the count here.
+      // The title is already the count here.  Capitalised by hand
+      // rather than through `plural`: every other count on the page
+      // reads inline ("6 recipes"), but this one stands alone as a
+      // heading, in the same sentence case as the rest of the page.
       sections.innerHTML = section(
-        plural(hits.length, 'match', 'es'),
+        `${hits.length} ${hits.length === 1 ? 'Match' : 'Matches'}`,
         hits, 'No material or animal by that name.', false);
     } else {
       // What you are holding here first, then the quick way back to
       // whatever you were logging lately.
       sections.innerHTML =
         section(at, held(state.location), `Nothing ${lower(at)} yet.`)
-        + section('Recently touched', recent(state.location), '');
+        + section('Recently Touched', recent(state.location), '');
     }
 
     savebar.hidden = staged.size === 0;

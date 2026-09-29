@@ -405,10 +405,14 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 /* The search box has the first row to itself, full width, as on
    Inventory; the filters and the sort follow on the rows under it. */
-.search {
+.search-wrap {
+  position: relative;
   flex: 1 1 100%;
   min-width: 0;
-  padding: 9px 12px;
+}
+.search {
+  width: 100%;
+  padding: 9px 34px 9px 12px;
   font: inherit;
   color: var(--ink);
   background: var(--surface);
@@ -416,6 +420,32 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border-radius: var(--radius);
 }
 .search::placeholder { color: var(--ink-faint); }
+
+/* The box's own cancel glyph is dropped in favour of `.search-clear`,
+   which every browser draws the same way and which sits in the same
+   spot a "search" input already reserved. */
+.search::-webkit-search-cancel-button { appearance: none; }
+
+.search-clear {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  line-height: 1;
+  color: var(--ink-faint);
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.search-clear:hover { color: var(--ink); background: var(--surface-2); }
+.search-clear:active { background: var(--line); }
 
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1331,7 +1361,15 @@ ul.buff li::before {
   color: var(--ink-label);
 }
 
-.stock-section + .stock-section { margin-top: 18px; }
+/* A rule between "In the Satchel" and "Recently Touched", with room
+   on both sides of it -- the two are different questions ("what am I
+   holding" vs. "what have I touched lately") and read as one run-on
+   list without a break between them. */
+.stock-section + .stock-section {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
 
 /* A section's name on the left, how many rows it holds on the right --
    the same split as the toolbars on Materials and Recipes. */
@@ -1341,7 +1379,10 @@ ul.buff li::before {
   gap: 12px;
   margin-bottom: 8px;
 }
-.section-head .list-label { margin: 0; }
+/* Sentence case rather than the small caps every other list-label
+   gets: this one is closer to a sentence than a tag ("In the
+   Satchel", "6 Matches") and reads oddly shouted. */
+.section-head .list-label { margin: 0; text-transform: none; }
 
 .rows {
   display: flex;
