@@ -254,6 +254,24 @@ export function locations() {
                      ELSE 3 END, name`);
 }
 
+/**
+ * Which vendor -- Pearson, Trapper -- wants each material, for the
+ * transfer buttons on Inventory: every material that appears in any
+ * of that vendor's recipes, wanted or not, the same reach a material
+ * card's own "Vendors" list has.  The Fence has none of its own --
+ * it draws straight from the Satchel, so there is nothing to hand it,
+ * and it never appears here.
+ */
+export function vendorWants() {
+  return db.all(`
+    SELECT   DISTINCT ri.ingredient_id, st.location_id
+    FROM     recipe_ingredients ri
+    JOIN     recipes  r  ON r.id  = ri.recipe_id
+    JOIN     stations st ON st.id = r.station_id
+    WHERE    st.id IN ('station-pearson', 'station-trapper')
+  `);
+}
+
 // `inventory` is the balance, `inventory_totals` the history: how
 // many have passed through your hands here, and how many of those
 // went into something.  Both are the same ledger, read differently.

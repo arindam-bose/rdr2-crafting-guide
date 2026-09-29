@@ -1354,14 +1354,28 @@ ul.buff li::before {
 .row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
   padding: 8px 10px 8px 14px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
 }
 .row:last-child { border-bottom: 0; }
 
-.row .name { flex: 1; min-width: 0; font-size: .92rem; }
+.row .name { flex: 1 1 140px; min-width: 0; font-size: .92rem; }
+
+/* The transfer stepper(s), if any, and the main stepper travel
+   together: if the row is too narrow for both beside the name, the
+   pair wraps to a line of its own rather than splitting apart. */
+.row .controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
 
 .row .history {
   display: block;
@@ -1402,6 +1416,24 @@ ul.buff li::before {
   color: var(--ink-faint);
 }
 .stepper output.held { color: var(--ok); font-weight: 600; }
+
+/* One or two transfer steppers per row -- the Satchel's are grouped
+   with a little air between them; a vendor's is alone. */
+.transfers { display: flex; gap: 6px; }
+
+/* A transfer stepper is the same control, smaller: it moves what is
+   already here rather than logging a gain, so it reads as the
+   quieter of the two.  The vendor's or the Satchel's own icon takes
+   the number's place -- reachable exactly where the main stepper's
+   count is, so a tap never lands on the wrong control by muscle
+   memory alone. */
+.stepper.transfer button { width: 28px; height: 28px; font-size: 1rem; }
+.stepper.transfer output {
+  display: inline-flex;
+  align-items: center;
+  min-width: 1.6em;
+}
+.stepper.transfer output .icon { margin: 0 2px 0 0; width: 1.05em; height: 1.05em; }
 
 /* pending, unsaved changes */
 
