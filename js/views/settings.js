@@ -51,7 +51,7 @@ const REFERENCES = [
 const FONT_CREDITS = [
   { name: 'Chinese Rocks',
     html: 'Fonts downloaded from <a href="https://www.dafont.com/chinese-rocks.font" target="_blank" rel="noopener noreferrer">DaFont</a> is licensed under the <a href="https://typodermicfonts.com/license/" target="_blank" rel="noopener noreferrer">Typodermic Desktop License</a>.' },
-  { name: 'RDR2 Lino Regular',
+  { name: 'RDR Lino Regular',
     html: 'Fonts made from <a href="http://www.onlinewebfonts.com" target="_blank" rel="noopener noreferrer">Web Fonts</a> is licensed by CC BY 4.0.' },
   { name: 'FB Remington',
     html: 'Fonts downloaded from <a href="https://www.dafont.com/fb_remington.font" target="_blank" rel="noopener noreferrer">DaFont</a> is free for professional usage.' },
