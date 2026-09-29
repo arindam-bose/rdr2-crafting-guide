@@ -670,8 +670,16 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 /* ---------- "used in" and "vendors" on a material card ---------- */
 
 /* The captions on a card -- Used in, Vendors, Ingredients -- tight to
-   the list they head, so a card reads as labelled blocks. */
-.card-label { margin: 2px 0 -2px; }
+   the list they head and held apart from whatever came before, so a
+   card reads as labelled blocks rather than one run-on list.  Sentence
+   case rather than the small caps other captions get: sitting this
+   close to the plain text under them, all-caps read louder than it
+   meant to.  Both margins lean on the card's own `gap` (10px, see
+   .card) rather than fighting it: the negative bottom closes most of
+   that gap, the positive top adds to it.  `.list-label.card-label`
+   rather than `.card-label` alone so this outranks the plain
+   `.list-label` rule regardless of which comes later in the file. */
+.list-label.card-label { margin: 12px 0 -6px; text-transform: none; }
 
 .used-in {
   margin: 0;
