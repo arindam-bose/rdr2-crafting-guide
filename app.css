@@ -624,6 +624,23 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .badge.legendary { color: var(--legendary); }
 
+/* Quality as the game stamps it: three stars, grey or gold, where a
+   card or an ingredient would otherwise spell it out in a chip.  The
+   box is the stars' own proportions, a little wider than tall. */
+.stars {
+  display: inline-block;
+  width: 1.5em;
+  height: 1.2em;
+  margin-left: 6px;
+  vertical-align: -.25em;
+  background: no-repeat center / contain;
+}
+.stars-perfect   { background-image: url('images/icons/stars-perfect.png'); }
+.stars-legendary { background-image: url('images/icons/stars-legendary.png'); }
+
+/* In a dialog's facts the stars lead the word instead of trailing a name. */
+.trait .stars { margin: 0 .4em 0 0; }
+
 /* A station as a chip: its stripe colour, so the tag, the card's edge
    and the demand rows all name the Trapper the same way. */
 .badge.station        { color: var(--ink-dim); }

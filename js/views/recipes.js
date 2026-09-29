@@ -20,7 +20,7 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { esc, empty, pager, plural, qualityBadge, stationBadge, stationColour,
+import { esc, empty, pager, plural, qualityStars, stationBadge, stationColour,
          stationIcon, detailHead, detailSection, placeName, traits, crossLink,
          PAGE } from '../render.js';
 import * as nav from '../nav.js';
@@ -382,7 +382,7 @@ function tally(r, personal) {
 }
 
 function ingredient(i, personal) {
-  const badge = qualityBadge(i.quality);
+  const badge = qualityStars(i.quality);
   const name = crossLink('materials', i.ingredient_id, i.name);
 
   if (!personal) {

@@ -36,14 +36,36 @@ export function esc(value) {
 }
 
 /**
- * The quality chip beside a material's name.  Three screens show a
- * material by name -- a card, a recipe's ingredient list, an inventory
- * row -- and all three mark quality the same way.
+ * The quality chip beside a material's name, as an inventory row
+ * writes it out.  A card and a recipe's ingredients draw the stars
+ * instead; see qualityStars.
  */
 export function qualityBadge(quality) {
   if (!quality) return '';
   const legendary = quality === 'Legendary' ? ' legendary' : '';
   return `<span class="badge${legendary}">${esc(quality)}</span>`;
+}
+
+/** The stamp of stars itself: grey for Perfect, gold for Legendary. */
+function stars(quality, label) {
+  const named = label
+    ? `role="img" aria-label="${esc(quality)}" title="${esc(quality)}"`
+    : 'aria-hidden="true"';
+  return `<span class="stars stars-${esc(quality.toLowerCase())}" ${named}></span>`;
+}
+
+/**
+ * Quality as the game marks it, beside a material's name on a card or
+ * in a recipe's ingredients: the stars alone, labelled, so a screen
+ * reader still says which.
+ */
+export function qualityStars(quality) {
+  return quality ? stars(quality, true) : '';
+}
+
+/** The stars with the quality written out after them, for a dialog's facts. */
+export function qualityLabel(quality) {
+  return quality ? `${stars(quality, false)}${esc(quality)}` : '';
 }
 
 /**
@@ -128,7 +150,7 @@ export function materialCard(material, { personal, expanded = false }) {
   return `
     <article class="card material" data-ingredient="${esc(material.ingredient_id)}">
       <h3><button type="button" class="card-open" data-open
-            aria-haspopup="dialog">${esc(name)}</button>${qualityBadge(quality)}</h3>
+            aria-haspopup="dialog">${esc(name)}</button>${qualityStars(quality)}</h3>
 
       ${usedIn(material.usage, personal, expanded)}
 
@@ -242,12 +264,12 @@ export function materialDetail(material, { personal }) {
   const [only] = animals.length === 1 ? animals : [];
   const facts = isAnimal
     ? [['Animal', only && webLink(only.link, only.name)],
-       ['Quality', qualityBadge(quality)],
+       ['Quality', qualityLabel(quality)],
        ['Type', esc(body_part)],
        ['Weapon', only && esc(only.weapon)],
        ['Bait', only && esc(only.bait)]]
     : source_type === 'misc'
-      ? [['Source', 'Found out in the world'], ['Quality', qualityBadge(quality)]]
+      ? [['Source', 'Found out in the world'], ['Quality', qualityLabel(quality)]]
       : [];
 
   // Stations with nothing left to make still show in personal mode --
