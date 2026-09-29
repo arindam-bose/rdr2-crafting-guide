@@ -69,6 +69,26 @@ export function stationColour(colour) {
   return ['blue', 'yellow', 'pink', 'green'].includes(colour) ? colour : '';
 }
 
+/**
+ * The icon that matches a merchant station's id, for the filter chips
+ * on Materials and Recipes.  Guarded the same way as stationColour:
+ * an id with no icon behind it draws no icon rather than a broken one.
+ */
+export function stationIcon(id) {
+  return { 'station-pearson': 'pearson', 'station-trapper': 'trapper',
+           'station-fence': 'fence' }[id];
+}
+
+/**
+ * An icon before a chip or tab's label.  The image itself is swapped
+ * by theme in CSS -- parchment or leather -- so this only ever names
+ * which one, not where it lives.
+ */
+export function icon(name) {
+  if (!name) return '';
+  return `<span class="icon icon-${name}" aria-hidden="true"></span>`;
+}
+
 /** What a material is, as a dialog's kicker names it. */
 const KIND_LABEL = {
   animal: 'Animal material',

@@ -11,7 +11,7 @@
 // a view still reads as "build this, then listen for that".
 // ============================================================
 
-import { esc, PAGE } from '../render.js';
+import { esc, icon, PAGE } from '../render.js';
 import * as prefs from '../prefs.js';
 
 // ------------------------------------------------------------
@@ -27,7 +27,9 @@ export function searchBox(id, placeholder) {
 
 /**
  * A row of chips.  `attr` is the data attribute they carry, which
- * is also the key the wiring writes on the view's state.
+ * is also the key the wiring writes on the view's state.  A chip
+ * with an `icon` -- one of the merchant stations -- draws it before
+ * the label; the rest, "All" included, draw none.
  *
  *   chipRow('m-stations', 'station',
  *           [{ value: '', label: 'All', pressed: true }, …])
@@ -38,13 +40,14 @@ export function chipRow(id, attr, chips) {
       ${chips.map((c) => `
         <button class="chip" data-${esc(attr)}="${esc(c.value)}"
                 aria-pressed="${c.pressed ? 'true' : 'false'}"
-          >${esc(c.label)}</button>`).join('')}
+          >${icon(c.icon)}${esc(c.label)}</button>`).join('')}
     </div>`;
 }
 
 /**
  * Tabs across the top of a gallery, each with room for a count of the
- * matches it holds.  `tabs` are { id, title }; the first starts chosen.
+ * matches it holds.  `tabs` are { id, title, icon }, the icon optional
+ * and drawn before the title; the first tab starts chosen.
  *
  *   tabRow('r-kinds', 'kind', [{ id: 'vendor', title: 'Vendor recipes' }, …])
  */
@@ -53,7 +56,7 @@ export function tabRow(id, attr, tabs) {
     <div class="segmented" role="tablist" id="${esc(id)}">
       ${tabs.map((t, i) => `
         <button role="tab" data-${esc(attr)}="${esc(t.id)}" aria-selected="${i === 0}">
-          ${esc(t.title)}<span class="tab-count"></span></button>`).join('')}
+          ${icon(t.icon)}${esc(t.title)}<span class="tab-count"></span></button>`).join('')}
     </div>`;
 }
 

@@ -399,6 +399,41 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border-color: var(--ink);
 }
 
+/* A station or a tab's icon, before its label.  Each is a stamped
+   medallion -- a filled disc with the glyph cut from it -- generated
+   in two colourways, so the ones drawn here are only ever named, never
+   pathed: which image loads is decided below, by theme. */
+.icon {
+  display: inline-block;
+  width: 1.2em;
+  height: 1.2em;
+  margin-right: .4em;
+  vertical-align: -.3em;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.icon-animals   { background-image: url('images/icons/parchment/animals.png'); }
+.icon-plants    { background-image: url('images/icons/parchment/plants.png'); }
+.icon-supplies  { background-image: url('images/icons/parchment/supplies.png'); }
+.icon-crafting  { background-image: url('images/icons/parchment/crafting.png'); }
+.icon-campfire  { background-image: url('images/icons/parchment/campfire.png'); }
+.icon-satchel   { background-image: url('images/icons/parchment/satchel.png'); }
+.icon-pearson   { background-image: url('images/icons/parchment/pearson.png'); }
+.icon-trapper   { background-image: url('images/icons/parchment/trapper.png'); }
+.icon-fence     { background-image: url('images/icons/parchment/fence.png'); }
+
+:root[data-theme="leather"] .icon-animals   { background-image: url('images/icons/leather/animals.png'); }
+:root[data-theme="leather"] .icon-plants    { background-image: url('images/icons/leather/plants.png'); }
+:root[data-theme="leather"] .icon-supplies  { background-image: url('images/icons/leather/supplies.png'); }
+:root[data-theme="leather"] .icon-crafting  { background-image: url('images/icons/leather/crafting.png'); }
+:root[data-theme="leather"] .icon-campfire  { background-image: url('images/icons/leather/campfire.png'); }
+:root[data-theme="leather"] .icon-satchel   { background-image: url('images/icons/leather/satchel.png'); }
+:root[data-theme="leather"] .icon-pearson   { background-image: url('images/icons/leather/pearson.png'); }
+:root[data-theme="leather"] .icon-trapper   { background-image: url('images/icons/leather/trapper.png'); }
+:root[data-theme="leather"] .icon-fence     { background-image: url('images/icons/leather/fence.png'); }
+
 /* A dropdown filter: category on both galleries. */
 .select {
   flex: 0 1 auto;

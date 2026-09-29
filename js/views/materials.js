@@ -22,7 +22,7 @@
 import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { materialCard, materialDetail, empty, esc, placeName, plural, pager,
-         PAGE } from '../render.js';
+         stationIcon, PAGE } from '../render.js';
 import { toast } from '../toast.js';
 import { detailDialog, opensCard } from '../dialog.js';
 import * as nav from '../nav.js';
@@ -38,9 +38,9 @@ const KINDS = [
 ];
 
 const GROUPS = [
-  { id: 'animal',   title: 'Animal Materials', types: ['animal'] },
-  { id: 'plant',    title: 'Plants',           types: ['plant'] },
-  { id: 'supplies', title: 'Supplies',         types: ['ammo', 'alcohol', 'misc'] },
+  { id: 'animal',   title: 'Animal Materials', types: ['animal'], icon: 'animals' },
+  { id: 'plant',    title: 'Plants',           types: ['plant'], icon: 'plants' },
+  { id: 'supplies', title: 'Supplies',         types: ['ammo', 'alcohol', 'misc'], icon: 'supplies' },
 ];
 const groupOf = (card) =>
   GROUPS.find((g) => g.types.includes(card.source_type))?.id;
@@ -104,7 +104,7 @@ export function mount(root) {
       </select>
       ${toolbar.chipRow('m-stations', 'station', [
         { value: '', label: 'All', pressed: true },
-        ...stations.map((s) => ({ value: s.id, label: s.name })),
+        ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
       ])}
       ${toolbar.chipRow('m-show', 'show', [
         { value: 'short', label: 'Still needed' },

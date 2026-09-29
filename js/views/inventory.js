@@ -17,11 +17,16 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { esc, empty, heldAt, plural, qualityBadge } from '../render.js';
+import { esc, empty, heldAt, icon, plural, qualityBadge } from '../render.js';
 import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
 
 const LOCATION_KEY = 'rdr2:location';
+
+// The icon that matches each location's id, for the segmented tabs.
+const LOCATION_ICON = {
+  'loc-satchel': 'satchel', 'loc-pearson': 'pearson', 'loc-trapper': 'trapper',
+};
 
 // Staged, uncommitted edits, keyed by location and material.
 // Module-level, so leaving the screen does not throw them away.
@@ -50,7 +55,8 @@ export function mount(root) {
     <div class="segmented" role="tablist" id="i-locations">
       ${locations.map((l) => `
         <button role="tab" data-location="${esc(l.id)}"
-                aria-selected="${l.id === state.location}">${esc(l.name)}</button>`)
+                aria-selected="${l.id === state.location}"
+          >${icon(LOCATION_ICON[l.id])}${esc(l.name)}</button>`)
         .join('')}
     </div>
     <div id="i-sections"></div>

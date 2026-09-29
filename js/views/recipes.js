@@ -21,7 +21,7 @@
 import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { esc, empty, pager, plural, qualityBadge, stationBadge, stationColour,
-         detailHead, detailSection, placeName, traits, crossLink,
+         stationIcon, detailHead, detailSection, placeName, traits, crossLink,
          PAGE } from '../render.js';
 import * as nav from '../nav.js';
 import * as toolbar from './toolbar.js';
@@ -51,8 +51,8 @@ const byName = (a, b) => a.name.localeCompare(b.name);
 const ready = (r) => !r.repeatable && r.state === 'wanted' && r.satisfied === r.needs;
 
 const KINDS = [
-  { id: 'vendor',   title: 'Vendor recipes', repeatable: 0 },
-  { id: 'campfire', title: 'Campfire',       repeatable: 1 },
+  { id: 'vendor',   title: 'Vendor recipes', repeatable: 0, icon: 'crafting' },
+  { id: 'campfire', title: 'Campfire',       repeatable: 1, icon: 'campfire' },
 ];
 const kindOf = (r) => (r.repeatable ? 'campfire' : 'vendor');
 
@@ -85,7 +85,7 @@ export function mount(root) {
       <select class="select" id="r-category" aria-label="Category"></select>
       ${toolbar.chipRow('r-stations', 'station', [
         { value: '', label: 'All', pressed: true },
-        ...stations.map((s) => ({ value: s.id, label: s.name })),
+        ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
       ])}
       ${toolbar.chipRow('r-show', 'show', [
         { value: 'ready', label: 'Ready to craft' },
