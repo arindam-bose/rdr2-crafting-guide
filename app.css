@@ -1496,9 +1496,15 @@ ul.buff li::before {
   margin: 0;
   font-size: .78rem;
   letter-spacing: .07em;
-  text-transform: uppercase;
   color: var(--ink-label);
 }
+
+/* Settings' captions, the tiles' own and the ones inside them, are
+   written in sentence case, the way a dialog's are. */
+.panel .list-label { margin: 0 0 8px; text-transform: none; }
+
+/* A tile with more to it than a note and a button takes the whole row. */
+.panel-wide { grid-column: 1 / -1; }
 
 .note {
   margin: 0;
@@ -1529,56 +1535,85 @@ ul.buff li::before {
   text-align: right;
 }
 
-/* The sources, credited.  Title first because that is what you are
-   looking for, the site under it in the quiet ink; the whole row is
-   the link, so a thumb has something to hit. */
+/* The acknowledgements, in two groups: the sources beside the fonts
+   on a wide screen, the one above the other on a narrow one. */
+.ack-groups {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+@media (min-width: 900px) {
+  .ack-groups { grid-template-columns: 2fr 1fr; }
+}
+
+/* The sources, credited, as a grid of small tiles: the site's short
+   name to find it by, the page's own long title under it in the quiet
+   ink.  The whole tile is the link, so a thumb has something to hit. */
 .refs {
   margin: 0;
   padding: 0;
   list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 8px;
 }
-.refs li { border-bottom: 1px solid var(--line); }
-.refs li:last-child { border-bottom: 0; }
-
 .refs a {
   display: block;
-  padding: 7px 0;
-  font-size: .86rem;
+  height: 100%;
+  padding: 9px 12px;
   line-height: 1.35;
-  color: var(--accent-text);
   text-decoration: none;
+  background: var(--page-wash);
+  border: 1px solid var(--line);
+  border-radius: 8px;
 }
-.refs a:hover { text-decoration: underline; }
+.refs a:hover { border-color: var(--accent-text); }
+.refs a:hover strong { text-decoration: underline; }
+.refs strong {
+  display: block;
+  font-size: .88rem;
+  font-weight: 400;
+  color: var(--accent-text);
+}
 .refs small {
   display: block;
-  margin-top: 1px;
-  font-size: .74rem;
+  margin-top: 2px;
+  font-size: .72rem;
   color: var(--ink-faint);
 }
 
-/* A licence, credited: a name and a sentence, not a single link, so
-   unlike .refs the row itself is not the tap target -- the links
-   inside it are. */
+/* A font, credited: its name set in the face itself, and where it came
+   from and on what terms under it.  Unlike .refs the row is not the tap
+   target -- the links inside it are. */
 .credits {
   margin: 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 2px;
 }
 .credits li {
-  padding: 7px 0;
-  font-size: .86rem;
-  line-height: 1.4;
-  color: var(--ink-dim);
+  padding: 8px 0;
   border-bottom: 1px solid var(--line);
 }
+.credits li:first-child { padding-top: 0; }
 .credits li:last-child { border-bottom: 0; }
-.credits strong { color: var(--ink); }
+.credits strong {
+  display: block;
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--ink);
+}
+.credits .face-display { font-family: var(--font-display); letter-spacing: .06em; }
+.credits .face-heading { font-family: var(--font-heading); letter-spacing: .04em; }
+.credits .face-body    { font-family: var(--font-body); }
+.credits small {
+  display: block;
+  margin-top: 2px;
+  font-size: .76rem;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
 .credits a {
   color: var(--accent-text);
   text-decoration: none;
