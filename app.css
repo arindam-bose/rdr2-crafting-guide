@@ -888,14 +888,15 @@ body:has(dialog.detail[open]) { overflow: hidden; }
 .trait dt {
   margin-bottom: 3px;
   font-size: .7rem;
-  text-transform: uppercase;
   letter-spacing: .08em;
   color: var(--ink-label);
 }
 .trait dd { margin: 0; font-size: .92rem; }
 .trait .badge { margin-left: 0; }
 
-.detail-section .list-label { margin-bottom: 8px; }
+/* A dialog's captions are written as they are said, "Recipes used in",
+   the way a card's are, rather than shouted like the page's own. */
+.detail-section .list-label { margin-bottom: 8px; text-transform: none; }
 .detail .hint { margin: 0; font-size: .92rem; }
 
 /* A dialog's boxed list: recipes a material goes into, a recipe's buffs. */
