@@ -1011,10 +1011,6 @@ body:has(dialog.detail[open]) { overflow: hidden; }
 .detail-recipes li.made .what,
 .detail-recipes li.retired .what  { color: var(--ink-faint); }
 
-/* Crafted / not crafted read as the checkbox alone, at the size a
-   glance can tell apart from the text beside it. */
-.detail-recipes .state-icon { flex: 0 0 auto; width: 1.3em; height: 1.3em; margin: 0; }
-
 /* The animals a material comes from: the name, and how to take it --
    a weapon, or the bait for a fish -- set to the right. */
 .detail-animals li { align-items: baseline; background: var(--surface); }

@@ -79,9 +79,9 @@ export function nameWith(name, trailing) {
     esc(name.slice(cut))}${trailing}</span>`;
 }
 
-/** "1 material", "2 materials", "3 matches". */
-export function plural(n, word, suffix = 's') {
-  return `${n} ${word}${n === 1 ? '' : suffix}`;
+/** "1 material", "2 materials". */
+export function plural(n, word) {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
 /**
@@ -156,8 +156,10 @@ const USAGE_SHOWN = 6;
  *                body_part, animals: [...], demands: [...],
  *                usage: [...] }
  *
- * `personal` decides whether the card talks about what you have, and
- * `expanded` whether its "used in" list is showing every entry.
+ * `personal` decides whether the card talks about what you have,
+ * `expanded` whether its "used in" list is showing every entry, and
+ * `done` whether it gets the checkbox Recipes stamps a crafted card
+ * with -- nothing is outstanding for it, and something still tracks it.
  */
 export function materialCard(material, { personal, expanded = false, done = false }) {
   const { material: name, quality } = material;
@@ -343,15 +345,14 @@ function forQty(qty) {
 
 /** One recipe in the detail view, with its state spelled out. */
 function recipeLine(u, personal) {
-  // The same three words Recipes uses for the same three states, so a
-  // recipe does not change its name on the way across.  Crafted and
-  // not crafted are the checkbox, exactly as Recipes stamps a card
-  // once it is made; Skipped keeps the pill, since there is no
+  // Crafted and not crafted are the checkbox, exactly as Recipes
+  // stamps a card once it is made; Skipped keeps the word Recipes
+  // uses for the same state everywhere else, since there is no
   // skipped icon to stand in for it.
   const [state, label] = !personal || u.state === 'campfire' ? ['plain', '']
-    : u.state === 'done' ? ['made', 'Crafted']
+    : u.state === 'done' ? ['made', '']
     : u.state === 'skipped' ? ['retired', 'Skipped']
-    : ['open', 'Not crafted'];
+    : ['open', ''];
 
   const mark = state === 'made' ? checkbox(true)
     : state === 'open' ? checkbox(false)
@@ -366,9 +367,10 @@ function recipeLine(u, personal) {
     </li>`;
 }
 
-/** The checkbox standing in for "Crafted" / "Not crafted". */
+/** The checkbox standing in for "Crafted" / "Not crafted", the same
+    size as `doneMark` draws in a card's corner -- just checked or not. */
 function checkbox(done) {
-  return `<span class="icon ${done ? 'icon-crafted' : 'icon-uncrafted'} state-icon"
+  return `<span class="icon ${done ? 'icon-crafted' : 'icon-uncrafted'} crafted-mark"
             role="img" aria-label="${done ? 'Crafted' : 'Not crafted'}"></span>`;
 }
 

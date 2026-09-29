@@ -28,13 +28,6 @@ import * as toolbar from './toolbar.js';
 import { toast } from '../toast.js';
 import { detailDialog, opensCard } from '../dialog.js';
 
-// One word for the done state, wherever it is said: the badge on a
-// settled card, the filter chip, the want switch, the toast, and the
-// line a material's dialog shows for the same recipe.  "Done" is not
-// it -- Materials already spends that on a material you are finished
-// with, which is a different thing from a recipe you have crafted.
-const STATE_LABEL = { wanted: '', done: 'Crafted', skipped: 'Skipped' };
-
 // What you are still working on comes first; what you have crafted
 // next; what you have retired last.  A skipped recipe keeping its
 // alphabetical slot was the thing that made Skip feel like it had
@@ -291,7 +284,7 @@ function card(r, personal) {
           <h3><button type="button" class="card-open" data-open
                 aria-haspopup="dialog">${nameWith(r.name,
             stationMark(r.station_id, r.station, r.color)
-            + (settled && !crafted ? stateBadge(r.state) : ''))}</button></h3>
+            + (settled && !crafted ? stateBadge() : ''))}</button></h3>
           ${crafted ? doneMark('Crafted') : ''}
         </div>
         <span class="price">${r.price_cents ? priceLabel(r) : ''}</span>
@@ -360,9 +353,13 @@ function slotLine(options, personal) {
     </li>`;
 }
 
-/** "Crafted" or "Skipped", beside the vendor, once a recipe is settled. */
-function stateBadge(state) {
-  return `<span class="badge state ${state}">${esc(STATE_LABEL[state])}</span>`;
+/**
+ * "Skipped", beside the vendor, once a recipe is settled without
+ * being made -- crafted gets the checkbox instead, so this text badge
+ * is the only settled state that still reaches one.
+ */
+function stateBadge() {
+  return '<span class="badge state skipped">Skipped</span>';
 }
 
 /**

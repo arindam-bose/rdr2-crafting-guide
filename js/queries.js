@@ -282,6 +282,7 @@ const STOCK_AT = `
              ing.quality     AS quality,
              COALESCE(inv.qty, 0)            AS qty,
              COALESCE(tot.gathered, 0)       AS gathered,
+             COALESCE(tot.received, 0)       AS received,
              COALESCE(tot.used_crafting, 0)  AS used_crafting
   FROM       ingredients ing
   LEFT JOIN  inventory        inv ON inv.ingredient_id = ing.id

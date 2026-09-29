@@ -51,14 +51,25 @@ CREATE VIEW inventory AS
 -- a pelt you gathered and then spent is exactly the case these
 -- totals exist to describe.
 --
--- qty <= gathered holds by construction: qty is the sum of every
--- delta, gathered only the positive ones.
+-- A transfer's positive row is kept out of `gathered`: it did not
+-- come from a kill, a purchase or the wild, and counting it there
+-- would read as loot that a look at the ledger shows was only ever
+-- handed over from the Satchel.  `received` is that same total, kept
+-- instead of dropped, so a vendor's history still says where its
+-- stock actually came from.
+--
+-- qty <= gathered + received holds by construction: qty is the sum
+-- of every delta, the other two only the positive ones, split by
+-- reason.
 -- ------------------------------------------------------------
 CREATE VIEW inventory_totals AS
     SELECT ingredient_id,
            location_id,
            SUM(delta)                                            AS qty,
-           SUM(CASE WHEN delta > 0 THEN delta ELSE 0 END)        AS gathered,
+           SUM(CASE WHEN delta > 0 AND reason <> 'move'
+                    THEN delta ELSE 0 END)                       AS gathered,
+           SUM(CASE WHEN delta > 0 AND reason = 'move'
+                    THEN delta ELSE 0 END)                       AS received,
            -SUM(CASE WHEN reason = 'craft' THEN delta ELSE 0 END) AS used_crafting,
            -SUM(CASE WHEN reason <> 'craft' AND delta < 0
                      THEN delta ELSE 0 END)                      AS given_back

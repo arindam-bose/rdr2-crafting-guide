@@ -53,20 +53,24 @@ const editKey = (location, ingredient) => `edit\u0000${location}\u0000${ingredie
 const moveKey = (ingredient, from, to) => `move\u0000${ingredient}\u0000${from}\u0000${to}`;
 
 /**
- * Every pending change touching one material at one location, net --
- * its own staged edit, minus what is staged to leave from here, plus
- * what is staged to arrive here from the other end.  This is what a
- * row's count actually shows, whichever screen it is read from.
+ * Every pending change at one location, net, by ingredient -- each
+ * one's own staged edit, minus what is staged to leave from here,
+ * plus what is staged to arrive here from the other end.  This is
+ * what a row's count actually shows, whichever screen it is read
+ * from.  Built once per render rather than rescanned per row: every
+ * row on the screen asks the same question about the same fixed
+ * location, so one pass over `staged` answers all of them.
  */
-function pendingAt(location, ingredient) {
-  let delta = 0;
+function pendingIndex(location) {
+  const index = new Map();
+  const add = (id, delta) => index.set(id, (index.get(id) ?? 0) + delta);
+
   for (const e of staged.values()) {
-    if (e.ingredient_id !== ingredient) continue;
-    if (e.kind === 'edit' && e.location_id === location) delta += e.delta;
-    else if (e.kind === 'move' && e.from_location_id === location) delta -= e.delta;
-    else if (e.kind === 'move' && e.to_location_id === location) delta += e.delta;
+    if (e.kind === 'edit' && e.location_id === location) add(e.ingredient_id, e.delta);
+    else if (e.kind === 'move' && e.from_location_id === location) add(e.ingredient_id, -e.delta);
+    else if (e.kind === 'move' && e.to_location_id === location) add(e.ingredient_id, e.delta);
   }
-  return delta;
+  return index;
 }
 
 window.addEventListener('beforeunload', (event) => {
@@ -91,6 +95,11 @@ export function mount(root) {
     if (!wants.has(w.ingredient_id)) wants.set(w.ingredient_id, new Set());
     wants.get(w.ingredient_id).add(w.location_id);
   }
+
+  // Rebuilt at the top of every update(), read by row() through
+  // section(): every row on the same render asks pendingIndex() the
+  // same question, so it is computed once rather than once each.
+  let pendingIdx;
 
   const tabs = locations.map((l) => ({ id: l.id, title: l.name, icon: LOCATION_ICON[l.id] }));
   root.innerHTML = `
@@ -159,19 +168,38 @@ export function mount(root) {
 
   // A tap always moves one unit between the Satchel and whichever
   // vendor `to` names, in the direction the screen you are on implies:
-  // `state.location` is always the other end.  Capped at zero rather
-  // than going negative, since there is no such thing as sending
-  // fewer than none.
+  // `state.location` is always the other end.  Sending one first
+  // cancels against a transfer already staged the other way for the
+  // same material, rather than piling up beside it -- three out and
+  // one back, before either is saved, is one decision to send two,
+  // not two ledger entries that would each write and half-undo the
+  // other.  Capped at zero rather than going negative, since there is
+  // no such thing as sending fewer than none.
   function stageMove({ ingredient, name, source }, to, delta) {
     const from = state.location;
-    const k = moveKey(ingredient, from, to);
-    const entry = staged.get(k)
-      ?? { kind: 'move', ingredient_id: ingredient, name, source_type: source,
-           from_location_id: from, to_location_id: to, delta: 0 };
 
-    entry.delta = Math.max(0, entry.delta + delta);
-    if (entry.delta === 0) staged.delete(k);
-    else staged.set(k, entry);
+    if (delta > 0) {
+      const oppositeKey = moveKey(ingredient, to, from);
+      const opposite = staged.get(oppositeKey);
+      if (opposite) {
+        const cancel = Math.min(opposite.delta, delta);
+        opposite.delta -= cancel;
+        delta -= cancel;
+        if (opposite.delta === 0) staged.delete(oppositeKey);
+        else staged.set(oppositeKey, opposite);
+      }
+    }
+
+    if (delta !== 0) {
+      const k = moveKey(ingredient, from, to);
+      const entry = staged.get(k)
+        ?? { kind: 'move', ingredient_id: ingredient, name, source_type: source,
+             from_location_id: from, to_location_id: to, delta: 0 };
+
+      entry.delta = Math.max(0, entry.delta + delta);
+      if (entry.delta === 0) staged.delete(k);
+      else staged.set(k, entry);
+    }
 
     update();
   }
@@ -211,6 +239,7 @@ export function mount(root) {
     const searching = state.search.length > 0;
     const place = locations.find((l) => l.id === state.location).name;
     const at = heldAt(state.location, place);
+    pendingIdx = pendingIndex(state.location);
 
     if (searching) {
       const hits = queries.searchMaterials(state.search, state.location);
@@ -250,7 +279,7 @@ export function mount(root) {
         </div>
         ${list.length
           ? `<div class="rows">${list
-               .map((m) => row(m, state.location, wants))
+               .map((m) => row(m, state.location, wants, pendingIdx))
                .join('')}</div>`
           : empty(emptyText)}
       </section>`;
@@ -299,6 +328,7 @@ function asRow(e) {
     quality: null,
     qty: 0,
     gathered: 0,
+    received: 0,
     used_crafting: 0,
   };
 }
@@ -306,18 +336,23 @@ function asRow(e) {
 /**
  * What has passed through your hands here.  Only worth saying once
  * there is a history to report — on a row you have never touched it
- * would be three zeroes and no information.
+ * would be three zeroes and no information.  Gathered and received
+ * are kept apart: a transfer did not come from a kill, a purchase or
+ * the wild, and folding it into "gathered" would credit a vendor with
+ * loot that only ever came from the Satchel.
  */
 function history(m) {
-  if (!m.gathered) return '';
+  if (!m.gathered && !m.received) return '';
 
-  const parts = [`${m.gathered} gathered`];
+  const parts = [];
+  if (m.gathered) parts.push(`${m.gathered} gathered`);
+  if (m.received) parts.push(`${m.received} received`);
   if (m.used_crafting) parts.push(`${m.used_crafting} crafted`);
   return `<small class="history">${parts.join(' - ')}</small>`;
 }
 
-function row(m, location, wants) {
-  const shown = m.qty + pendingAt(location, m.ingredient_id);
+function row(m, location, wants, pendingIdx) {
+  const shown = m.qty + (pendingIdx.get(m.ingredient_id) ?? 0);
   const net = shown - m.qty;
 
   const mark = net
