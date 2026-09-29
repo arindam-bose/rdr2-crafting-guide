@@ -47,7 +47,7 @@ export function toast(message, action = null) {
   // A way out that does not depend on waiting.
   const close = document.createElement('button');
   close.type = 'button';
-  close.className = 'toast-close';
+  close.className = 'toast-close close-btn';
   close.setAttribute('aria-label', 'Dismiss');
   close.textContent = 'x';
   close.addEventListener('click', dismiss);

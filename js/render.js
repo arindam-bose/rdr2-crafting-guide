@@ -341,19 +341,32 @@ function forQty(qty) {
 /** One recipe in the detail view, with its state spelled out. */
 function recipeLine(u, personal) {
   // The same three words Recipes uses for the same three states, so a
-  // recipe does not change its name on the way across.
+  // recipe does not change its name on the way across.  Crafted and
+  // not crafted are the checkbox, exactly as Recipes stamps a card
+  // once it is made; Skipped keeps the pill, since there is no
+  // skipped icon to stand in for it.
   const [state, label] = !personal || u.state === 'campfire' ? ['plain', '']
     : u.state === 'done' ? ['made', 'Crafted']
     : u.state === 'skipped' ? ['retired', 'Skipped']
     : ['open', 'Not crafted'];
+
+  const mark = state === 'made' ? checkbox(true)
+    : state === 'open' ? checkbox(false)
+    : label ? `<span class="state">${label}</span>` : '';
 
   return `
     <li class="${state}">
       <span class="what">${forQty(u.qty)}${
         crossLink('recipes', u.recipe_id, u.recipe)}
         <small>${esc(u.station)}</small></span>
-      ${label ? `<span class="state">${label}</span>` : ''}
+      ${mark}
     </li>`;
+}
+
+/** The checkbox standing in for "Crafted" / "Not crafted". */
+function checkbox(done) {
+  return `<span class="icon ${done ? 'icon-crafted' : 'icon-uncrafted'} state-icon"
+            role="img" aria-label="${done ? 'Crafted' : 'Not crafted'}"></span>`;
 }
 
 /**

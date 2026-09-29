@@ -426,6 +426,20 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
    spot a "search" input already reserved. */
 .search::-webkit-search-cancel-button { appearance: none; }
 
+/* The one "×" the app draws, on a toast and on a search box alike:
+   same glyph, same box, same hover, wherever something needs closing
+   or clearing. */
+.close-btn {
+  font: inherit;
+  line-height: 1;
+  color: var(--ink-faint);
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.close-btn:hover { color: var(--ink); background: var(--line); }
+
 .search-clear {
   position: absolute;
   top: 50%;
@@ -433,19 +447,8 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   transform: translateY(-50%);
   width: 28px;
   height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   font-size: 1.2rem;
-  line-height: 1;
-  color: var(--ink-faint);
-  background: none;
-  border: 0;
-  border-radius: 50%;
-  cursor: pointer;
 }
-.search-clear:hover { color: var(--ink); background: var(--surface-2); }
-.search-clear:active { background: var(--line); }
 
 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -491,8 +494,10 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .icon-trapper   { background-image: url('images/icons/parchment/trapper-inverse.png'); }
 .icon-fence     { background-image: url('images/icons/parchment/fence-inverse.png'); }
 .icon-crafted   { background-image: url('images/icons/parchment/checkbox-checked.png'); }
+.icon-uncrafted { background-image: url('images/icons/parchment/checkbox-unchecked.png'); }
 
 :root[data-theme="leather"] .icon-crafted   { background-image: url('images/icons/leather/checkbox-checked.png'); }
+:root[data-theme="leather"] .icon-uncrafted { background-image: url('images/icons/leather/checkbox-unchecked.png'); }
 :root[data-theme="leather"] .icon-animals   { background-image: url('images/icons/leather/animals-inverse.png'); }
 :root[data-theme="leather"] .icon-plants    { background-image: url('images/icons/leather/plants-inverse.png'); }
 :root[data-theme="leather"] .icon-supplies  { background-image: url('images/icons/leather/supplies-inverse.png'); }
@@ -1002,11 +1007,13 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   border: 1px solid currentColor;
   border-radius: 999px;
 }
-.detail-recipes li.open .state    { color: var(--danger-text); }
-.detail-recipes li.made .state    { color: var(--ok); }
 .detail-recipes li.retired .state { color: var(--ink-faint); }
 .detail-recipes li.made .what,
 .detail-recipes li.retired .what  { color: var(--ink-faint); }
+
+/* Crafted / not crafted read as the checkbox alone, at the size a
+   glance can tell apart from the text beside it. */
+.detail-recipes .state-icon { flex: 0 0 auto; width: 1.3em; height: 1.3em; margin: 0; }
 
 /* The animals a material comes from: the name, and how to take it --
    a weapon, or the bait for a fish -- set to the right. */
@@ -1899,16 +1906,8 @@ ul.buff li::before {
   width: 26px;
   height: 26px;
   margin: -4px -4px -4px 0;
-  font: inherit;
   font-size: 1.1rem;
-  line-height: 1;
-  color: var(--ink-faint);
-  background: none;
-  border: 0;
-  border-radius: 6px;
-  cursor: pointer;
 }
-.toast .toast-close:hover { color: var(--ink); background: var(--line); }
 @media (min-width: 720px) { .toast { bottom: 20px; } }
 
 /* ============================================================
