@@ -1,17 +1,30 @@
 /* ------------------------------------------------------------
-   Two faces, and they divide the page between them.
+   Three faces, and they divide the page between them by weight,
+   not by element type -- the same tag can carry any of the three
+   depending on what it is doing on screen.
 
-   Chinese Rocks sets the names — headings, tabs, buttons, labels.
-   FB Remington sets everything else, which on these screens is
-   mostly numbers: 3/3, 2x Oregano, $14.95.  It is monospaced, so
-   those columns line up on their own.
+   Chinese Rocks is the loudest: the site's own name, a page's own
+   header, the tab bar that gets you between pages.  There is only
+   ever a handful of these on screen at once.
 
-   It ships one weight and no italic, so the browser synthesises
-   both.  That is the right trade here: a real Remington had one
-   weight too, and emphasis was struck twice over the same spot.
+   RDR Lino Regular is the middle tier: a card's own name, a tab
+   inside a page (Vendor recipes / Campfire), a dialog's title, a
+   section's caption (USED IN, INGREDIENTS), the General/Personalize
+   and Skip/Want it switches, and every button's own label.  It is
+   not monospaced, unlike the other two, so it never carries a
+   column that has to line up.
 
-   Its character set is a typewriter's, which is to say 152 of
-   them.  It has no ×, ✓, ·, − or —, so nothing here asks for
+   FB Remington sets everything else -- prose, descriptions, the
+   Settings page's explanations, and the numbers: 3/3, 2x Oregano,
+   $14.95.  It is monospaced, so those columns line up on their own.
+
+   All three ship one weight and no italic, so the browser
+   synthesises both where either is asked for.  That is the right
+   trade here: the real originals had one weight too, and emphasis
+   was struck twice over the same spot.
+
+   FB Remington's character set is a typewriter's, which is to say
+   152 of them.  It has no ×, ✓, ·, − or —, so nothing here asks for
    one; see the marks in render.js.
 
    What each one is used on is decided at the foot of this file,
@@ -35,6 +48,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "RDR Lino Regular";
+  src: url("fonts/rdr2_lino_regular/RDR Lino Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   /* The five colours of the game's key art, kept verbatim:
      https://www.color-hex.com/color-palette/72703
@@ -47,6 +68,7 @@
 
   --font-body:    "FB Remington", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-display: "Chinese Rocks", "Haettenschweiler", "Arial Narrow", sans-serif;
+  --font-heading: "RDR Lino Regular", Georgia, "Times New Roman", serif;
 
   /* For the handful of glyphs a typewriter never had a key for: the tick,
      the cross, the copyright sign.  Named rather than left to the browser
@@ -1626,19 +1648,34 @@ ul.buff li::before {
    The lettering, last.
    Every control in this file sets `font: inherit` so it matches
    the page rather than the operating system, and that shorthand
-   resets the family — so the display face has to be assigned
-   after them or the buttons quietly fall back to the sans.
-   Applied by hand rather than to every heading, because a
+   resets the family — so the display or heading face has to be
+   assigned after them or the buttons quietly fall back to the
+   sans.  Applied by hand rather than to every heading, because a
    caps-only face has to earn its place: names, labels and
-   buttons yes, prose never.  It carries no bold, so anything
+   buttons yes, prose never.  Neither carries a bold, so anything
    that asked for 600 is reset here and leans on size and
-   tracking instead.  The steppers stay in the UI font: a
+   tracking instead.  The steppers stay in the body font: a
    caps face draws a poor + and -.
    ============================================================ */
 
-h1, h2, h3,
+/* Chinese Rocks: the site's own name, a page's own header, and the
+   tab bar that moves between pages -- the loudest tier, and the
+   rarest on screen. */
+h1, h2,
 .page-title,
-.tabs a,
+.tabs a {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: .04em;
+}
+
+/* RDR Lino Regular: a card's own name, a tab inside a page, a
+   dialog's title, a section's caption, the General/Personalize and
+   Skip/Want it switches, and every button's own label -- one tier
+   down from the above, and everywhere else something reads as a
+   header or a control rather than prose. */
+h3,
+#detail-title,
 .chip,
 .segmented button,
 .craft-btn, .ghost-btn, .more-btn, .danger-btn, .sort-dir, .savebar button,
@@ -1646,13 +1683,14 @@ h1, h2, h3,
 .list-label,
 .panel h3,
 .trait dt, .detail-kicker,
-.entry .reason {
-  font-family: var(--font-display);
+.entry .reason,
+.mode-switch, .want-switch {
+  font-family: var(--font-heading);
   font-weight: 400;
   letter-spacing: .04em;
 }
 
-/* Tracking the caps face needs at each size it is used. */
+/* Tracking each face needs at each size it is used. */
 .page-title { letter-spacing: .06em; }
 .tabs a     { letter-spacing: .07em; }
 .card h3    { letter-spacing: .05em; }
