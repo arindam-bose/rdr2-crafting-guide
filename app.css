@@ -725,6 +725,15 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 .demands { display: flex; flex-direction: column; gap: 6px; }
 
+/* Settings' crafted-by-category tally: the same demand row, but two
+   to a line once there is room, since two dozen categories in one
+   narrow column would make the panel the tallest thing on the page. */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 6px 16px;
+}
+
 .demand {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -777,7 +786,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .mark.icon {
   width: 1.3em;
   height: 1.3em;
-  margin: 0;
+  margin: -2px 0 0;
   align-self: center;
 }
 

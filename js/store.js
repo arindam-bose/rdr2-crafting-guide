@@ -333,7 +333,14 @@ export async function importJSON(text) {
   return found;
 }
 
-/** A count of what is here, for the Settings page to report. */
+/**
+ * A count of what is here, for the Settings page to report.
+ *
+ * Campfire recipes are never crafted or ticked off (see queries.js),
+ * so every count below that means "crafted" -- made, spent, the
+ * category and vendor breakdowns -- is scoped to the 165 vendor
+ * recipes on purpose; a campfire recipe has no such state to count.
+ */
 export function stats() {
   const one = (sql) => db.one(sql)?.n ?? 0;
   return {
@@ -342,6 +349,43 @@ export function stats() {
     materials: one('SELECT COUNT(DISTINCT ingredient_id) AS n FROM inventory WHERE qty > 0'),
     made: one("SELECT COUNT(*) AS n FROM targets WHERE state = 'done'"),
     skipped: one("SELECT COUNT(*) AS n FROM targets WHERE state = 'skipped'"),
+    vendorRecipes: one('SELECT COUNT(*) AS n FROM recipes WHERE repeatable = 0'),
+    spentCents: one(`
+      SELECT COALESCE(SUM(r.price_cents), 0) AS n
+      FROM   recipes r
+      JOIN   targets t ON t.recipe_id = r.id
+      WHERE  t.state = 'done' AND r.repeatable = 0`),
+    outfits: one("SELECT COUNT(*) AS n FROM sets WHERE set_type = 'outfit'"),
+    outfitsDone: one(`
+      SELECT COUNT(*) AS n FROM (
+        SELECT   s.id
+        FROM     sets s
+        JOIN     recipes r ON r.set_id = s.id
+        LEFT JOIN targets t ON t.recipe_id = r.id
+        WHERE    s.set_type = 'outfit'
+        GROUP BY s.id
+        HAVING   MIN(COALESCE(t.state, 'wanted') = 'done') = 1)`),
+    byCategory: db.all(`
+      SELECT     r.category                                       AS category,
+                 COUNT(*)                                          AS total,
+                 SUM(CASE WHEN t.state = 'done' THEN 1 ELSE 0 END) AS made
+      FROM       recipes r
+      LEFT JOIN  targets t ON t.recipe_id = r.id
+      WHERE      r.repeatable = 0
+      GROUP BY   r.category
+      ORDER BY   r.category`),
+    byVendor: db.all(`
+      SELECT     st.id                                             AS station_id,
+                 st.name                                           AS station,
+                 st.color                                          AS color,
+                 COUNT(*)                                          AS total,
+                 SUM(CASE WHEN t.state = 'done' THEN 1 ELSE 0 END) AS made
+      FROM       recipes r
+      JOIN       stations st ON st.id = r.station_id
+      LEFT JOIN  targets t ON t.recipe_id = r.id
+      WHERE      r.repeatable = 0
+      GROUP BY   st.id
+      ORDER BY   made DESC`),
     referenceBuild: referenceBuild(),
   };
 }

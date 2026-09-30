@@ -13,7 +13,7 @@
 
 import * as store from '../store.js';
 import * as theme from '../theme.js';
-import { esc, plural } from '../render.js';
+import { esc, plural, icon, stationIcon, stationColour } from '../render.js';
 import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
 import { ledgerDialog } from './ledger.js';
@@ -86,10 +86,16 @@ export function mount(root) {
         </div>
       </section>
 
-      <section class="panel">
-        <h3>Your data</h3>
+      <section class="panel panel-wide">
+        <h3>Your stats</h3>
         <dl class="facts" id="s-facts"></dl>
         <p class="note" id="s-last"></p>
+
+        <p class="list-label card-label">By vendor</p>
+        <div class="demands" id="s-by-vendor"></div>
+
+        <p class="list-label card-label">By category</p>
+        <div class="stat-grid" id="s-by-category"></div>
       </section>
 
       <section class="panel">
@@ -328,7 +334,6 @@ export function mount(root) {
   function update() {
     const s = store.stats();
 
-
     $('#s-facts').innerHTML = facts([
       ['Ledger entries', s.entries, 'ledger'],
       ['Materials held', s.materials
@@ -336,7 +341,15 @@ export function mount(root) {
         : 'nothing yet'],
       ['Recipes crafted', s.made],
       ['Recipes skipped', s.skipped],
+      ['Spent crafting', money(s.spentCents)],
+      ['Outfits completed', `${s.outfitsDone} of ${s.outfits}`],
     ]);
+
+    $('#s-by-vendor').innerHTML = s.byVendor.map((v) => progressRow(v.station, v.made, v.total,
+      { colour: stationColour(v.color), mark: icon(stationIcon(v.station_id)) })).join('');
+
+    $('#s-by-category').innerHTML = s.byCategory.map((c) =>
+      progressRow(c.category, c.made, c.total)).join('');
 
     const last = prefs.get(LAST_EXPORT);
     $('#s-last').textContent = last
@@ -380,6 +393,28 @@ export function mount(root) {
           : esc(term)}</dt>
         <dd>${esc(value)}</dd>
       </div>`).join('');
+  }
+
+  function money(cents) {
+    return `$${(cents / 100).toFixed(2)}`;
+  }
+
+  /**
+   * A labelled count against its total, with a bar -- the same shape
+   * a material card's vendor demand takes, reused here for a made/total
+   * tally instead of a have/needed one.  `mark` is the vendor's own
+   * icon, where there is one to show.
+   */
+  function progressRow(label, made, total, { colour = '', mark = '' } = {}) {
+    const pct = total ? Math.round((made / total) * 100) : 0;
+    return `
+      <div class="demand ${colour}">
+        <span class="station">${mark}${esc(label)}:</span>
+        <span class="qty"><span class="${made ? 'have' : ''}">${made}</span>/${total}</span>
+        <span class="bar" role="img"
+              aria-label="${made} of ${total} crafted for ${esc(label)}"
+          ><i style="width:${pct}%"></i></span>
+      </div>`;
   }
 
   update();
