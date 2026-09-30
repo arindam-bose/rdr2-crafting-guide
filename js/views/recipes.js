@@ -346,7 +346,7 @@ function slotLine(options, personal) {
   const covered = options.some((o) => o.satisfied);
   return `
     <li class="any ${covered ? 'have' : 'short'}">
-      <span class="mark" aria-hidden="true">${covered ? '✓' : '✗'}</span>
+      <span class="mark icon ${covered ? 'icon-crafted' : 'icon-uncrafted'}" aria-hidden="true"></span>
       <span class="qty">${qty}x</span>
       ${what}
       <span class="tally"></span>
@@ -400,7 +400,7 @@ function ingredient(i, personal) {
 
   return `
     <li class="${i.satisfied ? 'have' : 'short'}">
-      <span class="mark" aria-hidden="true">${i.satisfied ? '✓' : '✗'}</span>
+      <span class="mark icon ${i.satisfied ? 'icon-crafted' : 'icon-uncrafted'}" aria-hidden="true"></span>
       <span class="qty">${i.qty}x</span>
       <span class="what">${name}${badge}</span>
       <span class="tally">${i.have}/${i.qty}</span>

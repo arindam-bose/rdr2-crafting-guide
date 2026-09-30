@@ -502,13 +502,17 @@ function usedIn(usage = [], personal, expanded = false) {
       : u.state === 'done' ? 'made'
       : u.state === 'skipped' ? 'retired'
       : 'open';
-    // These four are icons, not type.  Each sits alone in a .mark span
-    // with its own font stack, so the typewriter face not having them is
-    // contained -- unlike a gap in the middle of a word.
-    const mark = { made: '\u2713', retired: '\u2013', open: '\u2717', plain: '\u00b7' }[state];
+    // Made and open are the same checkbox the card corners use, checked
+    // or not; retired and plain have no such icon, so they stay type --
+    // each alone in a .mark span with its own font stack, so the
+    // typewriter face not having them is contained, unlike a gap in the
+    // middle of a word.
+    const mark = state === 'made' ? '<span class="mark icon icon-crafted" aria-hidden="true"></span>'
+      : state === 'open' ? '<span class="mark icon icon-uncrafted" aria-hidden="true"></span>'
+      : `<span class="mark" aria-hidden="true">${{ retired: '\u2013', plain: '\u00b7' }[state]}</span>`;
 
     return `<li class="${state}">
-      <span class="mark" aria-hidden="true">${mark}</span>
+      ${mark}
       <span class="what">${forQty(u.qty)}${
         crossLink('recipes', u.recipe_id, u.recipe)}</span>
     </li>`;

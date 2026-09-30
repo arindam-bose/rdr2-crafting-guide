@@ -767,6 +767,20 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   font-weight: 700;
 }
 
+/* The have/short and made/open states use the same checkbox icon the
+   card corners do, sized down to sit level with the text beside it
+   rather than the .icon default made for a line of its own.  Its row
+   is a grid aligned on the text's baseline, which an empty icon has
+   none of; centering it against that baseline is what actually lines
+   it up with the text, where vertical-align (for inline flow, not a
+   grid) does nothing. */
+.mark.icon {
+  width: 1.3em;
+  height: 1.3em;
+  margin: 0;
+  align-self: center;
+}
+
 /* ---------- a count riding along on a tab ---------- */
 
 .tab-count {
@@ -823,8 +837,6 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .used-in .mark { font-size: .85rem; line-height: 1; }
 .used-in li.made          { color: var(--ink-faint); }
-.used-in li.made .mark    { color: var(--ok); }
-.used-in li.open .mark    { color: var(--danger-text); }
 .used-in li.retired       { color: var(--ink-faint); }
 .used-in li.made .what    { text-decoration: line-through; }
 .used-in li.retired .what { text-decoration: line-through; }
@@ -1094,6 +1106,13 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   vertical-align: 0;
 }
 
+/* A card's own done mark, in its title -- ~20% bigger than the same
+   checkbox drawn small beside a line in a dialog's used-in/recipe list. */
+.card-title .crafted-mark {
+  width: 1.56em;
+  height: 1.56em;
+}
+
 /* Flush right as before, but with a rule leading into it on the same
    line, filling whatever room the name above did not need.  A free
    recipe has no price text, so the row would otherwise be nothing but
@@ -1168,8 +1187,6 @@ ul.buff li::before {
 .ingredients li:not(.have):not(.short) { grid-template-columns: auto 1fr; }
 
 .ingredients .mark { font-size: .9rem; line-height: 1; }
-.ingredients li.have  .mark  { color: var(--ok); }
-.ingredients li.short .mark  { color: var(--danger-text); }
 .ingredients li.short .what  { color: var(--ink-dim); }
 
 .ingredients .qty { color: var(--ink-dim); font-variant-numeric: tabular-nums; }
