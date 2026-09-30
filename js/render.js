@@ -338,9 +338,15 @@ function animalLine(a) {
     </li>`;
 }
 
-/** "2x for " when a recipe takes more than one of this; nothing for one. */
-function forQty(qty) {
-  return qty > 1 ? `${qty}x for ` : '';
+/**
+ * "2x for " when a recipe takes more than one of this; nothing for
+ * one, except in the dialog's own recipe list, where a bare name
+ * reads as though the amount were left out rather than being 1 --
+ * the card's tile stays as it was, tight on room for a list that
+ * can run to a dozen recipes.
+ */
+function forQty(qty, { always = false } = {}) {
+  return qty > 1 || always ? `${qty}x for ` : '';
 }
 
 /** One recipe in the detail view, with its state spelled out. */
@@ -360,7 +366,7 @@ function recipeLine(u, personal) {
 
   return `
     <li class="${state}">
-      <span class="what">${forQty(u.qty)}${
+      <span class="what">${forQty(u.qty, { always: true })}${
         crossLink('recipes', u.recipe_id, u.recipe)}
         <small>${esc(u.station)}</small></span>
       ${mark}
