@@ -58,6 +58,21 @@ const FONT_CREDITS = [
     html: 'From <a href="https://www.dafont.com/fb_remington.font" target="_blank" rel="noopener noreferrer">DaFont</a>, free for professional use' },
 ];
 
+// recipes.category is stored singular -- "Boot", not "Boots" -- so the
+// Recipes page filter reads as one kind of thing.  A tally here is a
+// count of several, so this page pluralises on the way out instead;
+// irregular ones (a word ending in a consonant then "y") are listed,
+// everything else just takes an "s".
+const CATEGORY_PLURAL = {
+  Accessory: 'Accessories',
+};
+
+function pluralCategory(category) {
+  const words = category.split(' ');
+  const last = words.pop();
+  return [...words, CATEGORY_PLURAL[last] ?? `${last}s`].join(' ');
+}
+
 export function mount(root) {
   root.innerHTML = `
     <div class="settings">
@@ -84,18 +99,6 @@ export function mount(root) {
             <button type="button" role="tab" data-theme="${esc(t.id)}"
                     aria-selected="false">${esc(t.label)}</button>`).join('')}
         </div>
-      </section>
-
-      <section class="panel panel-wide">
-        <h3>Your stats</h3>
-        <dl class="facts" id="s-facts"></dl>
-        <p class="note" id="s-last"></p>
-
-        <p class="list-label card-label">By vendor</p>
-        <div class="demands" id="s-by-vendor"></div>
-
-        <p class="list-label card-label">By category</p>
-        <div class="stat-grid" id="s-by-category"></div>
       </section>
 
       <section class="panel">
@@ -147,6 +150,18 @@ export function mount(root) {
       <section class="panel">
         <h3>About</h3>
         <dl class="facts" id="s-about"></dl>
+      </section>
+
+      <section class="panel panel-wide">
+        <h3>Your stats</h3>
+        <dl class="facts" id="s-facts"></dl>
+        <p class="note" id="s-last"></p>
+
+        <p class="list-label card-label">By vendor</p>
+        <div class="demands" id="s-by-vendor"></div>
+
+        <p class="list-label card-label">By category</p>
+        <div class="stat-grid" id="s-by-category"></div>
       </section>
 
       <section class="panel panel-wide">
@@ -349,7 +364,7 @@ export function mount(root) {
       { colour: stationColour(v.color), mark: icon(stationIcon(v.station_id)) })).join('');
 
     $('#s-by-category').innerHTML = s.byCategory.map((c) =>
-      progressRow(c.category, c.made, c.total)).join('');
+      progressRow(pluralCategory(c.category), c.made, c.total)).join('');
 
     const last = prefs.get(LAST_EXPORT);
     $('#s-last').textContent = last
