@@ -76,11 +76,11 @@ BODY_PARTS = {
 
 # ordinal warmth scale, derived from the description text at build time
 WARMTH = {
-    "lightweight":     0,
-    "slightly warm":   1,
-    "reasonably warm": 2,
-    "warm":            3,
-    "very warm":       4,
+    "a lightweight item. good in hot weather. no protection from the cold.": 0,
+    "slightly warm. pair with other warm items for protection from the cold.": 1,
+    "reasonably warm. pair with other warm items for protection from the cold.": 2,
+    "warm. too warm for hot weather. pair with other warm items for protection from the cold.": 3,
+    "very warm. too warm for hot weather. provides protection from the cold.": 4,
 }
 
 # typos in the source data, corrected on import
