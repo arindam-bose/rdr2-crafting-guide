@@ -1974,7 +1974,8 @@ h3,
 .panel h3,
 .trait dt, .detail-kicker,
 .entry .reason,
-.mode-switch, .want-switch {
+.mode-switch, .want-switch,
+.footer p {
   font-family: var(--font-heading);
   font-weight: 400;
   letter-spacing: .04em;
