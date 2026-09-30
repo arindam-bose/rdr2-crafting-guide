@@ -354,7 +354,7 @@ export function mount(root) {
       ['Materials held', s.materials
         ? `${plural(s.materials, 'kind')} in ${plural(s.held, 'place')}`
         : 'nothing yet'],
-      ['Recipes crafted', s.made],
+      ['Recipes crafted', `${s.made}/${s.vendorRecipes}`],
       ['Recipes skipped', s.skipped],
       ['Spent crafting', money(s.spentCents)],
       ['Outfits completed', `${s.outfitsDone} of ${s.outfits}`],
