@@ -58,7 +58,12 @@ last. Its `animals` sheet updates animals by id: name, the weapon that leaves
 the pelt unspoiled, the `bait` or lure that catches a fish, and a wiki `link`.
 An animal's id stays put when its name changes (`animal-bear` is the Grizzly
 Bear). Its `ingredient_animals` sheet is the whole of that table, and the build
-lists every link it adds or drops against the other sources. `--check-ids` names the build being replaced: every ingredient,
+lists every link it adds or drops against the other sources. Its `recipes`
+sheet does the same for a recipe's name alone, by id — `recipe-explosive-slug`
+keeps its id when the sheet renames it to Explosive Shotgun Slug, since the id
+is derived from the name only at the CSV import a step earlier, and a patch
+applied after that must not shift what the personal layer already has pinned
+to it. `--check-ids` names the build being replaced: every ingredient,
 recipe and location id in it must survive, because the personal layer stores
 those strings, and the build fails if one is gone.
 
@@ -105,7 +110,7 @@ served network-first, so edits show up on reload without a cache bump.
       views/materials.js  "Where to go if you have these items"
       views/inventory.js  entry: pick a location, search, tap +/-
       views/recipes.js    the catalogue, and the recipe dialog you craft in
-      views/settings.js   export, import, reset, and what is stored
+      views/settings.js   stats, export, import, reset, and what is stored
       views/ledger.js     the history, as a dialog opened from Settings
       views/toolbar.js    search, chips, sort and pager, shared by the two
                           galleries
@@ -144,7 +149,8 @@ recipe, `--ink-label` for the USED IN / LOCATIONS / INGREDIENTS captions, the
 station stripes and icons, the hover edge — is chrome, and chrome never carries
 status. A
 name is a name whether or not you own the thing. Spend red on a heading and the
-red `✗` on the card below it stops meaning *you are short of this*.
+red count on a vendor's demand row below it stops meaning *you are short of
+this*.
 
 Each signal is two tokens, because a colour that fills a shape and a colour
 that draws a word are not the same colour:
@@ -211,20 +217,16 @@ the machine could type:
 That costs nothing — the one `·` left is in `document.title`, which the browser
 draws in its own font — and the page reads as one face throughout.
 
-The marks are the exception, and deliberately so. A tick and a cross are icons
-rather than type: each sits alone in a `.mark` span, `aria-hidden`, with the
-colour beside it already carrying the meaning. A gap there is contained in a
-way a gap mid-word is not, so `.mark` gets its own stack and keeps the real
-characters — ✓ for made, ✗ for still wanted, `–` for retired, `·` outside
-personal mode. The `×` on a dialog's close button is the same kind of thing, an
+Made and open take the same checked or unchecked box the card's own corner
+mark stamps — a small image, swapped by theme, not a character the font would
+have to have — so a have/short ingredient or a used-in recipe never depends on
+a glyph FB Remington lacks. Retired and plain have no such icon and stay as
+type, each alone in a `.mark` span, `aria-hidden`: `–` for retired, `·` outside
+personal mode, with the colour beside it already carrying the meaning where
+one still applies. A gap there is contained in a way a gap mid-word is not, so
+`.mark` gets its own stack rather than whatever the browser would otherwise
+fall back to. The `×` on a dialog's close button is the same kind of thing, an
 icon with an `aria-label`, and takes the same stack.
-
-The stack is explicit rather than left to the browser, because ✓ is in far more
-fonts than ✗: allowed to fall back on its own, each glyph lands in a different
-font and the pair arrives at two different weights. Naming
-`"Noto Sans Symbols 2", "DejaVu Sans"` ahead of `sans-serif` keeps them in one
-family. They are still not the same weight — `BALLOT X` is simply drawn heavier
-than `CHECK MARK` — which suits a mark that means *you are short of this*.
 
 The last `•` was not the app's to type: seven saddles carried their five stat
 lines as a Notion bulleted list, bullet characters and all, inside a single
@@ -311,7 +313,10 @@ Feather) lists them instead, each with its own weapon or bait. Every animal's
 name links to its page on the Red Dead wiki, in a new tab. Then every recipe with a Crafted / Not crafted /
 Skipped tag; each vendor's demand against what you hold where it draws from — the
 Fence names your Satchel — and the verdict, *You need to go hunting!* and its
-siblings. Each station row has `-` and `+ Add to Trapper` buttons. These write
+siblings. The dialog's own copy of the recipe list spells out `1x` too, unlike
+the card's: a bare name there reads as though the amount were left off rather
+than being one, where the card stays tight on room for a list that can run to
+a dozen recipes. Each station row has `-` and `+ Add to Trapper` buttons. These write
 at once, one ledger row per tap with an undo toast, rather than staging a
 batch as Inventory does: here you are logging one thing and looking straight
 at the result. In personal mode a station with nothing left to make still
@@ -364,9 +369,9 @@ ingredients, and the two things you can do:
   spending anything — only the target's state is written. Putting back refunds
   the ingredients and wants the recipe again.
 
-Once a recipe is crafted its ingredient list drops the crosses and tallies:
-the ingredients were spent making it, and a row of red under something
-already made reads as a shortfall.
+Once a recipe is crafted its ingredient list drops the checkboxes and
+tallies: the ingredients were spent making it, and a row of them still marked
+short under something already made reads as a shortfall.
 
 A recipe that is done or skipped stops asking for its materials, so it drops out
 of the Materials screen. Demand is per station, so that only removes the demand
@@ -423,6 +428,17 @@ material's dialog, and every screen names a location the same way: *in the
 Satchel*, *with Pearson*.
 
 ### Settings and the ledger
+
+**Your stats** is a scoreboard over the same ledger and targets: materials
+held, recipes crafted against the 165 that can be, recipes skipped, money
+spent crafting, and how many of the sixteen wearable outfits are complete —
+every piece in a set crafted, not just started. Below that, two breakdowns
+with a bar each, by vendor and by category. All of it, the outfit count
+included, only ever counts the one-time vendor recipes: a campfire recipe has
+no crafted/not-crafted state to tally (see Two layers, above), so it sits
+outside every number on this panel. Categories are stored singular (`Boot`,
+not `Boots`) so the Recipes filter reads as one kind of thing; this panel
+pluralises them back on the way out, since a tally is a count of several.
 
 The ledger opens as a dialog from the *Ledger entries* count in Settings — it is
 the one thing here that grows without limit, and a page that is mostly history

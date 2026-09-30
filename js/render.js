@@ -84,6 +84,11 @@ export function plural(n, word) {
   return `${n} ${word}${n === 1 ? '' : 's'}`;
 }
 
+/** "$40.00" from a recipe's price in cents. */
+export function money(cents) {
+  return `$${(cents / 100).toFixed(2)}`;
+}
+
 /**
  * A station's colour, as the database spells it.  Guarded because it
  * reaches the stylesheet as a class name, and only these four have a
@@ -338,15 +343,9 @@ function animalLine(a) {
     </li>`;
 }
 
-/**
- * "2x for " when a recipe takes more than one of this; nothing for
- * one, except in the dialog's own recipe list, where a bare name
- * reads as though the amount were left out rather than being 1 --
- * the card's tile stays as it was, tight on room for a list that
- * can run to a dozen recipes.
- */
-function forQty(qty, { always = false } = {}) {
-  return qty > 1 || always ? `${qty}x for ` : '';
+/** "2x for " when a recipe takes more than one of this; nothing for one. */
+function forQty(qty) {
+  return qty > 1 ? `${qty}x for ` : '';
 }
 
 /** One recipe in the detail view, with its state spelled out. */
@@ -364,9 +363,12 @@ function recipeLine(u, personal) {
     : state === 'open' ? checkbox(false)
     : label ? `<span class="state">${label}</span>` : '';
 
+  // Unlike forQty elsewhere, the amount always shows here: a bare name
+  // in this list reads as though the amount were left out rather than
+  // being 1, where the card's own tile stays tight on room instead.
   return `
     <li class="${state}">
-      <span class="what">${forQty(u.qty, { always: true })}${
+      <span class="what">${u.qty}x for ${
         crossLink('recipes', u.recipe_id, u.recipe)}
         <small>${esc(u.station)}</small></span>
       ${mark}
@@ -378,6 +380,17 @@ function recipeLine(u, personal) {
 function checkbox(done) {
   return `<span class="icon ${done ? 'icon-crafted' : 'icon-uncrafted'} crafted-mark"
             role="img" aria-label="${done ? 'Crafted' : 'Not crafted'}"></span>`;
+}
+
+/**
+ * The same checked/unchecked box, sized instead to sit inline with a
+ * line of text: a material's used-in list and a recipe's ingredient
+ * list both stamp have/short or made/open this way, decorative since
+ * the row it sits in already says which one it is.
+ */
+export function markIcon(done) {
+  return `<span class="mark icon ${done ? 'icon-crafted' : 'icon-uncrafted'}"
+            aria-hidden="true"></span>`;
 }
 
 /**
@@ -513,8 +526,8 @@ function usedIn(usage = [], personal, expanded = false) {
     // each alone in a .mark span with its own font stack, so the
     // typewriter face not having them is contained, unlike a gap in the
     // middle of a word.
-    const mark = state === 'made' ? '<span class="mark icon icon-crafted" aria-hidden="true"></span>'
-      : state === 'open' ? '<span class="mark icon icon-uncrafted" aria-hidden="true"></span>'
+    const mark = state === 'made' ? markIcon(true)
+      : state === 'open' ? markIcon(false)
       : `<span class="mark" aria-hidden="true">${{ retired: '\u2013', plain: '\u00b7' }[state]}</span>`;
 
     return `<li class="${state}">

@@ -22,7 +22,7 @@ import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { esc, empty, nameWith, pager, plural, qualityStars, stationColour,
          stationIcon, stationLabel, stationMark, detailHead, detailSection, placeName, traits, crossLink,
-         doneMark, PAGE } from '../render.js';
+         doneMark, markIcon, money, PAGE } from '../render.js';
 import * as nav from '../nav.js';
 import * as toolbar from './toolbar.js';
 import { toast } from '../toast.js';
@@ -346,7 +346,7 @@ function slotLine(options, personal) {
   const covered = options.some((o) => o.satisfied);
   return `
     <li class="any ${covered ? 'have' : 'short'}">
-      <span class="mark icon ${covered ? 'icon-crafted' : 'icon-uncrafted'}" aria-hidden="true"></span>
+      ${markIcon(covered)}
       <span class="qty">${qty}x</span>
       ${what}
       <span class="tally"></span>
@@ -400,7 +400,7 @@ function ingredient(i, personal) {
 
   return `
     <li class="${i.satisfied ? 'have' : 'short'}">
-      <span class="mark icon ${i.satisfied ? 'icon-crafted' : 'icon-uncrafted'}" aria-hidden="true"></span>
+      ${markIcon(i.satisfied)}
       <span class="qty">${i.qty}x</span>
       <span class="what">${name}${badge}</span>
       <span class="tally">${i.have}/${i.qty}</span>
@@ -543,8 +543,4 @@ function shortfall(r) {
   return missing.length > 2
     ? `${missing.slice(0, 2).join(', ')} and ${missing.length - 2} more`
     : missing.join(', ');
-}
-
-function money(cents) {
-  return `$${(cents / 100).toFixed(2)}`;
 }

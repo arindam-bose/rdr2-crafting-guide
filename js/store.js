@@ -355,12 +355,20 @@ export function stats() {
       FROM   recipes r
       JOIN   targets t ON t.recipe_id = r.id
       WHERE  t.state = 'done' AND r.repeatable = 0`),
-    outfits: one("SELECT COUNT(*) AS n FROM sets WHERE set_type = 'outfit'"),
+    // Denominator and numerator share the same population -- outfit sets
+    // with at least one vendor recipe -- so a set with none yet (or only
+    // a campfire recipe, which is never marked done) can't sit forever
+    // out of reach of 100%.
+    outfits: one(`
+      SELECT COUNT(DISTINCT s.id) AS n
+      FROM   sets s
+      JOIN   recipes r ON r.set_id = s.id
+      WHERE  s.set_type = 'outfit' AND r.repeatable = 0`),
     outfitsDone: one(`
       SELECT COUNT(*) AS n FROM (
         SELECT   s.id
         FROM     sets s
-        JOIN     recipes r ON r.set_id = s.id
+        JOIN     recipes r ON r.set_id = s.id AND r.repeatable = 0
         LEFT JOIN targets t ON t.recipe_id = r.id
         WHERE    s.set_type = 'outfit'
         GROUP BY s.id
@@ -371,7 +379,7 @@ export function stats() {
                  SUM(CASE WHEN t.state = 'done' THEN 1 ELSE 0 END) AS made
       FROM       recipes r
       LEFT JOIN  targets t ON t.recipe_id = r.id
-      WHERE      r.repeatable = 0
+      WHERE      r.repeatable = 0 AND r.category IS NOT NULL
       GROUP BY   r.category
       ORDER BY   r.category`),
     byVendor: db.all(`

@@ -76,13 +76,17 @@ BODY_PARTS = {
     "Fat": "Fat", "Feather": "Feather", "Glands": "Gland",
 }
 
-# ordinal warmth scale, derived from the description text at build time
+# ordinal warmth scale, derived from the description text at build time.
+# Keyed on the phrase itself rather than the full sentence around it, so
+# the boilerplate that follows -- "pair with other warm items...", which
+# has changed wording before -- can keep changing without silently
+# dropping warmth_rank to NULL; see warmth_of below.
 WARMTH = {
-    "a lightweight item. good in hot weather. no protection from the cold.": 0,
-    "slightly warm. pair with other warm items for protection from the cold.": 1,
-    "reasonably warm. pair with other warm items for protection from the cold.": 2,
-    "warm. too warm for hot weather. pair with other warm items for protection from the cold.": 3,
-    "very warm. too warm for hot weather. provides protection from the cold.": 4,
+    "lightweight":     0,
+    "slightly warm":   1,
+    "reasonably warm": 2,
+    "warm":            3,
+    "very warm":       4,
 }
 
 # typos in the source data, corrected on import
@@ -242,6 +246,17 @@ def unbullet(text):
                      (p.strip() for p in text.split("\u2022")) if part)
 
 
+def warmth_of(text):
+    """The WARMTH phrase this text contains, longest first so "slightly
+    warm" wins over the bare "warm" inside it -- sorted here rather than
+    trusted to WARMTH's own order, which is free to change."""
+    lowered = text.lower()
+    for phrase in sorted(WARMTH, key=len, reverse=True):
+        if phrase in lowered:
+            return WARMTH[phrase]
+    return None
+
+
 def parse_description(buff):
     """
     Keep the Notion 'Buff' text, less its bullet characters, and derive an
@@ -253,7 +268,7 @@ def parse_description(buff):
     text = str(buff).strip()
     text = TEXT_FIXES.get(text, text)
     text = unbullet(text)
-    return text, WARMTH.get(text.lower())
+    return text, warmth_of(text)
 
 
 def mkid(prefix, name):

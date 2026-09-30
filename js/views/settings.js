@@ -13,7 +13,7 @@
 
 import * as store from '../store.js';
 import * as theme from '../theme.js';
-import { esc, plural, icon, stationIcon, stationColour } from '../render.js';
+import { esc, plural, icon, stationIcon, stationColour, money } from '../render.js';
 import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
 import { ledgerDialog } from './ledger.js';
@@ -62,15 +62,19 @@ const FONT_CREDITS = [
 // Recipes page filter reads as one kind of thing.  A tally here is a
 // count of several, so this page pluralises on the way out instead;
 // irregular ones (a word ending in a consonant then "y") are listed,
-// everything else just takes an "s".
+// everything else just takes an "s".  A category already plural (a
+// campfire one, such as "Hunting Accessories", though byCategory does
+// not show those today) is left alone rather than doubled up.
 const CATEGORY_PLURAL = {
   Accessory: 'Accessories',
 };
 
 function pluralCategory(category) {
+  if (!category) return category;
   const words = category.split(' ');
   const last = words.pop();
-  return [...words, CATEGORY_PLURAL[last] ?? `${last}s`].join(' ');
+  const plural = last.endsWith('s') ? last : CATEGORY_PLURAL[last] ?? `${last}s`;
+  return [...words, plural].join(' ');
 }
 
 export function mount(root) {
@@ -408,10 +412,6 @@ export function mount(root) {
           : esc(term)}</dt>
         <dd>${esc(value)}</dd>
       </div>`).join('');
-  }
-
-  function money(cents) {
-    return `$${(cents / 100).toFixed(2)}`;
   }
 
   /**
