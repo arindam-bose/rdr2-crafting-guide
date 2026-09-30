@@ -22,7 +22,9 @@ replaces.  Its 'animals' sheet updates animals by id -- name, weapon,
 bait for the fish, a wiki link -- and adds any it names that are new.
 Its 'ingredient_animals' sheet is the whole of that table: the build
 reports every link it adds or drops against what the other sources
-said.
+said.  Its 'recipes' sheet renames recipes by id, the same way
+'animals' does, without touching the id a name change would otherwise
+produce.
 
 --check-ids names an earlier build.  Every ingredient, recipe and
 location id in it must still be produced, because the personal layer
@@ -516,7 +518,7 @@ def blank(value):
 def load_patch(path):
     """The patch workbook's two sheets, or a clean exit if one is missing."""
     book = pd.read_excel(path, sheet_name=None, dtype=str)
-    for sheet in ("animals", "ingredient_animals"):
+    for sheet in ("animals", "ingredient_animals", "recipes"):
         if sheet not in book:
             sys.exit(f"error: no {sheet!r} sheet in {path}")
     return book
@@ -583,6 +585,19 @@ def apply_patch(db, book, warnings, notes, fresh=frozenset()):
     db.execute("DELETE FROM ingredient_animals")
     db.executemany("INSERT INTO ingredient_animals(ingredient_id, animal_id) "
                    "VALUES (?,?)", sorted(links))
+
+    # ---- recipes: rename by id, id itself untouched -------------------------
+    known_recipes = {i: n for i, n in db.execute("SELECT id, name FROM recipes")}
+    for _, r in book["recipes"].iterrows():
+        rid, name = blank(r.get("id")), blank(r.get("name"))
+        if not rid or not name:
+            continue
+        if rid not in known_recipes:
+            warnings.append(f"recipe patch: unknown id {rid!r}")
+            continue
+        if known_recipes[rid] != name:
+            notes.append(f"renamed {known_recipes[rid]!r} -> {name!r} ({rid})")
+            db.execute("UPDATE recipes SET name = ? WHERE id = ?", (name, rid))
 
 
 def build_consumables(db, path, animal_id, aliases, campfire, warnings, added,
