@@ -244,7 +244,7 @@ the operating system, and that shorthand resets the family, so anything
 assigned earlier loses.
 
 [palette]: https://www.color-hex.com/color-palette/72703
-[Marston]: https://www.pixelsagas.com/?page_id=8484
+[Marston]: https://www.pixelsagas.com/
 [FB Remington]: https://www.dafont.com/fb-remington.font
 
 ## State
