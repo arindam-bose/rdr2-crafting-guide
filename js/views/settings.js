@@ -50,8 +50,8 @@ const REFERENCES = [
 // pair like REFERENCES above: a licence line reads as a phrase with a
 // couple of links in it, not a single link with a caption.
 const FONT_CREDITS = [
-  { name: 'Chinese Rocks', face: 'display',
-    html: 'From <a href="https://www.dafont.com/chinese-rocks.font" target="_blank" rel="noopener noreferrer">DaFont</a>, under the <a href="https://typodermicfonts.com/license/" target="_blank" rel="noopener noreferrer">Typodermic Desktop License</a>' },
+  { name: 'Marston', face: 'display',
+    html: 'By Neale Davidson, from <a href="https://www.pixelsagas.com/?page_id=8484" target="_blank" rel="noopener noreferrer">Pixel Sagas</a>, under the Pixel Sagas Freeware Fonts EULA' },
   { name: 'RDR Lino Regular', face: 'heading',
     html: 'From <a href="http://www.onlinewebfonts.com" target="_blank" rel="noopener noreferrer">Web Fonts</a>, under CC BY 4.0' },
   { name: 'FB Remington', face: 'body',

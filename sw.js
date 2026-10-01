@@ -14,7 +14,7 @@
 //   more while this is still being written.
 // ============================================================
 
-const CACHE = 'rdr2-crafting-v21';
+const CACHE = 'rdr2-crafting-v22';
 
 // Fetched once and kept: big, and only ever replaced wholesale.
 // The fonts and the artwork join the runtime and the database here —
@@ -24,7 +24,7 @@ const IMMUTABLE = [
   'vendor/sql-wasm.js',
   'vendor/sql-wasm.wasm',
   'data/rdr2.db',
-  'fonts/chinese_rocks/chinese-rocks-rg.otf',
+  'fonts/marston/Marston.otf',
   'fonts/fb_remington/FBRemington-Regular.ttf',
   'fonts/rdr2_lino_regular/RDR Lino Regular.ttf',
   'images/logo.png',

@@ -90,7 +90,7 @@ served network-first, so edits show up on reload without a cache bump.
                           workbook and the patch workbook
     scripts/build_db.py   the build
     fonts/
-      chinese_rocks/      Chinese Rocks, the display face, with its licence
+      marston/            Marston, the display face, with its licence
       fb_remington/       FB Remington, the body face
       rdr2_lino_regular/  RDR Lino Regular, the heading face
     images/               the logo and the favicons cut from it, the cover
@@ -190,8 +190,8 @@ copy of it.
 
 ### The lettering
 
-Two faces, and they divide the page between them. [Chinese Rocks] by Ray
-Larabie sets the names — headings, tabs, buttons, labels. It is a caps-only
+Two faces, and they divide the page between them. [Marston] by Neale
+Davidson sets the names — headings, tabs, buttons, labels. It is a caps-only
 display face, so it never sets prose. [FB Remington] by Fred Brutus sets
 everything else, which on these screens is mostly numbers: `3/3`, `2x Oregano`,
 `$14.95`. It is monospaced, so those columns line up on their own. Both are
@@ -244,7 +244,7 @@ the operating system, and that shorthand resets the family, so anything
 assigned earlier loses.
 
 [palette]: https://www.color-hex.com/color-palette/72703
-[Chinese Rocks]: https://www.dafont.com/chinese-rocks.font
+[Marston]: https://www.pixelsagas.com/?page_id=8484
 [FB Remington]: https://www.dafont.com/fb-remington.font
 
 ## State
