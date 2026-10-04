@@ -39,9 +39,16 @@ const REFERENCES = [
   { source: 'RDR2.org',
     title: 'Red Dead Redemption 2 Wiki',
     url: 'https://www.rdr2.org/wiki/' },
-  { source: 'JimmyJames86',
+  { source: 'u/JimmyJames86',
     title: 'RDR2 Hunting and Crafting Guide (story mode)',
     url: 'https://www.reddit.com/r/reddeadredemption/comments/kunnbu/rdr2_hunting_and_crafting_guide_story_mode/' },
+];
+
+// Where the cover photo under the tabs came from, credited the same way.
+const ART_CREDITS = [
+  { source: 'u/Thatoneguywhofailed',
+    title: 'Campfire at Horseshoe Overlook',
+    url: 'https://www.reddit.com/r/reddeadredemption/comments/pc1uvy/campfire_at_horseshoe_overlook/' },
 ];
 
 // The three faces the page sets type in, each named in its own face
@@ -170,13 +177,20 @@ export function mount(root) {
 
       <section class="panel panel-wide">
         <h3>Acknowledgements</h3>
-        <p class="note">Where the reference data came from. None of this is
-          mine; the guide is only the table they add up to.</p>
+        <p class="note">Where the reference data and the cover photo came
+          from. None of this is mine; the guide is only the table they add
+          up to.</p>
         <div class="ack-groups">
           <div>
             <p class="list-label">Reference data</p>
             <ul class="refs">
               ${REFERENCES.map((r) => `
+                <li><a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer"
+                       ><strong>${esc(r.source)}</strong><small>${esc(r.title)}</small></a></li>`).join('')}
+            </ul>
+            <p class="list-label">Cover art</p>
+            <ul class="refs">
+              ${ART_CREDITS.map((r) => `
                 <li><a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer"
                        ><strong>${esc(r.source)}</strong><small>${esc(r.title)}</small></a></li>`).join('')}
             </ul>

@@ -9,6 +9,7 @@ data/*.building
 # A local safety copy of the reference database, kept out of history.
 data/rdr2_bkp.db
 
-# The cover art at full size (4K, 7 MB).  The page loads the two JPEGs
-# cut from it; this is kept only to cut them again.
+# The cover art at full size (PNG, a few MB).  The page loads the two
+# JPEGs cut from each; these are kept only to cut them again.
 images/cover-art.png
+images/arthur-crafts-oldphoto.png

@@ -365,8 +365,9 @@ body {
 
 /* ---------- cover art ---------- */
 
-/* A letterbox cut from the key art: the sun and the riders, with the
-   sky above and the ground below cropped away.  The foot fades out
+/* A letterbox cut from the campfire photo: Arthur and the fire, with
+   the treetops above and the ground (and the game's prompts) below
+   cropped away.  The foot fades out
    into the page, so the art sits on either theme without a hard edge. */
 .cover {
   max-width: 1400px;
@@ -378,7 +379,7 @@ body {
   width: 100%;
   height: clamp(120px, 22vw, 280px);
   object-fit: cover;
-  object-position: 50% 68%;
+  object-position: 50% 36%;
   border-radius: var(--radius);
   -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent);
           mask-image: linear-gradient(to bottom, #000 72%, transparent);
@@ -1739,6 +1740,9 @@ ul.buff li::before {
   font-size: .72rem;
   color: var(--ink-faint);
 }
+/* A second group under the first (the cover art under the reference
+   data) gets the same gap the groups have beside each other. */
+.refs + .list-label { margin-top: 18px; }
 
 /* A font, credited: its name set in the face itself, and where it came
    from and on what terms under it.  Unlike .refs the row is not the tap
