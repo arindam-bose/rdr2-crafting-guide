@@ -224,7 +224,7 @@ body {
     transparent, color-mix(in srgb, var(--accent-text) 55%, transparent), transparent);
 }
 
-/* The masthead: the cylinder-seal logo, then the title on two
+/* The masthead: the campfire-emblem logo, then the title on two
    lines — the game above, what this is below.  Two lines because
    the whole name is 36 characters and a phone's top bar is not,
    and because it stacks to the logo's height for free. */
@@ -1890,6 +1890,16 @@ ul.buff li::before {
 .footer .sym {
   font-family: var(--font-symbol);
   font-size: .92em;
+}
+
+/* The fan-site disclaimer, on a line of its own under the credit: set
+   in the body face, not the heading one, as small print rather than a
+   signature.  `.footer p.disclaimer` so it outranks `.footer p` in the
+   type tiers further down. */
+.footer p.disclaimer {
+  font-family: var(--font-body);
+  letter-spacing: normal;
+  font-size: .72rem;
 }
 
 /* ---------- misc ---------- */
