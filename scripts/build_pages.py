@@ -270,8 +270,9 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme):
         f'<a href="{root}{href}">{esc(name)}</a>' if n < len(crumbs) else
         f'<span aria-current="page">{esc(name)}</span>'
         for n, (name, href) in enumerate(crumbs, 1))
+    here = ' class="here"'      # not inline: Python < 3.12 rejects a \" in an f-string
     tabs = '\n    '.join(
-        f'<a href="{root}#/{route}"{" class=\"here\"" if route == tab else ""}>'
+        f'<a href="{root}#/{route}"{here if route == tab else ""}>'
         f'<span class="icon icon-{ico}" aria-hidden="true"></span>{label}</a>'
         for route, label, ico in (('materials', 'Materials', 'materials'),
                                   ('recipes', 'Recipes', 'recipes'),

@@ -482,12 +482,19 @@ export async function reset() {
 // "go hunting" -- General is useful from the first second.  Someone
 // who logged things back when Personalize was the default never had
 // to choose it; hydrate() settles them on it, so nobody is moved.
+//
+// The choice is held here as well as stored, so it still takes for the
+// rest of the visit in a browser that will not keep it -- blocked site
+// data, some private modes -- where a write fails without a word.
+let chosen = null;
+
 export function isPersonal() {
-  return prefs.get(MODE_KEY) === 'personal';
+  return (chosen ?? prefs.get(MODE_KEY)) === 'personal';
 }
 
 export function setPersonal(on) {
-  prefs.set(MODE_KEY, on ? 'personal' : 'general');
+  chosen = on ? 'personal' : 'general';
+  prefs.set(MODE_KEY, chosen);
   changed();
 }
 

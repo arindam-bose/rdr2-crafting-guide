@@ -40,7 +40,7 @@ import * as toolbar from './toolbar.js';
 import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
 import * as nav from '../nav.js';
-import { materialDialog } from './material-dialog.js';
+import { freshCard, materialDialog } from './material-dialog.js';
 
 const LOCATION_KEY = 'rdr2:location';
 const OFFER_DISMISSED = 'rdr2:personalize-offer-dismissed';
@@ -139,7 +139,23 @@ export function mount(root) {
   // what it goes into, who wants it -- the same dialog Materials
   // opens.  Under this page's address, so shutting it leaves you on
   // your batch rather than on another tab.
-  const detail = materialDialog({ route: 'inventory' });
+  //
+  // Its counts include what is staged here but not yet saved, as the
+  // rows do.  Its own steppers write straight away, so a "-" read off
+  // the saved count alone could take a stock below zero once the
+  // staged batch lands -- sending all three pelts to the Trapper, then
+  // taking one more from the Satchel in here.
+  const detail = materialDialog({
+    route: 'inventory',
+    find(id) {
+      const card = freshCard(id);
+      if (!card) return card;
+      card.demands = card.demands.map((d) => ({
+        ...d, have: d.have + (pendingIndex(d.location_id).get(id) ?? 0),
+      }));
+      return card;
+    },
+  });
 
   // The row whose Transfer panel is open, by what stageMove() needs, or
   // null.  The rows are rebuilt on every change, so the panel keeps
@@ -201,8 +217,11 @@ export function mount(root) {
   let closingFor = null;
   sections.addEventListener('pointerdown', (event) => {
     const opener = event.target.closest('.move-btn');
+    const ingredient = opener?.closest('.row').dataset.ingredient;
+    // Only the button whose panel is open: a tap on another row's
+    // closes this panel on the way in, and should open its own.
     closingFor = opener && movePop.matches(':popover-open')
-      ? opener.closest('.row').dataset.ingredient : null;
+                 && moving?.ingredient === ingredient ? ingredient : null;
   }, true);
 
   movePop.addEventListener('toggle', (event) => {
@@ -262,16 +281,17 @@ export function mount(root) {
     movePop.style.top = `${top}px`;
     movePop.style.left = `${left}px`;
   }
-  window.addEventListener('resize', () => {
+  function onResize() {
     if (movePop.matches(':popover-open')) placeMove();
-  });
+  }
+  window.addEventListener('resize', onResize);
   // Pinned to the screen, it would drift off its row as the page
   // scrolls, so it follows its button -- and closes once the button
   // has gone off screen, rather than hanging over unrelated rows.
   // Not closed on any scroll: a trackpad still coasting from the last
   // swipe would shut it the moment it opened.
   let following = false;
-  window.addEventListener('scroll', () => {
+  function onScroll() {
     if (narrow.matches || following || !movePop.matches(':popover-open')) return;
     following = true;
     requestAnimationFrame(() => {
@@ -281,7 +301,8 @@ export function mount(root) {
       if (!at || at.bottom < 0 || at.top > window.innerHeight) movePop.hidePopover();
       else placeMove();
     });
-  }, { passive: true });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
 
   function renderMove() {
     const rowEl = moveButtonFor(moving.ingredient)?.closest('.row');
@@ -292,6 +313,14 @@ export function mount(root) {
     const from = state.location;
     const available = Number(rowEl.dataset.qty) + (pendingIdx.get(moving.ingredient) ?? 0);
     const targets = moveTargets(moving.ingredient, from, wants);
+
+    // The repaint replaces the button just pressed, so note which it
+    // was and hand the focus to its successor -- or, once that one is
+    // disabled (nothing left to send), to the close button -- rather
+    // than dropping it to the page, as the detail dialog does.
+    const pressed = movePop.contains(document.activeElement) ? document.activeElement : null;
+    const again = pressed?.dataset.move
+      ? `[data-move="${pressed.dataset.move}"][data-to="${pressed.dataset.to}"]` : null;
 
     movePop.innerHTML = `
       <div class="move-head">
@@ -310,6 +339,11 @@ export function mount(root) {
       </ul>
       <p class="move-note">Hands over what you already hold -- nothing new
         is logged.  Saved with the rest of your changes.</p>`;
+
+    if (pressed) {
+      const next = again && movePop.querySelector(again);
+      (next && !next.disabled ? next : movePop.querySelector('[data-close]'))?.focus();
+    }
   }
 
   // The restore offer's file input is rebuilt with the sections, so it
@@ -497,7 +531,15 @@ export function mount(root) {
   }
 
   update();
-  return { update, focus: detail.focus, destroy: detail.destroy };
+  // On the window, so they outlive the page unless taken off: each would
+  // keep this whole screen alive, and run on every scroll, after it.
+  function destroy() {
+    window.removeEventListener('resize', onResize);
+    window.removeEventListener('scroll', onScroll);
+    detail.destroy();
+  }
+
+  return { update, focus: detail.focus, destroy };
 }
 
 /**
