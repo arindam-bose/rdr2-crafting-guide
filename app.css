@@ -412,6 +412,29 @@ body {
   background: var(--surface-2);
 }
 
+/* The page's own icon with its name: the link's gap spaces it, so the
+   margin an icon carries beside running text is dropped here.  On the
+   phone's bottom bar the icon sits above the name, the way a thumb bar
+   is read -- side by side, four of them do not fit a narrow phone --
+   and the unsaved-changes dot moves to the icon's shoulder.  The wide
+   layout puts them back in a row. */
+.tabs .icon { flex: 0 0 auto; margin-right: 0; }
+
+@media (max-width: 719px) {
+  .tabs a {
+    position: relative;
+    flex-direction: column;
+    gap: 3px;
+    font-size: .8rem;
+  }
+  .tabs .icon { width: 1.6em; height: 1.6em; }
+  .tabs a[data-pending]::after {
+    position: absolute;
+    top: 7px;
+    left: calc(50% + 10px);
+  }
+}
+
 @media (min-width: 720px) {
   body { padding-bottom: 0; }
 
@@ -581,6 +604,11 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .icon-fence     { background-image: url('images/icons/parchment/fence-inverse.png'); }
 .icon-crafted   { background-image: url('images/icons/parchment/checkbox-checked.png'); }
 .icon-uncrafted { background-image: url('images/icons/parchment/checkbox-unchecked.png'); }
+/* The four pages, on the tabs. */
+.icon-materials { background-image: url('images/icons/parchment/materials-inverse.png'); }
+.icon-recipes   { background-image: url('images/icons/parchment/recipes-inverse.png'); }
+.icon-inventory { background-image: url('images/icons/parchment/inventory-inverse.png'); }
+.icon-settings  { background-image: url('images/icons/parchment/settings-inverse.png'); }
 
 :root[data-theme="leather"] .icon-crafted   { background-image: url('images/icons/leather/checkbox-checked.png'); }
 :root[data-theme="leather"] .icon-uncrafted { background-image: url('images/icons/leather/checkbox-unchecked.png'); }
@@ -593,6 +621,10 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 :root[data-theme="leather"] .icon-pearson   { background-image: url('images/icons/leather/pearson-inverse.png'); }
 :root[data-theme="leather"] .icon-trapper   { background-image: url('images/icons/leather/trapper-inverse.png'); }
 :root[data-theme="leather"] .icon-fence     { background-image: url('images/icons/leather/fence-inverse.png'); }
+:root[data-theme="leather"] .icon-materials { background-image: url('images/icons/leather/materials-inverse.png'); }
+:root[data-theme="leather"] .icon-recipes   { background-image: url('images/icons/leather/recipes-inverse.png'); }
+:root[data-theme="leather"] .icon-inventory { background-image: url('images/icons/leather/inventory-inverse.png'); }
+:root[data-theme="leather"] .icon-settings  { background-image: url('images/icons/leather/settings-inverse.png'); }
 
 /* A pressed chip or a chosen tab turns its label over -- pale on
    parchment, dark on leather -- and the medallion's disc follows the
