@@ -25,6 +25,7 @@
 // hand it.
 // ============================================================
 
+import * as backup from '../backup.js';
 import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { esc, empty, heldAt, nameWith, plural, qualityStars, icon } from '../render.js';
@@ -149,6 +150,28 @@ export function mount(root) {
     stage(button.closest('.row').dataset, Number(button.dataset.delta));
   });
 
+  // The restore offer's file input is rebuilt with the sections, so it
+  // is listened for here, the same way the steppers are.  There is
+  // nothing on the device to lose -- that is the only time the offer
+  // shows -- so there is no confirming step: a file that reads cleanly
+  // is loaded, and one that does not says why.
+  sections.addEventListener('change', async (event) => {
+    if (event.target.id !== 'i-restore') return;
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    const text = await file.text();
+    const found = store.inspectImport(text);
+    if (found.fatal) {
+      toast(found.fatal);
+      return;
+    }
+    await backup.restore(text);
+    toast(`Restored ${found.ledger} ${found.ledger === 1 ? 'entry' : 'entries'}.`
+      + (found.problems.length ? ` Note: ${found.problems.join('; ')}.` : ''));
+  });
+
   root.querySelector('#i-discard').addEventListener('click', discard);
   root.querySelector('#i-save').addEventListener('click', save);
 
@@ -253,8 +276,8 @@ export function mount(root) {
     } else {
       // What you are holding here first, then the quick way back to
       // whatever you were logging lately.
-      sections.innerHTML =
-        section(at, held(state.location), `Nothing ${lower(at)} yet.`)
+      sections.innerHTML = (store.isEmpty() ? restoreOffer() : '')
+        + section(at, held(state.location), `Nothing ${lower(at)} yet.`)
         + section('Recently Touched', recent(state.location), '');
     }
 
@@ -287,6 +310,23 @@ export function mount(root) {
 
   update();
   return { update, destroy() {} };
+}
+
+/**
+ * Shown only while nothing at all is logged here: the one moment a
+ * backup file is what someone needs most -- a new device, or a browser
+ * whose data was cleared -- so the way back in is on the page they land
+ * on, not three tabs away.
+ */
+function restoreOffer() {
+  return `
+    <section class="restore-offer">
+      <p class="note"><strong>Starting fresh on this device?</strong> If you
+        have a backup file from before, load it and pick up where you left off.</p>
+      <label class="ghost-btn file-btn">Restore from a backup
+        <input type="file" id="i-restore" accept=".json,application/json" hidden>
+      </label>
+    </section>`;
 }
 
 const lower = (text) => text[0].toLowerCase() + text.slice(1);

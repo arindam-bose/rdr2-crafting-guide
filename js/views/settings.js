@@ -14,11 +14,9 @@
 import * as store from '../store.js';
 import * as theme from '../theme.js';
 import { esc, plural, icon, stationIcon, stationColour, money } from '../render.js';
-import * as prefs from '../prefs.js';
+import * as backup from '../backup.js';
 import { toast } from '../toast.js';
 import { ledgerDialog } from './ledger.js';
-
-const LAST_EXPORT = 'rdr2:last-export';
 
 // The sources the reference data was built from, credited in the order
 // they were leaned on.  `source` is the site or the author; `title` is
@@ -95,8 +93,7 @@ export function mount(root) {
 
       <section class="panel">
         <h3>Appearance</h3>
-        <p class="note">The same five colours either way -- the game's own --
-          laid on paper or on leather. Remembered on this device only, since
+        <p class="note">Remembered on this device only, since
           the right one depends on where you are reading it.</p>
         <div class="segmented" role="tablist" id="s-theme">
           ${theme.THEMES.map((t) => `
@@ -123,19 +120,21 @@ export function mount(root) {
           <label class="ghost-btn file-btn">Choose a file
             <input type="file" id="s-file" accept=".json,application/json" hidden>
           </label>
+          <button type="button" class="ghost-btn" id="s-paste-toggle"
+                  aria-expanded="false" aria-controls="s-paste-box">Paste instead</button>
         </div>
-        <details class="paste">
-          <summary>or paste it instead</summary>
+        <div class="paste" id="s-paste-box" hidden>
           <textarea id="s-paste" rows="4" spellcheck="false"
                     placeholder="Paste the contents of an export…"></textarea>
           <button type="button" class="ghost-btn" id="s-read">Read this</button>
-        </details>
+        </div>
         <div id="s-preview"></div>
       </section>
 
       <section class="panel">
         <h3>Offline</h3>
         <p class="note" id="s-offline">Checking…</p>
+        <p class="note" id="s-kept" hidden></p>
         <div class="panel-actions">
           <button type="button" class="ghost-btn" id="s-update">Check for updates</button>
         </div>
@@ -204,35 +203,10 @@ export function mount(root) {
 
   // ---- the file itself ------------------------------------------------
 
-  $('#s-download').addEventListener('click', () => {
-    const stamp = new Date().toISOString().slice(0, 10);
-    const blob = new Blob([store.exportJSON()], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `rdr2-inventory-${stamp}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-
-    prefs.set(LAST_EXPORT, new Date().toISOString());
-    update();
-    toast(`Saved rdr2-inventory-${stamp}.json`);
-  });
-
-  // The download attribute is unreliable on iOS, so there is always
-  // a way to get the text out by hand.
-  $('#s-copy').addEventListener('click', async () => {
-    const text = store.exportJSON();
-    try {
-      await navigator.clipboard.writeText(text);
-      prefs.set(LAST_EXPORT, new Date().toISOString());
-      update();
-      toast('Copied. Paste it somewhere safe.');
-    } catch {
-      toast('This browser would not let the page copy. Use Download.');
-    }
-  });
+  // Both mark the backup taken, and the page hears it through the
+  // subscription below, the same as from the masthead button.
+  $('#s-download').addEventListener('click', backup.download);
+  $('#s-copy').addEventListener('click', backup.copy);
 
   $('#s-file').addEventListener('change', async (event) => {
     const file = event.target.files?.[0];
@@ -240,6 +214,17 @@ export function mount(root) {
     offer(await file.text(), file.name);
     event.target.value = '';            // so the same file can be picked twice
   });
+
+  // A button beside Choose a file rather than a disclosure under it, so
+  // the tile's controls stay on one line, level with its neighbours'.
+  const pasteToggle = $('#s-paste-toggle');
+  function showPaste(open) {
+    $('#s-paste-box').hidden = !open;
+    pasteToggle.setAttribute('aria-expanded', String(open));
+    if (open) $('#s-paste').focus();
+  }
+  pasteToggle.addEventListener('click', () =>
+    showPaste(pasteToggle.getAttribute('aria-expanded') !== 'true'));
 
   $('#s-read').addEventListener('click', () => {
     const text = $('#s-paste').value.trim();
@@ -287,10 +272,11 @@ export function mount(root) {
       pending = null;
       preview.innerHTML = '';
     } else if (event.target.id === 's-confirm' && pending) {
-      const found = await store.importJSON(pending);
+      const found = await backup.restore(pending);
       pending = null;
       preview.innerHTML = '';
       $('#s-paste').value = '';
+      showPaste(false);
       toast(`Loaded ${found.ledger} ${found.ledger === 1 ? 'entry' : 'entries'}.`);
     }
   });
@@ -370,10 +356,12 @@ export function mount(root) {
     $('#s-by-category').innerHTML = s.byCategory.map((c) =>
       progressRow(pluralCategory(c.category), c.made, c.total)).join('');
 
-    const last = prefs.get(LAST_EXPORT);
-    $('#s-last').textContent = last
-      ? `Last exported ${new Date(last).toLocaleString()}.`
-      : 'Never exported from this device.';
+    const last = backup.lastSaved();
+    const { count } = backup.status();
+    $('#s-last').textContent = (last
+      ? `Last backed up ${last.toLocaleString()}.`
+      : 'Never backed up from this device.')
+      + (count ? ` ${count} ${count === 1 ? 'change' : 'changes'} since.` : '');
 
     $('#s-mode').textContent = store.isPersonal()
       ? 'Switch to General' : 'Switch to Personalize';
@@ -384,6 +372,7 @@ export function mount(root) {
     ]);
 
     reportOffline();
+    reportKept();
     ledger.refresh();
   }
 
@@ -400,6 +389,16 @@ export function mount(root) {
       ? `Cached and ready to use without a signal${
           mine.length ? ` (${mine[0]})` : ''}.`
       : 'Not cached yet -- reload once while online.';
+  }
+
+  async function reportKept() {
+    const target = $('#s-kept');
+    const kept = await backup.kept();
+    target.hidden = kept === null;
+    target.textContent = kept
+      ? 'This browser has agreed to keep your data until you clear it yourself.'
+      : 'This browser may clear your data on its own -- if the site goes '
+        + 'unvisited for a while, or space runs low -- so keep a backup.';
   }
 
   // A term with an `opens` becomes the button that opens its dialog.
@@ -432,6 +431,14 @@ export function mount(root) {
       </div>`;
   }
 
+  const unsubscribe = backup.subscribe(update);
+
   update();
-  return { update, destroy: ledger.destroy };
+  return {
+    update,
+    destroy() {
+      unsubscribe();
+      ledger.destroy();
+    },
+  };
 }

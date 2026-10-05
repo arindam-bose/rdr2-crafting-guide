@@ -14,7 +14,7 @@
 //   more while this is still being written.
 // ============================================================
 
-const CACHE = 'rdr2-crafting-v25';
+const CACHE = 'rdr2-crafting-v26';
 
 // Fetched once and kept: big, and only ever replaced wholesale.
 // The fonts and the artwork join the runtime and the database here —
@@ -43,6 +43,7 @@ const SHELL = [
   'manifest.webmanifest',
   'database/personal_schema.sql',
   'js/main.js',
+  'js/backup.js',
   'js/db.js',
   'js/store.js',
   'js/queries.js',

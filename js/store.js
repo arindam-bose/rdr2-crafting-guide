@@ -398,6 +398,37 @@ export function stats() {
   };
 }
 
+/**
+ * What has been written since `since` (a moment as an ISO string, or
+ * null for "ever"): how many ledger rows and recipe marks are newer,
+ * and the oldest of them.  An undo deletes its row, so taking a change
+ * back takes it off this count too.
+ *
+ * SQLite stamps rows with datetime('now') -- UTC, "YYYY-MM-DD HH:MM:SS"
+ * -- so the ISO string is cut to that same shape and the two compare
+ * as text.  That makes a row written in the same second as the backup
+ * count as part of it: a second is shorter than any two taps.
+ */
+export function changesSince(since) {
+  const stamp = since ? since.slice(0, 19).replace('T', ' ') : '';
+  const row = db.one(`
+    SELECT COUNT(*) AS n, MIN(at) AS oldest FROM (
+      SELECT ts         AS at FROM ledger  WHERE ts         > :stamp
+      UNION ALL
+      SELECT updated_at AS at FROM targets WHERE updated_at > :stamp)`,
+    { stamp });
+  return {
+    count: row?.n ?? 0,
+    oldest: row?.oldest ? new Date(`${row.oldest.replace(' ', 'T')}Z`) : null,
+  };
+}
+
+/** True when there is nothing personal here at all -- nothing to lose. */
+export function isEmpty() {
+  return !db.one('SELECT 1 AS n FROM ledger LIMIT 1')
+      && !db.one('SELECT 1 AS n FROM targets LIMIT 1');
+}
+
 /** Throw the personal layer away. */
 export async function reset() {
   db.transaction(() => {

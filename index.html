@@ -41,15 +41,25 @@ try {
         <span class="brand-app">Crafting Guide</span>
       </span>
     </h1>
-    <!-- Both words always showing, the one in force drawn in ink: the
-         same switch the recipe dialog uses, so the two read alike. -->
-    <button type="button" class="mode-switch" id="mode-toggle" role="switch"
-            aria-checked="true" aria-label="Personalize"
-            title="Personalize tracks what you have; General is the plain reference.">
-      <span class="side off" aria-hidden="true">General</span>
-      <span class="track" aria-hidden="true"><i></i></span>
-      <span class="side on" aria-hidden="true">Personalize</span>
-    </button>
+    <div class="topbar-actions">
+      <!-- One tap to a backup file, from any page.  Shown in Personalize
+           once there is something to back up; main.js adds the dot when
+           one is due. -->
+      <button type="button" class="backup-btn" id="backup-btn" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 19.5h14"/></svg>
+        <span class="backup-label">Back up</span>
+      </button>
+
+      <!-- Both words always showing, the one in force drawn in ink: the
+           same switch the recipe dialog uses, so the two read alike. -->
+      <button type="button" class="mode-switch" id="mode-toggle" role="switch"
+              aria-checked="true" aria-label="Personalize"
+              title="Personalize tracks what you have; General is the plain reference.">
+        <span class="side off" aria-hidden="true">General</span>
+        <span class="track" aria-hidden="true"><i></i></span>
+        <span class="side on" aria-hidden="true">Personalize</span>
+      </button>
+    </div>
 
     <!-- Set here rather than left to main.js, for the same reason the
          theme is set in the head: that module is deferred behind the
@@ -80,6 +90,21 @@ try {
        sizes="100vw" alt="" width="1920" height="1080" decoding="async">
 </div>
 
+<!-- Said once, the first time someone is in Personalize: where what
+     they log is kept, and what that asks of them.  main.js shows it
+     until it is dismissed. -->
+<aside class="first-note" id="first-note" hidden>
+  <div class="first-note-box">
+    <p><strong>Your inventory stays on this device.</strong> Nothing you log
+      here is uploaded anywhere, and once the guide has loaded it works
+      without a signal. The flip side: clearing this browser's site data
+      erases it. Once you have logged something, <strong>Back up</strong>
+      at the top saves a copy -- take one now and then, and keep it
+      somewhere safe.</p>
+    <button type="button" class="ghost-btn" id="first-note-ok">Got it</button>
+  </div>
+</aside>
+
 <h2 class="page-title" id="page-title"></h2>
 
 <main id="view" aria-live="polite">
@@ -100,7 +125,9 @@ try {
   <p><span class="sym">&copy;</span> 2026 - Made with love by
      <span class="by">Arindam Bose</span>,
      powered by <span class="by">Claude</span></p>
-  <p class="disclaimer">Not affiliated with or endorsed by Rockstar Games
+  <p class="small-print privacy">Your inventory stays in this browser: nothing
+     is uploaded, and it works offline.</p>
+  <p class="small-print">Not affiliated with or endorsed by Rockstar Games
      or Take-Two Interactive</p>
 </footer>
 

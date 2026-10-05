@@ -6,8 +6,10 @@
 // shows a personal layer that is briefly empty.
 // ============================================================
 
+import * as backup from './backup.js';
 import * as db from './db.js';
 import * as nav from './nav.js';
+import * as prefs from './prefs.js';
 import * as store from './store.js';
 import * as theme from './theme.js';
 import { errorBox } from './render.js';
@@ -35,13 +37,43 @@ const view = document.getElementById('view');
 const pageTitle = document.getElementById('page-title');
 const tabs = document.querySelector('.tabs');
 const modeToggle = document.getElementById('mode-toggle');
+const backupBtn = document.getElementById('backup-btn');
+const firstNote = document.getElementById('first-note');
+
+const FIRST_NOTE_SEEN = 'rdr2:first-note-seen';
 
 let current = null;     // the mounted view's { update, destroy }
 let currentName = null;
 
-/** The masthead switch, told which way it is set. */
+/**
+ * The masthead switch, told which way it is set -- and the one-time
+ * note about where the data lives, which only Personalize has a reason
+ * to say.  Both are preferences, so both can paint before the database.
+ */
 function paintMode() {
-  modeToggle.setAttribute('aria-checked', String(store.isPersonal()));
+  const personal = store.isPersonal();
+  modeToggle.setAttribute('aria-checked', String(personal));
+  firstNote.hidden = !personal || prefs.get(FIRST_NOTE_SEEN) !== null;
+}
+
+/**
+ * The masthead's Back up button: there in Personalize once something
+ * has been logged, wearing a dot once a backup is due and a red one
+ * once it is overdue.  Its label says how much is unsaved.
+ */
+function paintBackup() {
+  backupBtn.hidden = !store.isPersonal() || store.isEmpty();
+  if (backupBtn.hidden) return;
+
+  const { count, level } = backup.status();
+  if (level === 'ok') delete backupBtn.dataset.due;
+  else backupBtn.dataset.due = level;
+
+  const label = count
+    ? `Back up: ${count} ${count === 1 ? 'change' : 'changes'} not in a backup yet`
+    : 'Back up: everything is in your last backup';
+  backupBtn.title = label;
+  backupBtn.setAttribute('aria-label', label);
 }
 
 // ------------------------------------------------------------
@@ -103,14 +135,26 @@ async function start() {
     store.setPersonal(!store.isPersonal());
     paintMode();                      // the subscription is not up yet
   });
+  document.getElementById('first-note-ok').addEventListener('click', () => {
+    prefs.set(FIRST_NOTE_SEEN, new Date().toISOString());
+    paintMode();
+  });
+  backupBtn.addEventListener('click', backup.download);
 
   await db.open();
   await store.hydrate();
 
   // Any write — or a mode flip — refreshes whatever is on screen, and
   // repaints the switch, so Settings' own mode button and this one can
-  // never disagree.
-  store.subscribe(() => { paintMode(); current?.update?.(); });
+  // never disagree.  The first write is also when the data becomes
+  // worth asking the browser to keep.
+  store.subscribe(() => {
+    paintMode();
+    paintBackup();
+    current?.update?.();
+    if (!store.isEmpty()) backup.keep();
+  });
+  backup.subscribe(paintBackup);
 
   // A cross-link is a real anchor -- middle-clickable, copyable, and
   // something the keyboard can reach -- but a plain left-click is sent
@@ -134,6 +178,11 @@ async function start() {
 
   window.addEventListener('hashchange', () => show(route()));
   show(route());
+
+  paintBackup();
+  if (!store.isEmpty()) backup.keep();
+  // A moment after the page settles, so it is read rather than missed.
+  setTimeout(backup.remind, 1500);
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {

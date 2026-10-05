@@ -295,6 +295,91 @@ body {
   .mode-switch .side { display: none; }
 }
 
+/* The Back up button and the mode switch, kept together at the right. */
+.topbar-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* A quiet outline at rest, so it never competes with the title; the
+   dot in its corner is what speaks up -- amber once a backup is due,
+   red once it is overdue.  A phone drops the word and keeps the arrow,
+   the same way the mode switch drops its words. */
+.backup-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: .76rem;
+  color: var(--ink-dim);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.backup-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
+.backup-btn[hidden] { display: none; }
+.backup-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.backup-btn[data-due]::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--bg);
+}
+.backup-btn[data-due="overdue"]::after { background: var(--danger); }
+.backup-btn[data-due] { color: var(--ink); }
+
+@media (max-width: 460px) {
+  .backup-label { display: none; }
+  .backup-btn { padding: 6px 7px; }
+}
+
+/* The one-time note on where the data lives: a panel with the accent
+   down its edge, in the same column as the page under it. */
+.first-note {
+  max-width: 1400px;
+  margin: 16px auto 0;
+  padding: 0 16px;
+}
+.first-note[hidden] { display: none; }
+.first-note-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px 16px;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-text);
+  border-radius: var(--radius);
+}
+.first-note p {
+  flex: 1 1 420px;
+  margin: 0;
+  font-size: .85rem;
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+.first-note strong { color: var(--ink); font-weight: 600; }
+
 /* ---------- navigation: thumb on narrow, mouse on wide ---------- */
 
 .tabs {
@@ -1393,6 +1478,22 @@ ul.buff li::before {
   color: var(--ink-label);
 }
 
+/* The way back in, above an empty Inventory: a note and one button,
+   set apart the way a Settings panel is. */
+.restore-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-text);
+  border-radius: var(--radius);
+}
+.restore-offer .note { flex: 1 1 320px; }
+
 /* A rule between "In the Satchel" and "Recently Touched", with room
    on both sides of it -- the two are different questions ("what am I
    holding" vs. "what have I touched lately") and read as one run-on
@@ -1571,11 +1672,12 @@ ul.buff li::before {
 
 /* ---------- settings ---------- */
 
+/* Tiles in a row share one height, as the Materials and Recipes cards
+   do, rather than each stopping where its own text runs out. */
 .settings {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 14px;
-  align-items: start;
 }
 
 .panel {
@@ -1675,6 +1777,25 @@ ul.buff li::before {
 .note strong { color: var(--ink); font-weight: 600; }
 
 .panel-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+/* A tile's controls sit on its bottom edge, so a short tile stretched
+   to its row's height has them level with its neighbours' rather than
+   floating under its text.  The auto margin goes on the first control,
+   which carries everything after it down too: in Bring it back, the
+   paste box and the preview stay right under its button. */
+.panel > .panel-actions,
+.panel > .segmented { margin-top: auto; }
+
+/* The theme switch, cut to a button's height and without the gap
+   Inventory leaves under it, so its edges line up with the buttons
+   in the tiles beside it. */
+.panel > .segmented { margin-bottom: 0; }
+
+/* The import preview is empty until a file is read, and an empty box
+   still takes the tile's gap below the buttons -- enough to lift them
+   out of line with the next tile's. */
+#s-preview:empty { display: none; }
+.panel > .segmented button { padding: 7px 6px; font-size: .82rem; }
 
 
 /* label-as-button, so the file input can stay hidden */
@@ -1780,14 +1901,10 @@ ul.buff li::before {
 }
 .credits a:hover { text-decoration: underline; }
 
-.paste summary {
-  font-size: .82rem;
-  color: var(--ink-dim);
-  cursor: pointer;
-}
+.paste[hidden] { display: none; }
 .paste textarea {
   width: 100%;
-  margin: 8px 0;
+  margin: 0 0 8px;
   padding: 9px 11px;
   font: inherit;
   font-size: .78rem;
@@ -1890,15 +2007,18 @@ ul.buff li::before {
   font-size: .92em;
 }
 
-/* The fan-site disclaimer, on a line of its own under the credit: set
-   in the body face, not the heading one, as small print rather than a
-   signature.  `.footer p.disclaimer` so it outranks `.footer p` in the
-   type tiers further down. */
-.footer p.disclaimer {
+/* The lines under the credit -- where your data lives, and the
+   fan-site disclaimer -- each on a line of its own: set in the body
+   face, not the heading one, as small print rather than a signature.
+   `.footer p.small-print` so it outranks `.footer p` in the type tiers
+   further down.  The privacy line is the one worth reading, so it
+   sits a shade darker. */
+.footer p.small-print {
   font-family: var(--font-body);
   letter-spacing: normal;
   font-size: .72rem;
 }
+.footer p.privacy { color: var(--ink-dim); }
 
 /* ---------- misc ---------- */
 
@@ -1985,7 +2105,7 @@ h3,
 .panel h3,
 .trait dt, .detail-kicker,
 .entry .reason,
-.mode-switch, .want-switch,
+.mode-switch, .want-switch, .backup-btn,
 .footer p {
   font-family: var(--font-heading);
   font-weight: 400;
