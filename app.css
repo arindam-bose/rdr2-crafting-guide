@@ -1081,6 +1081,16 @@ body:has(dialog.detail[open]) { overflow: hidden; }
 .detail-section .list-label { margin-bottom: 8px; text-transform: none; }
 .detail .hint { margin: 0; font-size: .92rem; }
 
+/* Running text in a dialog -- About and How to use: paragraphs and a
+   short list in the body face, at a size meant to be read through
+   rather than scanned. */
+.prose { color: var(--ink-dim); font-size: .9rem; line-height: 1.6; }
+.prose p, .prose ul { margin: 0 0 10px; }
+.prose > :last-child { margin-bottom: 0; }
+.prose ul { padding-left: 20px; }
+.prose li + li { margin-top: 6px; }
+.prose strong { color: var(--ink); font-weight: 600; }
+
 /* A dialog's boxed list: recipes a material goes into, a recipe's buffs. */
 .detail-list {
   margin: 0;

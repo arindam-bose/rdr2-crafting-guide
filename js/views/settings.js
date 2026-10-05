@@ -17,6 +17,7 @@ import { esc, plural, icon, stationIcon, stationColour, money } from '../render.
 import * as backup from '../backup.js';
 import { toast } from '../toast.js';
 import { ledgerDialog } from './ledger.js';
+import { aboutDialog, howToDialog } from './guide.js';
 
 // The sources the reference data was built from, credited in the order
 // they were leaned on.  `source` is the site or the author; `title` is
@@ -66,6 +67,18 @@ const FONT_CREDITS = [
 const CATEGORY_PLURAL = {
   Accessory: 'Accessories',
 };
+
+/**
+ * A release date as "5 Oct 2026".  The version file writes a bare day,
+ * which a browser reads as midnight UTC, so it is shown in UTC too --
+ * in local time it would land on the day before, west of Greenwich.
+ */
+function released(day) {
+  const at = new Date(`${day}T00:00:00Z`);
+  if (Number.isNaN(at.getTime())) return day ?? 'unknown';
+  return at.toLocaleDateString(undefined,
+    { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
 
 function pluralCategory(category) {
   if (!category) return category;
@@ -195,9 +208,25 @@ export function mount(root) {
   const $ = (sel) => root.querySelector(sel);
   const preview = $('#s-preview');
   const ledger = ledgerDialog();
+  const about = aboutDialog();
+  const howTo = howToDialog();
 
   $('#s-facts').addEventListener('click', (event) => {
     if (event.target.closest('[data-ledger]')) ledger.open();
+  });
+
+  // The About tile: the two pages of words, then the release this is.
+  // Nothing here moves with the store, so it is filled once, not on
+  // every update.
+  const { number, date } = self.APP_VERSION ?? {};
+  $('#s-about').innerHTML = facts([
+    ['About this tool', '', 'about'],
+    ['How to use this tool', '', 'howto'],
+    ['Tool version', number ? `v${number}, updated ${released(date)}` : 'unknown'],
+  ]);
+  $('#s-about').addEventListener('click', (event) => {
+    if (event.target.closest('[data-about]')) about.open();
+    else if (event.target.closest('[data-howto]')) howTo.open();
   });
   let pending = null;          // text waiting for a confirmed import
 
@@ -366,10 +395,6 @@ export function mount(root) {
     $('#s-mode').textContent = store.isPersonal()
       ? 'Switch to General' : 'Switch to Personalize';
 
-    $('#s-about').innerHTML = facts([
-      ['Reference data', s.referenceBuild ? `built ${s.referenceBuild}` : 'unknown'],
-      ['Stored in', 'this browser only -- nothing is uploaded'],
-    ]);
 
     reportOffline();
     reportKept();
@@ -439,6 +464,8 @@ export function mount(root) {
     destroy() {
       unsubscribe();
       ledger.destroy();
+      about.destroy();
+      howTo.destroy();
     },
   };
 }

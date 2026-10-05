@@ -190,7 +190,9 @@ async function start() {
         toast('Cached -- this works without a signal now.');
       }
     });
-    navigator.serviceWorker.register('sw.js').catch((err) => {
+    // `updateViaCache: 'none'` so a check for updates looks past the
+    // HTTP cache at js/version.js too, not just at sw.js itself.
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).catch((err) => {
       console.warn('offline caching unavailable:', err);
     });
   }

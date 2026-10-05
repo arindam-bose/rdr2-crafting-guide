@@ -67,8 +67,8 @@ to it. `--check-ids` names the build being replaced: every ingredient,
 recipe and location id in it must survive, because the personal layer stores
 those strings, and the build fails if one is gone.
 
-The build stamps a `meta` table with the date and schema version, which the
-Settings page reports and every export records.
+The build stamps a `meta` table with the date and schema version, which every
+export records.
 
 The CSVs are the Notion export with the hash taken off each name:
 `Animals.csv`, `Animal Materials.csv`, `Misc Materials.csv`,
@@ -77,9 +77,12 @@ derived from names (`ing-perfect-beaver-pelt`), so they survive rows being
 added, removed or reordered — which matters, because the personal layer stores
 those strings.
 
-After a rebuild, bump `CACHE` in `sw.js`. The database and the wasm runtime are
-cached hard — they are big and only ever replaced wholesale — while app code is
-served network-first, so edits show up on reload without a cache bump.
+After a rebuild, or any change to the images or fonts, bump the release in
+`js/version.js` — its `number` names the offline cache in `sw.js`, and Settings
+shows it with its `date` as the tool version. The database, the wasm runtime,
+the fonts and the artwork are cached hard — they are big and only ever replaced
+wholesale — while app code is served network-first, so edits show up on reload
+without a bump.
 
 ## Layout
 
@@ -112,11 +115,14 @@ served network-first, so edits show up on reload without a cache bump.
       views/recipes.js    the catalogue, and the recipe dialog you craft in
       views/settings.js   stats, export, import, reset, and what is stored
       views/ledger.js     the history, as a dialog opened from Settings
+      views/guide.js      About and How to use, as dialogs from Settings
       views/toolbar.js    search, chips, sort and pager, shared by the two
                           galleries
       toast.js            the undo toast, which follows an open dialog
       theme.js            parchment or leather, remembered per device
       main.js             boot and hash routing
+      backup.js           backups: download, restore, and when one is due
+      version.js          the release number and date, read by sw.js too
     vendor/               sql.js, vendored so nothing is fetched from a CDN
     sw.js                 offline cache
 

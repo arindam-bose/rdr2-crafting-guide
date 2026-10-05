@@ -14,7 +14,10 @@
 //   more while this is still being written.
 // ============================================================
 
-const CACHE = 'rdr2-crafting-v26';
+// Named after the release in js/version.js, so bumping the version
+// there is what renews the cache.
+importScripts('js/version.js');
+const CACHE = `rdr2-crafting-v${self.APP_VERSION.number}`;
 
 // Fetched once and kept: big, and only ever replaced wholesale.
 // The fonts and the artwork join the runtime and the database here —
@@ -42,6 +45,7 @@ const SHELL = [
   'app.css',
   'manifest.webmanifest',
   'database/personal_schema.sql',
+  'js/version.js',
   'js/main.js',
   'js/backup.js',
   'js/db.js',
@@ -58,6 +62,7 @@ const SHELL = [
   'js/views/recipes.js',
   'js/views/settings.js',
   'js/views/ledger.js',
+  'js/views/guide.js',
   'js/views/toolbar.js',
 ];
 
