@@ -1633,23 +1633,158 @@ ul.buff li::before {
 }
 .stepper output.held { color: var(--ok); font-weight: 600; }
 
-/* One or two transfer steppers per row -- the Satchel's are grouped
-   with a little air between them; a vendor's is alone. */
-.transfers { display: flex; gap: 6px; }
-
-/* A transfer stepper is the same control, smaller: it moves what is
-   already here rather than logging a gain, so it reads as the
-   quieter of the two.  The vendor's or the Satchel's own icon takes
-   the number's place -- reachable exactly where the main stepper's
-   count is, so a tap never lands on the wrong control by muscle
-   memory alone. */
-.stepper.transfer button { width: 28px; height: 28px; font-size: 1rem; }
-.stepper.transfer output {
+/* The row's way into a transfer.  Told apart from the stepper beside
+   it by everything but height: an outlined pill against filled
+   squares, a word against a sign, with clear air between them -- so
+   a thumb aimed at one has nothing that looks like it to land on.
+   The same 40px tall, so a row with one sits on the same line as a
+   row without. */
+.move-btn {
   display: inline-flex;
   align-items: center;
-  min-width: 1.6em;
+  gap: 6px;
+  height: 40px;
+  margin-right: 6px;
+  padding: 0 12px 0 14px;
+  font: inherit;
+  font-size: .8rem;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
 }
-.stepper.transfer output .icon { margin: 0 2px 0 0; width: 1.05em; height: 1.05em; }
+.move-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
+.move-btn[aria-expanded="true"] { border-color: var(--accent-text); color: var(--ink); }
+.move-btn .move-to { display: inline-flex; gap: 2px; }
+.move-btn .move-to .icon { margin: 0; width: 1.25em; height: 1.25em; }
+
+/* A rule between the two controls, where a row has both: one moves
+   what is already here, the other changes how much there is. */
+.move-btn + .stepper {
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
+}
+
+/* Something staged to move: tinted like the staged row it sits on,
+   with the count in the button. */
+.move-btn.staged {
+  color: var(--accent-text);
+  border-color: var(--accent-text);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.move-count {
+  min-width: 1.5em;
+  padding: 1px 5px;
+  font-size: .74rem;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--on-accent);
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+/* On a phone there is no room for both controls beside the name, and
+   wrapping them onto a line of their own puts Move right up against
+   the stepper.  Instead Move tucks under the name on the left and the
+   stepper keeps the right edge: the two are a row's width apart. */
+@media (max-width: 559px) {
+  .row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 12px;
+  }
+  .row .controls { display: contents; }
+  .row .name    { grid-column: 1; grid-row: 1; }
+  .row .stepper { grid-column: 2; grid-row: 1; }
+  .row:has(.move-btn) .stepper { grid-row: 1 / span 2; }
+  .row .move-btn {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+    height: 34px;
+    margin: 0;
+  }
+}
+
+/* The Move panel: beside its button on a wide screen, placed by
+   inventory.js; a sheet along the bottom on a phone. */
+.move-pop {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  width: min(340px, calc(100vw - 16px));
+  padding: 16px 16px 14px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.move-pop:popover-open { animation: detail-in .14s ease-out; }
+.move-pop::backdrop { background: transparent; }
+
+@media (max-width: 559px) {
+  .move-pop {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    padding: 18px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+    border-width: 1px 0 0;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .move-pop::backdrop { background: rgb(20 12 6 / .45); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .move-pop:popover-open { animation: none; }
+}
+
+.move-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.move-head > div { flex: 1; min-width: 0; }
+.move-kicker {
+  margin: 0 0 4px;
+  font-size: .74rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.move-left { margin-left: 6px; color: var(--ink-dim); text-transform: none; letter-spacing: 0; }
+.move-left::before { content: "\00b7"; margin-right: 6px; color: var(--ink-faint); }
+.move-head h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.2;
+  color: var(--ink-name);
+}
+.move-head .detail-close { width: 32px; height: 32px; font-size: 1.2rem; }
+
+.move-dests { list-style: none; margin: 0; padding: 0; }
+.move-dest {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+.move-place { flex: 1; display: inline-flex; align-items: center; gap: 8px; font-size: .92rem; }
+.move-place .icon { margin: 0; width: 1.5em; height: 1.5em; }
+.move-dest.staged .move-place { color: var(--accent-text); }
+
+.move-note {
+  margin: 10px 0 0;
+  font-size: .76rem;
+  line-height: 1.45;
+  color: var(--ink-faint);
+}
 
 /* pending, unsaved changes */
 
@@ -2148,6 +2283,7 @@ h3,
 .trait dt, .detail-kicker,
 .entry .reason,
 .mode-switch, .want-switch, .backup-btn,
+.move-btn .move-word, .move-place,
 .footer p {
   font-family: var(--font-heading);
   font-weight: 400;

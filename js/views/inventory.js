@@ -23,6 +23,13 @@
 // reason 'move' -- as one entry in the batch.  The Fence gets none of
 // this: it spends straight from the Satchel, so there is nothing to
 // hand it.
+//
+// The row carries only a "Transfer to" button for it, never a second -/+
+// pair: two steppers side by side look alike, and a slip on the
+// wrong one silently hands a pelt to a vendor.  The button opens a
+// small panel that names the material, where it is moving from, and
+// each place it can go, each with its own stepper -- every control in
+// there says what it does.
 // ============================================================
 
 import * as backup from '../backup.js';
@@ -36,7 +43,7 @@ import { toast } from '../toast.js';
 const LOCATION_KEY = 'rdr2:location';
 
 // The icon that matches each location's id, for the segmented tabs
-// and the transfer buttons alike.
+// and the Transfer button and panel alike.
 const LOCATION_ICON = {
   'loc-satchel': 'satchel', 'loc-pearson': 'pearson', 'loc-trapper': 'trapper',
 };
@@ -110,6 +117,8 @@ export function mount(root) {
     ${toolbar.tabRow('i-locations', 'location', tabs,
                      { selected: state.location, counts: false })}
     <div id="i-sections"></div>
+    <div class="move-pop" id="i-move" popover role="dialog"
+         aria-labelledby="i-move-title"></div>
     <div class="savebar" id="i-savebar" hidden>
       <span class="pending-count" id="i-pending"></span>
       <button type="button" class="discard" id="i-discard">Discard</button>
@@ -121,6 +130,12 @@ export function mount(root) {
   const sections = root.querySelector('#i-sections');
   const savebar = root.querySelector('#i-savebar');
   const pending = root.querySelector('#i-pending');
+  const movePop = root.querySelector('#i-move');
+
+  // The row whose Transfer panel is open, by what stageMove() needs, or
+  // null.  The rows are rebuilt on every change, so the panel keeps
+  // the material rather than the element and finds its row again.
+  let moving = null;
 
   toolbar.wireTabs(segmented, 'location', state, () => {
     prefs.set(LOCATION_KEY, state.location);
@@ -134,14 +149,11 @@ export function mount(root) {
   toolbar.wireClear(searchBox);
 
   // One listener for every stepper: the rows are replaced on each
-  // change, so per-row listeners would not survive anyway.  A
-  // transfer button carries `data-move` instead of `data-delta`, so
-  // the two never fire on the same tap.
+  // change, so per-row listeners would not survive anyway.
   sections.addEventListener('click', (event) => {
-    const moveBtn = event.target.closest('[data-move]');
-    if (moveBtn) {
-      stageMove(moveBtn.closest('.row').dataset, moveBtn.dataset.to,
-                Number(moveBtn.dataset.move));
+    const opener = event.target.closest('.move-btn');
+    if (opener) {
+      openMove(opener);
       return;
     }
 
@@ -149,6 +161,135 @@ export function mount(root) {
     if (!button) return;
     stage(button.closest('.row').dataset, Number(button.dataset.delta));
   });
+
+  // The panel's own steppers, and its close button.
+  movePop.addEventListener('click', (event) => {
+    if (event.target.closest('[data-close]')) {
+      movePop.hidePopover();
+      return;
+    }
+    const button = event.target.closest('[data-move]');
+    if (button && moving) stageMove(moving, button.dataset.to, Number(button.dataset.move));
+  });
+
+  // A tap outside closes the panel before the click lands, so a tap on
+  // the same Transfer button would only open it again -- and the browser
+  // folds that close-and-reopen into one 'toggle', so it cannot be
+  // seen afterwards.  Noting, as the finger goes down, whether the
+  // panel was open for this row lets that tap close it instead.
+  let closingFor = null;
+  sections.addEventListener('pointerdown', (event) => {
+    const opener = event.target.closest('.move-btn');
+    closingFor = opener && movePop.matches(':popover-open')
+      ? opener.closest('.row').dataset.ingredient : null;
+  }, true);
+
+  movePop.addEventListener('toggle', (event) => {
+    if (event.newState === 'open') return;
+    const opener = moving && moveButtonFor(moving.ingredient);
+    moving = null;
+    for (const b of sections.querySelectorAll('.move-btn[aria-expanded="true"]')) {
+      b.setAttribute('aria-expanded', 'false');
+    }
+    // Back where the reader was, unless they have already moved on.
+    if (opener && (!document.activeElement || document.activeElement === document.body
+                   || movePop.contains(document.activeElement))) {
+      opener.focus();
+    }
+  });
+
+  function openMove(opener) {
+    const { ingredient, name, source } = opener.closest('.row').dataset;
+    const wasOpen = closingFor === ingredient;
+    closingFor = null;
+    if (wasOpen) {
+      if (movePop.matches(':popover-open')) movePop.hidePopover();
+      return;
+    }
+
+    for (const b of sections.querySelectorAll('.move-btn[aria-expanded="true"]')) {
+      b.setAttribute('aria-expanded', 'false');
+    }
+    moving = { ingredient, name, source };
+    renderMove();
+    movePop.showPopover();
+    placeMove();
+    opener.setAttribute('aria-expanded', 'true');
+    movePop.querySelector('[data-move="1"]:not(:disabled)')?.focus();
+  }
+
+  function moveButtonFor(ingredient) {
+    return sections.querySelector(`.row[data-ingredient="${CSS.escape(ingredient)}"] .move-btn`);
+  }
+
+  // Beside its button where there is room; on a phone the stylesheet
+  // makes it a sheet along the bottom instead, and the inline
+  // position would only fight that.
+  const narrow = window.matchMedia('(max-width: 559px)');
+  function placeMove() {
+    const opener = moving && moveButtonFor(moving.ingredient);
+    if (narrow.matches || !opener) {
+      movePop.style.top = movePop.style.left = '';
+      return;
+    }
+    const at = opener.getBoundingClientRect();
+    const box = movePop.getBoundingClientRect();
+    const gap = 6;
+    const below = at.bottom + gap + box.height <= window.innerHeight - 8;
+    const top = below ? at.bottom + gap : Math.max(8, at.top - gap - box.height);
+    const left = Math.min(Math.max(8, at.right - box.width), window.innerWidth - box.width - 8);
+    movePop.style.top = `${top}px`;
+    movePop.style.left = `${left}px`;
+  }
+  window.addEventListener('resize', () => {
+    if (movePop.matches(':popover-open')) placeMove();
+  });
+  // Pinned to the screen, it would drift off its row as the page
+  // scrolls, so it follows its button -- and closes once the button
+  // has gone off screen, rather than hanging over unrelated rows.
+  // Not closed on any scroll: a trackpad still coasting from the last
+  // swipe would shut it the moment it opened.
+  let following = false;
+  window.addEventListener('scroll', () => {
+    if (narrow.matches || following || !movePop.matches(':popover-open')) return;
+    following = true;
+    requestAnimationFrame(() => {
+      following = false;
+      if (!moving || !movePop.matches(':popover-open')) return;
+      const at = moveButtonFor(moving.ingredient)?.getBoundingClientRect();
+      if (!at || at.bottom < 0 || at.top > window.innerHeight) movePop.hidePopover();
+      else placeMove();
+    });
+  }, { passive: true });
+
+  function renderMove() {
+    const rowEl = moveButtonFor(moving.ingredient)?.closest('.row');
+    if (!rowEl) {
+      movePop.hidePopover();
+      return;
+    }
+    const from = state.location;
+    const available = Number(rowEl.dataset.qty) + (pendingIdx.get(moving.ingredient) ?? 0);
+    const targets = moveTargets(moving.ingredient, from, wants);
+
+    movePop.innerHTML = `
+      <div class="move-head">
+        <div>
+          <p class="move-kicker">Transfer from ${esc(LOCATION_LABEL[from])}
+            <span class="move-left">${available} ${
+              targets.some((to) => staged.has(moveKey(moving.ingredient, from, to)))
+                ? 'left' : 'here'}</span></p>
+          <h3 id="i-move-title">${rowEl.dataset.title}</h3>
+        </div>
+        <button type="button" class="detail-close" data-close
+                aria-label="Close">×</button>
+      </div>
+      <ul class="move-dests">
+        ${targets.map((to) => moveDest(moving, from, to, available)).join('')}
+      </ul>
+      <p class="move-note">Hands over what you already hold -- nothing new
+        is logged.  Saved with the rest of your changes.</p>`;
+  }
 
   // The restore offer's file input is rebuilt with the sections, so it
   // is listened for here, the same way the steppers are.  There is
@@ -287,6 +428,8 @@ export function mount(root) {
         + section('Recently Touched', recent(state.location), '');
     }
 
+    if (moving) renderMove();
+
     savebar.hidden = staged.size === 0;
     pending.textContent = `${plural(staged.size, 'unsaved change')}`;
 
@@ -407,10 +550,12 @@ function row(m, location, wants, pendingIdx) {
 
   return `
     <div class="row${net ? ' staged' : ''}" data-ingredient="${esc(m.ingredient_id)}"
-         data-name="${esc(m.name)}" data-source="${esc(m.source_type)}">
+         data-name="${esc(m.name)}" data-source="${esc(m.source_type)}"
+         data-qty="${m.qty}"
+         data-title="${esc(nameWith(m.name, qualityStars(m.quality)))}">
       <span class="name">${nameWith(m.name, qualityStars(m.quality))}${history(m)}</span>
       <span class="controls">
-        ${transfers(m, location, wants, shown)}
+        ${moveButton(m, location, wants, shown)}
         <span class="stepper">
           <button type="button" data-delta="-1" ${shown <= 0 ? 'disabled' : ''}
                   aria-label="One fewer ${esc(m.name)}">-</button>
@@ -432,43 +577,70 @@ const LOCATION_LABEL = {
 };
 
 /**
- * The transfer control(s) for one row: on the Satchel, one per vendor
- * that wants this material -- there can be two, since Pearson and
+ * Where one material can be moved from `location`: on the Satchel,
+ * each vendor that wants it -- there can be two, since Pearson and
  * Trapper both want plenty of the same pelts; on a vendor, the single
- * way back to the Satchel.  Nothing at all for a material no vendor
- * here cares about -- a plant on the Trapper's screen, say.
+ * way back to the Satchel.  None at all for a material no vendor here
+ * cares about -- a plant on the Trapper's screen, say.
  */
-function transfers(m, location, wants, available) {
-  const targets = VENDOR_LOCATIONS.includes(location)
-    ? (wants.get(m.ingredient_id)?.has(location) ? ['loc-satchel'] : [])
-    : VENDOR_LOCATIONS.filter((to) => wants.get(m.ingredient_id)?.has(to));
-
-  if (!targets.length) return '';
-  return `<span class="transfers">${
-    targets.map((to) => transferStepper(m, location, to, available)).join('')}</span>`;
+function moveTargets(ingredient, location, wants) {
+  return VENDOR_LOCATIONS.includes(location)
+    ? (wants.get(ingredient)?.has(location) ? ['loc-satchel'] : [])
+    : VENDOR_LOCATIONS.filter((to) => wants.get(ingredient)?.has(to));
 }
 
 /**
- * One destination's transfer stepper: the count already staged
- * toward it, a vendor's or the Satchel's own icon standing in for the
- * usual number, and a "+" that stops offering once there is nothing
- * left here to send -- shared across every destination on the row,
- * since they all draw down the same stock.
+ * The row's one way into a transfer: a word, and the icon of each
+ * place it can go, so it says what it does before it is tapped.  An
+ * outlined pill where the stepper is filled squares, so the two are
+ * told apart by shape before anyone reads them.  Once something is
+ * staged to move, it says how many.  Absent while there is nothing
+ * here to move and nothing on its way out -- a button that could
+ * only open onto disabled steppers is clutter.
  */
-function transferStepper(m, from, to, available) {
-  const count = staged.get(moveKey(m.ingredient_id, from, to))?.delta ?? 0;
-  const label = LOCATION_LABEL[to];
+function moveButton(m, location, wants, available) {
+  const targets = moveTargets(m.ingredient_id, location, wants);
+  if (!targets.length) return '';
+
+  const count = targets.reduce((sum, to) =>
+    sum + (staged.get(moveKey(m.ingredient_id, location, to))?.delta ?? 0), 0);
+  if (available <= 0 && !count) return '';
+  const names = targets.map((to) => LOCATION_LABEL[to]).join(' or ');
 
   return `
-    <span class="stepper transfer">
-      <button type="button" data-move="-1" data-to="${esc(to)}"
-              ${count <= 0 ? 'disabled' : ''}
-              aria-label="One fewer of ${esc(m.name)} to send to ${esc(label)}">-</button>
-      <output class="${count > 0 ? 'held' : ''}"
-              aria-label="${count} to send to ${esc(label)}"
-        >${icon(LOCATION_ICON[to])}${count || ''}</output>
-      <button type="button" data-move="1" data-to="${esc(to)}"
-              ${available > 0 ? '' : 'disabled'}
-              aria-label="Send one ${esc(m.name)} to ${esc(label)}">+</button>
-    </span>`;
+    <button type="button" class="move-btn${count ? ' staged' : ''}"
+            aria-haspopup="dialog" aria-expanded="false"
+            aria-label="Transfer ${esc(m.name)} to ${esc(names)}${
+              count ? ` (${count} staged)` : ''}">
+      <span class="move-word">Transfer to</span>
+      <span class="move-to">${targets.map((to) => icon(LOCATION_ICON[to])).join('')}</span>
+      ${count ? `<span class="move-count">${count}</span>` : ''}
+    </button>`;
+}
+
+/**
+ * One destination in the Transfer panel: its icon and name, then a
+ * stepper for how many go there.  Its "+" stops offering once there
+ * is nothing left here to send -- shared across every destination,
+ * since they all draw down the same stock.
+ */
+function moveDest(m, from, to, available) {
+  const count = staged.get(moveKey(m.ingredient, from, to))?.delta ?? 0;
+  const label = LOCATION_LABEL[to];
+  const place = label.replace(/^the /, '');
+
+  return `
+    <li class="move-dest${count ? ' staged' : ''}">
+      <span class="move-place">${icon(LOCATION_ICON[to])}<span>To ${esc(label)}</span></span>
+      <span class="stepper">
+        <button type="button" data-move="-1" data-to="${esc(to)}"
+                ${count <= 0 ? 'disabled' : ''}
+                aria-label="One fewer to ${esc(place)}">-</button>
+        <output class="${count > 0 ? 'pending' : ''}"
+                aria-label="${count} to ${esc(place)}">${count}</output>
+        <button type="button" data-move="1" data-to="${esc(to)}"
+                ${available > 0 ? '' : 'disabled'}
+                aria-label="One more to ${esc(place)}">+</button>
+      </span>
+    </li>`;
 }
