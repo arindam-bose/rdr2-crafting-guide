@@ -365,10 +365,11 @@ body {
 
 /* ---------- cover art ---------- */
 
-/* A letterbox cut from the campfire photo: Arthur and the fire, with
-   the treetops above and the ground (and the game's prompts) below
-   cropped away.  The foot fades out
-   into the page, so the art sits on either theme without a hard edge. */
+/* A letterbox cut from the campfire picture: the cowboy and the fire,
+   with the treetops above and the ground below cropped away.  The foot
+   fades out into the page, so the art sits on either theme without a
+   hard edge.  About 3:1 at full width, close to the phone's shape, so
+   the fire clears the fade on a desktop too. */
 .cover {
   max-width: 1400px;
   margin: 0 auto;
@@ -377,9 +378,9 @@ body {
 .cover img {
   display: block;
   width: 100%;
-  height: clamp(120px, 22vw, 280px);
+  height: clamp(120px, 30vw, 420px);
   object-fit: cover;
-  object-position: 50% 36%;
+  object-position: 50% 65%;
   border-radius: var(--radius);
   -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent);
           mask-image: linear-gradient(to bottom, #000 72%, transparent);
@@ -1740,9 +1741,6 @@ ul.buff li::before {
   font-size: .72rem;
   color: var(--ink-faint);
 }
-/* A second group under the first (the cover art under the reference
-   data) gets the same gap the groups have beside each other. */
-.refs + .list-label { margin-top: 18px; }
 
 /* A font, credited: its name set in the face itself, and where it came
    from and on what terms under it.  Unlike .refs the row is not the tap

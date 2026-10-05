@@ -14,7 +14,7 @@
 //   more while this is still being written.
 // ============================================================
 
-const CACHE = 'rdr2-crafting-v24';
+const CACHE = 'rdr2-crafting-v25';
 
 // Fetched once and kept: big, and only ever replaced wholesale.
 // The fonts and the artwork join the runtime and the database here —
@@ -32,8 +32,8 @@ const IMMUTABLE = [
   'images/favicon-32.png',
   'images/icon-192.png',
   'images/apple-touch-icon.png',
-  'images/arthur-crafts-oldphoto-960.jpg',
-  'images/arthur-crafts-oldphoto-1920.jpg',
+  'images/pixel-cowboy-campfire-at-dusk-960.jpg',
+  'images/pixel-cowboy-campfire-at-dusk-1920.jpg',
 ];
 
 const SHELL = [
