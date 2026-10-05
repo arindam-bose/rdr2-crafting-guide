@@ -2,6 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- The privacy promise, enforced by the browser rather than taken on
+     trust: this page may load and fetch from its own origin and nowhere
+     else.  First in <head>, so it covers everything after it.
+
+       'wasm-unsafe-eval'  sql.js compiles its wasm; JS eval stays blocked.
+       sha256-…            the inline theme script below.  Edit one byte
+                           of it and it stops running -- recompute this
+                           hash (sha256 of the text between the tags,
+                           base64) whenever it changes.
+       style 'unsafe-inline'  the progress bars' style="width:…".  Styles
+                           can still only load from this origin.
+
+     A meta tag cannot carry frame-ancestors; GitHub Pages sets no
+     headers, so that one is left out. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-+/qS7dCmregQBe3xZrxsAqXlpLcqTFgGyvh3VzGNcjg='; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#e7dbc0">
 <title>Red Dead Redemption II Crafting Guide</title>
@@ -61,17 +77,7 @@ try {
       </button>
     </div>
 
-    <!-- Set here rather than left to main.js, for the same reason the
-         theme is set in the head: that module is deferred behind the
-         wasm runtime, and until it runs a reader in General mode would
-         watch the switch sit on Personalize -- and a screen reader
-         would be told the wrong one outright. -->
-    <script>
-    try {
-      document.getElementById('mode-toggle').setAttribute('aria-checked',
-        String(localStorage.getItem('rdr2:personal-mode') !== 'general'));
-    } catch (e) { /* private mode: the default is fine */ }
-    </script>
+    <script src="js/mode-toggle-early.js"></script>
   </header>
 
   <nav class="tabs">
@@ -133,18 +139,7 @@ try {
 
 <div id="toast" class="toast" hidden></div>
 
-<!-- A classic script, not a module: on file:// the modules below are
-     blocked by CORS and never run, so this has to be what explains it. -->
-<script>
-if (location.protocol === 'file:') {
-  document.getElementById('view').innerHTML =
-    '<div class="error"><h2>This needs to be served over HTTP.</h2>' +
-    '<p>Opened from a file path, the browser gives every file the origin ' +
-    '<code>null</code> and blocks the modules and the database fetch.</p>' +
-    '<p>From the project folder, run <code>python3 -m http.server 8000</code> ' +
-    'and open <a href="http://localhost:8000">http://localhost:8000</a>.</p></div>';
-}
-</script>
+<script src="js/file-protocol.js"></script>
 
 <!-- sql.js ships as a classic script that defines window.initSqlJs -->
 <script src="js/version.js"></script>
