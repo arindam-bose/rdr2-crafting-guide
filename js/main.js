@@ -58,6 +58,11 @@ let currentName = null;
 function paintMode() {
   const personal = store.isPersonal();
   modeToggle.setAttribute('aria-checked', String(personal));
+  // Which mode is on, then what a tap does -- a tooltip that only
+  // described the two never said which one you were in.
+  modeToggle.title = personal
+    ? 'Personalize: tracking what you have. Tap for General, the plain reference.'
+    : 'General: the plain reference. Tap for Personalize, which tracks what you have.';
   firstNote.hidden = !personal || firstNoteDismissed
                    || prefs.get(FIRST_NOTE_SEEN) !== null;
 }

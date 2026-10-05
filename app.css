@@ -278,8 +278,9 @@ body {
 /* The masthead switch: the same two-sided control as the recipe
    dialog's, in the accent rather than the green, since it sets what
    the whole app is showing rather than whether one thing is wanted.
-   On a narrow phone the words go and the track carries it alone --
-   the Settings panel spells the two modes out either way. */
+   On a narrow phone there is no room for both words, so only the one
+   in force stays, set small above the track the way the game's name
+   sits above the guide's -- the switch still says which mode is on. */
 .mode-switch[aria-checked="true"]  .side.on,
 .mode-switch[aria-checked="false"] .side.off { color: var(--ink); }
 
@@ -293,7 +294,20 @@ body {
 }
 
 @media (max-width: 460px) {
-  .mode-switch .side { display: none; }
+  /* Under .topbar, to outrank the switch's own rule further down. */
+  .topbar .mode-switch {
+    flex-direction: column;
+    gap: 3px;
+    padding: 2px 0;
+  }
+  .mode-switch .side {
+    order: -1;
+    font-size: .6rem;
+    line-height: 1.25;
+    letter-spacing: .12em;
+  }
+  .mode-switch[aria-checked="true"]  .side.off,
+  .mode-switch[aria-checked="false"] .side.on { display: none; }
 }
 
 /* The Back up button and the mode switch, kept together at the right. */
@@ -347,9 +361,42 @@ body {
 .backup-btn[data-due="overdue"]::after { background: var(--danger); }
 .backup-btn[data-due] { color: var(--ink); }
 
+/* A rule between the two when both are showing: one is an action,
+   the other a setting. */
+.backup-btn:not([hidden]) + .mode-switch {
+  padding-left: 12px;
+  border-left: 1px solid var(--line);
+}
+
+/* On a phone, the same shape as the mode switch beside it: the word
+   small above, and the arrow in an outline the size of the switch's
+   track, so the pair reads as two of a kind rather than a box and a
+   pill.  The due dot stays at the top right, just past the word. */
 @media (max-width: 460px) {
-  .backup-label { display: none; }
-  .backup-btn { padding: 6px 7px; }
+  .backup-btn {
+    flex-direction: column;
+    gap: 3px;
+    padding: 2px 0;
+    border: 0;
+  }
+  .backup-label {
+    font-size: .6rem;
+    line-height: 1.25;
+    letter-spacing: .12em;
+    white-space: nowrap;
+  }
+  .backup-btn svg {
+    order: 1;
+    box-sizing: content-box;
+    width: 14px;
+    height: 14px;
+    padding: 2px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+  }
+  .backup-btn:hover svg { border-color: var(--ink-faint); }
+  .backup-btn[data-due]::after { top: -5px; right: -10px; }
+  .backup-btn:not([hidden]) + .mode-switch { padding-left: 10px; }
 }
 
 /* The one-time note on where the data lives: a panel with the accent
