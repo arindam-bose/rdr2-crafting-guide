@@ -2053,6 +2053,37 @@ ul.buff li::before {
 .panel > .segmented button { padding: 7px 6px; font-size: .82rem; }
 
 
+/* Support the guide: the one tile lit like a lamp -- a wash of the
+   accent and the accent down its edge -- and the one filled button on
+   the page, the Save button's amber, so it is warm without shouting. */
+.panel.support {
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  border-left: 3px solid var(--accent-text);
+}
+.coffee-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px 9px 13px;
+  font-size: .86rem;
+  color: var(--on-accent);
+  text-decoration: none;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+}
+.coffee-btn:hover { filter: brightness(1.06); }
+.coffee-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.coffee-note { font-size: .74rem; color: var(--ink-faint); }
+
 /* label-as-button, so the file input can stay hidden */
 .file-btn { display: inline-block; cursor: pointer; }
 
@@ -2428,6 +2459,7 @@ h3,
 .chip,
 .segmented button,
 .craft-btn, .ghost-btn, .more-btn, .danger-btn, .sort-dir, .savebar button,
+.coffee-btn,
 .badge,
 .list-label,
 .panel h3,

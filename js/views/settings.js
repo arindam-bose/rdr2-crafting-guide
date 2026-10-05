@@ -170,6 +170,29 @@ export function mount(root) {
         <dl class="facts" id="s-about"></dl>
       </section>
 
+      <!-- A plain link, not the site's own widget or button image: those
+           load from its servers, which this page's policy blocks and its
+           promise rules out.  Nothing is fetched until it is tapped. -->
+      <section class="panel support">
+        <h3>Support the guide</h3>
+        <p class="note">The guide is free, with no ads, no accounts and
+          nothing tracked, and it will stay that way. If it saved you a
+          ride back to Valentine, a coffee keeps it going.</p>
+        <div class="panel-actions">
+          <a class="coffee-btn" href="https://buymeacoffee.com/arindambose"
+             target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M8 3.5c-.6.8-.6 1.7 0 2.5M11.5 3.5c-.6.8-.6 1.7 0 2.5M15 3.5c-.6.8-.6 1.7 0 2.5"/>
+              <path d="M4.5 9h13v5a5 5 0 0 1-5 5h-3a5 5 0 0 1-5-5z"/>
+              <path d="M17.5 10.5h1a2.5 2.5 0 0 1 0 5h-1.3"/>
+              <path d="M3.5 21h15"/>
+            </svg>
+            Buy me a coffee
+          </a>
+          <small class="coffee-note">Opens buymeacoffee.com in a new tab</small>
+        </div>
+      </section>
+
       <section class="panel panel-wide">
         <h3>Your stats</h3>
         <dl class="facts" id="s-facts"></dl>
