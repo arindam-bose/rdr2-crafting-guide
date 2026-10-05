@@ -256,7 +256,7 @@ def shell_parts():
     return csp, theme
 
 
-def page(*, root, path, title, description, crumbs, tab, body, csp, theme):
+def page(*, root, path, title, description, crumbs, tab, body, csp, theme, wide=False):
     url = SITE_URL + path
     crumb_ld = json.dumps({
         '@context': 'https://schema.org',
@@ -326,7 +326,7 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme):
        sizes="100vw" alt="" width="1920" height="1080" decoding="async">
 </div>
 
-<main class="static-page">
+<main class="static-page{" static-wide" if wide else ""}">
   <nav class="crumbs" aria-label="Breadcrumb">{trail}</nav>
 {body}
 </main>
@@ -543,11 +543,12 @@ def recipe_page(r, data, parts):
 # the A-Z lists
 # ------------------------------------------------------------
 
-def az_section(title, items):
+def az_section(title, items, long_names=False):
     links = ''.join(f'\n        <li>{link}</li>' for link in items)
+    kind = 'az-list long' if long_names else 'az-list'
     return (f'\n    <section class="detail-section">\n'
             f'      <h2 class="list-label">{esc(title)} <span class="count">{len(items)}</span></h2>\n'
-            f'      <ul class="az-list">{links}\n      </ul>\n    </section>')
+            f'      <ul class="{kind}">{links}\n      </ul>\n    </section>')
 
 
 def materials_index(data, parts):
@@ -572,7 +573,7 @@ def materials_index(data, parts):
                                  'Redemption 2 -- pelts, hides, plants and supplies -- with the '
                                  'recipes each one goes into and where to find it.'),
                 crumbs=[('Crafting Guide', ''), ('Materials', 'materials/')],
-                tab='materials', body=''.join(body), csp=parts[0], theme=parts[1])
+                tab='materials', body=''.join(body), csp=parts[0], theme=parts[1], wide=True)
 
 
 def recipes_index(data, parts):
@@ -591,7 +592,7 @@ def recipes_index(data, parts):
         items = [page_link('recipes', r['id'], r['name'], root)
                  for r in data['recipes'] if r['station_id'] == s]
         if items:
-            body.append(az_section(station_names[s], items))
+            body.append(az_section(station_names[s], items, long_names=True))
     body.append('\n  </article>')
     return page(root=root, path='recipes/',
                 title=f'Every RDR2 Crafting Recipe, A-Z · {SITE_NAME}',
@@ -599,7 +600,7 @@ def recipes_index(data, parts):
                                  'Redemption 2 -- Pearson, the Trapper, the Fence and the '
                                  'campfire -- with the ingredients each one takes.'),
                 crumbs=[('Crafting Guide', ''), ('Recipes', 'recipes/')],
-                tab='recipes', body=''.join(body), csp=parts[0], theme=parts[1])
+                tab='recipes', body=''.join(body), csp=parts[0], theme=parts[1], wide=True)
 
 
 def sitemap(paths, built_at):

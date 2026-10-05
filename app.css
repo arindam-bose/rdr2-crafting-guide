@@ -2316,16 +2316,26 @@ ul.buff li::before {
 .static-cta { margin: 20px 0 0; }
 .static-cta .more-btn { text-decoration: none; }
 
-/* The A-Z lists: as many columns as fit, a name to a line. */
+/* The A-Z lists take the app's own full width rather than a reading
+   column -- they are scanned, not read -- with as many columns as fit
+   and every name on one line with its stars.  Each column is as wide
+   as the longest name in its list: a material runs to 33 characters
+   and its stars, a recipe to 42. */
+.static-page.static-wide { max-width: 1400px; }
+
 .az-list {
   margin: 0;
   padding: 0;
   list-style: none;
-  columns: 3 200px;
-  column-gap: 24px;
+  columns: 300px;
+  column-gap: 28px;
   font-size: .9rem;
 }
-.az-list li { padding: 3px 0; break-inside: avoid; }
+.az-list.long { columns: 370px; }
+.az-list li { padding: 3px 0; break-inside: avoid; white-space: nowrap; }
+/* A phone has one column and less than the longest recipe's width, so
+   there a name too long for the screen wraps rather than runs off it. */
+@media (max-width: 480px) { .az-list li { white-space: normal; } }
 .detail-section .list-label .count { margin-left: 6px; color: var(--ink-faint); }
 
 /* ---------- footer ---------- */
