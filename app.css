@@ -704,6 +704,12 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 :root[data-theme="leather"] .icon-inventory { background-image: url('images/icons/leather/inventory-inverse.png'); }
 :root[data-theme="leather"] .icon-settings  { background-image: url('images/icons/leather/settings-inverse.png'); }
 
+/* The coffee cup sits on the amber Buy me a coffee button, under black
+   lettering, in both themes -- so it takes the dark disc in both, which
+   is parchment's inverse but leather's plain one. */
+.icon-coffee { background-image: url('images/icons/parchment/coffee-inverse.png'); }
+:root[data-theme="leather"] .icon-coffee { background-image: url('images/icons/leather/coffee.png'); }
+
 /* A pressed chip or a chosen tab turns its label over -- pale on
    parchment, dark on leather -- and the medallion's disc follows the
    label, so the other colourway takes its place. */
@@ -2073,15 +2079,7 @@ ul.buff li::before {
   border-radius: 8px;
 }
 .coffee-btn:hover { filter: brightness(1.06); }
-.coffee-btn svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
+.coffee-btn .icon { margin: 0; width: 1.6em; height: 1.6em; }
 .coffee-note { font-size: .74rem; color: var(--ink-faint); }
 
 /* label-as-button, so the file input can stay hidden */
