@@ -428,14 +428,22 @@ function stockLine(d, personal) {
   // The Campfire takes any amount, so it is never short or retired.
   const enough = d.campfire || d.have >= d.needed;
   const retired = !d.campfire && d.needed === 0;
-  const needs = d.campfire ? 'uses it'
-    : retired ? 'needs no more' : `needs ${d.needed}`;
+  const needs = retired ? 'needs no more' : `needs ${d.needed}`;
+
+  // The Campfire is not a vendor wanting something from you: it is you,
+  // cooking with what is in your Satchel.  So it reads as something to
+  // do, with your own count -- "Use it in Campfire, have 3 / in your
+  // Satchel" -- rather than "Campfire uses it, has 3".
+  const [lead, says, from] = d.campfire
+    ? [`Use it in ${esc(d.station)}`, ', have',
+       `<small class="from">in your ${esc(d.location)}</small>`]
+    : [esc(d.station), ` ${needs}, has`, where];
 
   return `
     <div class="stock-line demand ${colour}${retired ? ' retired' : ''}"
          data-location="${esc(d.location_id)}">
-      <span class="stock-text"><span class="station">${icon(stationIcon(d.station_id))}${esc(d.station)}</span>
-        ${needs}, has <span class="${enough ? 'have' : 'short'}">${d.have}</span>${where}</span>
+      <span class="stock-text"><span class="station">${icon(stationIcon(d.station_id))}${lead}</span>${says}
+        <span class="${enough ? 'have' : 'short'}">${d.have}</span>${from}</span>
       <span class="stepper">
         <button type="button" data-delta="-1" data-key="${esc(d.station_id)}-less"
                 ${d.have <= 0 ? 'disabled' : ''}
