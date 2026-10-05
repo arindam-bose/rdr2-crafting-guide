@@ -187,6 +187,21 @@ body {
   padding-bottom: calc(var(--tabs-h) + env(safe-area-inset-bottom, 0px));
 }
 
+/* The footer at the foot of the window, however little the page holds:
+   the page is a column at least as tall as the screen, and the content
+   takes up whatever the rest leaves over.  Each part centres itself in
+   a 1400px column with auto margins, which a flex item would otherwise
+   shrink to fit its content -- so each is told to take the full width,
+   and its max-width does the rest, as before. */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+body > :is(.cover, .first-note, .page-title, main, .footer) { width: 100%; }
+body > main { flex: 1 0 auto; }
+
 /* ---------- top bar ---------- */
 
 /* No backdrop-filter here while the tabs are fixed inside it: a
