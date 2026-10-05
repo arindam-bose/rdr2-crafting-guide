@@ -120,6 +120,7 @@ export function mount(root) {
         <h3>Take it with you</h3>
         <p class="note">Everything you have logged, as one text file. Keep it
           somewhere safe - clearing this site's data erases the original.</p>
+        <p class="note" id="s-last"></p>
         <div class="panel-actions">
           <button type="button" class="more-btn" id="s-download">Download</button>
           <button type="button" class="ghost-btn" id="s-copy">Copy to clipboard</button>
@@ -172,7 +173,6 @@ export function mount(root) {
       <section class="panel panel-wide">
         <h3>Your stats</h3>
         <dl class="facts" id="s-facts"></dl>
-        <p class="note" id="s-last"></p>
 
         <p class="list-label card-label">By vendor</p>
         <div class="demands" id="s-by-vendor"></div>
