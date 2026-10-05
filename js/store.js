@@ -109,6 +109,16 @@ export async function hydrate() {
     }
   });
 
+  // Settled once, on the first load that finds no mode stored.  Data
+  // with no mode can only be from back when Personalize was the
+  // default, so it stays there.  A first visit is written down as
+  // General -- otherwise, once it had logged something, the next load
+  // would take it for one of those and switch it over unasked.
+  if (prefs.get(MODE_KEY) === null) {
+    const hasData = ledger.length || targets.some((t) => t.state !== 'wanted');
+    prefs.set(MODE_KEY, hasData ? 'personal' : 'general');
+  }
+
   return { ledger: ledger.length, targets: targets.length };
 }
 
@@ -467,8 +477,13 @@ export async function reset() {
 // the reference data alone, personal folds in what you have.
 // ------------------------------------------------------------
 
+// General until someone chooses otherwise.  A first visit has nothing
+// logged, and Personalize with nothing logged is every card saying
+// "go hunting" -- General is useful from the first second.  Someone
+// who logged things back when Personalize was the default never had
+// to choose it; hydrate() settles them on it, so nobody is moved.
 export function isPersonal() {
-  return prefs.get(MODE_KEY) !== 'general';
+  return prefs.get(MODE_KEY) === 'personal';
 }
 
 export function setPersonal(on) {

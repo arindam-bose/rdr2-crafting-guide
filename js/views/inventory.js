@@ -41,6 +41,7 @@ import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
 
 const LOCATION_KEY = 'rdr2:location';
+const OFFER_DISMISSED = 'rdr2:personalize-offer-dismissed';
 
 // The icon that matches each location's id, for the segmented tabs
 // and the Transfer button and panel alike.
@@ -151,6 +152,18 @@ export function mount(root) {
   // One listener for every stepper: the rows are replaced on each
   // change, so per-row listeners would not survive anyway.
   sections.addEventListener('click', (event) => {
+    if (event.target.closest('#i-personalize')) {
+      store.setPersonal(true);
+      toast('Personalize is on -- every card now counts what you have.');
+      return;
+    }
+    if (event.target.closest('#i-offer-dismiss')) {
+      offerDismissed = true;
+      prefs.set(OFFER_DISMISSED, new Date().toISOString());
+      update();
+      return;
+    }
+
     const opener = event.target.closest('.move-btn');
     if (opener) {
       openMove(opener);
@@ -424,6 +437,7 @@ export function mount(root) {
       // What you are holding here first, then the quick way back to
       // whatever you were logging lately.
       sections.innerHTML = (store.isEmpty() && !staged.size ? restoreOffer() : '')
+        + (offering() ? personalizeOffer() : '')
         + section(at, held(state.location), `Nothing ${lower(at)} yet.`)
         + section('Recently Touched', recent(state.location), '');
     }
@@ -439,6 +453,21 @@ export function mount(root) {
       if (staged.size) tab.dataset.pending = staged.size;
       else delete tab.dataset.pending;
     }
+  }
+
+  // Held here as well as stored, so "Not now" still holds for the rest
+  // of the visit in a browser that will not keep the preference.
+  let offerDismissed = false;
+
+  /**
+   * Whether to suggest Personalize: in General, once there is
+   * something logged for it to show -- the moment its value is
+   * plain, rather than a switch to find before there is any reason
+   * to.  Until "Not now", or until it is turned on.
+   */
+  function offering() {
+    return !store.isPersonal() && !store.isEmpty()
+      && !offerDismissed && prefs.get(OFFER_DISMISSED) === null;
   }
 
   function section(title, list, emptyText, counted = true) {
@@ -475,6 +504,24 @@ function restoreOffer() {
       <label class="ghost-btn file-btn">Restore from a backup
         <input type="file" id="i-restore" accept=".json,application/json" hidden>
       </label>
+    </section>`;
+}
+
+/**
+ * The invitation into Personalize, for someone logging in General:
+ * what they have just entered is kept, but nothing else on the site
+ * shows it until the switch is on.
+ */
+function personalizeOffer() {
+  return `
+    <section class="restore-offer personalize-offer">
+      <p class="note"><strong>Make the guide yours.</strong> Turn on
+        Personalize and every card counts what you have logged: what is
+        ready to craft, and what is still left to hunt.</p>
+      <div class="panel-actions">
+        <button type="button" class="more-btn" id="i-personalize">Turn on Personalize</button>
+        <button type="button" class="ghost-btn" id="i-offer-dismiss">Not now</button>
+      </div>
     </section>`;
 }
 

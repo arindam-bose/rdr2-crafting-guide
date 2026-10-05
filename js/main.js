@@ -149,6 +149,7 @@ async function start() {
 
   await db.open();
   await store.hydrate();
+  paintMode();                        // hydrate() may have settled it
 
   // Any write — or a mode flip — refreshes whatever is on screen, and
   // repaints the switch, so Settings' own mode button and this one can

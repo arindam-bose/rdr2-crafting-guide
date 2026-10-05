@@ -9,5 +9,5 @@
 // switch is already in the document.
 try {
   document.getElementById('mode-toggle').setAttribute('aria-checked',
-    String(localStorage.getItem('rdr2:personal-mode') !== 'general'));
+    String(localStorage.getItem('rdr2:personal-mode') === 'personal'));
 } catch (e) { /* private mode: the default is fine */ }
