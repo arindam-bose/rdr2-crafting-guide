@@ -9,6 +9,34 @@ own inventory lives in your browser.
 
 [sql.js]: https://sql.js.org
 
+## Privacy, enforced
+
+"Nothing is uploaded" is not a promise the reader has to take on trust: the
+page tells the browser to refuse anything else. Every page carries a
+Content-Security-Policy as a `<meta>` tag -- GitHub Pages cannot set headers --
+first in `<head>`, so it covers everything after it:
+
+- `default-src 'self'`: the page may load and fetch from its own origin and
+  nowhere else. A request to any other server is blocked by the browser and
+  shows in its console.
+- `script-src` adds `'wasm-unsafe-eval'`, which lets sql.js compile its
+  WebAssembly and nothing more -- JavaScript `eval` stays blocked -- and the
+  SHA-256 hash of the one inline script, the theme line in `<head>`. Change a
+  byte of that script and it stops running: recompute the hash (sha256 of the
+  text between the tags, base64), update the policy, and rerun
+  `scripts/build_pages.py`, which copies both into every search page. The other early
+  scripts are files (`js/mode-toggle-early.js`, `js/file-protocol.js`) so they
+  need no hash.
+- `style-src` allows inline styles, for the progress bars' `style="width:…"`.
+  A style can still only load from this origin.
+- `object-src`, `base-uri` and `form-action` are all `'none'`.
+
+`<meta name="referrer" content="no-referrer">` keeps the page's address out of
+the `Referer` header when a link leads off the site. Those links -- the wiki
+pages, the acknowledgements, Buy me a coffee -- are plain anchors that open in a
+new tab; nothing from another site is embedded, so nothing is contacted until
+one is followed. `frame-ancestors` cannot be set from a meta tag, so it is not.
+
 ## Two layers
 
 **Reference** — `data/rdr2.db`, built from a Notion export and the
@@ -40,7 +68,9 @@ Any static server, from the repository root:
     python3 -m http.server 8000
 
 then open <http://localhost:8000>. It needs to be served over HTTP rather than
-opened as a file, because the modules and the database are fetched.
+opened as a file, because the modules and the database are fetched. The
+security policy is in the page itself, so a local server enforces it exactly as
+the live site does.
 
 ## Rebuilding the database
 
@@ -105,6 +135,11 @@ that allows it by hash, so the two never drift apart. Every link in them is
 relative; the one absolute address, for canonical links and the sitemap, is
 `SITE_URL` at the top of the script.
 
+A material's or recipe's page keeps a reading width. The two A–Z lists take
+the app's full width instead, in as many columns as fit, each as wide as the
+longest name in its list so every name stays on one line; only on a phone does
+the longest recipe wrap.
+
 The service worker leaves these pages out of the offline cache. Offline, one
 that was never loaded redirects to its card in the app instead.
 
@@ -144,7 +179,10 @@ that domain:
       fb_remington/       FB Remington, the body face
       rdr2_lino_regular/  RDR Lino Regular, the heading face
     images/               the logo and the favicons cut from it, the cover
-                          art, and the station and quality icons
+                          art, and the station, tab, quality and coffee
+                          icons, each in a parchment and a leather
+                          colourway; images/icons/_source/ (not committed)
+                          holds them at full size, to cut them again
     database/
       personal_schema.sql the personal layer's DDL, and the four queries
     js/
@@ -158,9 +196,14 @@ that domain:
       nav.js              the address: which page, and which card is open
       prefs.js            localStorage, guarded: theme, location, last export
       views/materials.js  "Where to go if you have these items"
-      views/inventory.js  entry: pick a location, search, tap +/-
+      views/material-dialog.js
+                          a material, opened -- the one dialog Materials
+                          and Inventory both open
+      views/inventory.js  entry: pick a location, search, tap +/-, and
+                          the Transfer panel
       views/recipes.js    the catalogue, and the recipe dialog you craft in
-      views/settings.js   stats, backup and restore, reset, and the About tile
+      views/settings.js   stats, backup and restore, reset, About, and
+                          the Support tile
       views/ledger.js     the history, as a dialog opened from Settings
       views/guide.js      About and How to use, as dialogs from Settings
       views/toolbar.js    search, chips, sort and pager, shared by the two
@@ -170,6 +213,9 @@ that domain:
       main.js             boot and hash routing
       backup.js           backups: download, restore, and when one is due
       version.js          the release number and date, read by sw.js too
+      mode-toggle-early.js
+                          sets the mode switch before main.js has loaded
+      file-protocol.js    explains why the page will not run from file://
     vendor/               sql.js, vendored so nothing is fetched from a CDN
     sw.js                 offline cache
 
@@ -239,16 +285,20 @@ is per device — the same person reads this on a bright phone outdoors and a
 dark screen at night. `index.html` applies it inline before the first paint,
 after the stylesheet has loaded, so the choice never flashes and the script can
 read the theme's own `--bg` back out of the CSS instead of keeping a second
-copy of it.
+copy of it. It is the one inline script, allowed by its hash — see Privacy,
+enforced, before editing it.
 
 ### The lettering
 
-Two faces, and they divide the page between them. [Marston] by Neale
-Davidson sets the names — headings, tabs, buttons, labels. It is a caps-only
-display face, so it never sets prose. [FB Remington] by Fred Brutus sets
-everything else, which on these screens is mostly numbers: `3/3`, `2x Oregano`,
-`$14.95`. It is monospaced, so those columns line up on their own. Both are
-free, and both are vendored under `fonts/`.
+Three faces, in three tiers. [Marston] by Neale Davidson is the loudest and the
+rarest: the site's own name, a page's title and the tab bar. [RDR Lino Regular]
+sets everything that reads as a header or a control rather than prose — a
+card's name, a dialog's title, a section's caption, the switches and every
+button's label. Both are caps-only display faces, so neither ever sets prose.
+[FB Remington] by Fred Brutus sets everything else, which on these screens is
+mostly numbers: `3/3`, `2x Oregano`, `$14.95`. It is monospaced, so those
+columns line up on their own. All three are free, and all are vendored under
+`fonts/`.
 
 FB Remington ships one weight and no italic, so the browser synthesises both.
 That is the right trade here rather than a compromise: a real Remington had one
@@ -298,11 +348,42 @@ assigned earlier loses.
 
 [palette]: https://www.color-hex.com/color-palette/72703
 [Marston]: https://www.pixelsagas.com/
+[RDR Lino Regular]: http://www.onlinewebfonts.com
 [FB Remington]: https://www.dafont.com/fb-remington.font
 
 ## State
 
 All four screens work end to end.
+
+### General and Personalize
+
+A first visit opens in **General**: the reference data whole, useful before
+anything is logged, rather than every card saying *You need to go hunting!*
+over an empty ledger. **Personalize** folds in what you have. The first load
+that finds no mode stored writes one down — General for a new visitor;
+Personalize for a device that already holds data from before General was the
+default, so nobody is switched over unasked. The choice is also held in memory,
+so it still takes for the visit where storage is blocked.
+
+General hides every personal control on Materials and Recipes, which leaves
+Inventory as the one place a newcomer can log something. So the first save
+there, in General, brings an invitation into Personalize above the list —
+*Make the guide yours* — with *Not now*, which is remembered. Turning it on
+shows the one-time note on where the data lives, the first moment it applies.
+
+The masthead switch shows both words on a wide screen. On a phone it shows
+only the one in force, small above the track, and the Back up button beside it
+takes the same shape — its word above an outline the size of the track — with
+a rule between them. The switch's tooltip names the mode it is in, then what a
+tap does.
+
+### The page around it
+
+The cover art is shown full height on the first page of a visit, and settles
+to a strip from the first change of tab, for the rest of the visit: it has been
+seen, and the page under it is what you came for. Opening a card does not
+count as moving on. The footer sits at the foot of the window however little a
+page holds.
 
 ### Cards and dialogs
 
@@ -322,12 +403,19 @@ left outside could be neither seen nor pressed.
 ### Cross-links
 
 Every recipe named on the Materials page, and every material named on the
-Recipes page, is a link to the other one: tapping **Bear Batwing Chaps** on a
+Recipes page and on Inventory's rows, is a link: tapping **Bear Batwing Chaps** on a
 pelt's card lands on Recipes with that recipe already open, and tapping
 **Perfect Bear Pelt** inside it comes straight back. They are real anchors
 with real `href`s, so they can be middle-clicked, copied and tabbed to, and
 drawn as the text around them with the underline turned most of the way down:
 a card can carry a dozen, and a dozen loud links would be a page of blue.
+
+A material named on Inventory opens its card there, at `#/inventory/<id>`,
+rather than on Materials, so shutting it leaves you on your unsaved batch. It is
+the same dialog either way (`views/material-dialog.js`). On Inventory its counts
+include what is staged and not yet saved, as the rows do — its own steppers
+write at once, and a `-` read off the saved count alone could take a stock
+below zero once the batch lands.
 
 What makes that work is that an open dialog is part of the address.
 `#/recipes/<id>` is a page and a card, and every dialog in the app opens by
@@ -384,8 +472,10 @@ the three kinds of supply, which have no part; picking a category also
 switches to the tab its materials are on.
 
 A material used in campfire recipes gets a **Campfire** block on its card
-showing how many you hold in the Satchel, and a Campfire row in the dialog
-with the same `-` / `+ Add to Satchel` buttons. The Campfire never *needs*
+showing how many you hold in the Satchel, and a Campfire row in the dialog —
+*Use it in Campfire, have 3 / in your Satchel*, worded as something to do with
+your own count rather than as a vendor asking — with the same `-` /
+`+ Add to Satchel` buttons. The Campfire never *needs*
 anything, so it adds nothing to the verdict, and a material used only there
 is never Still needed or Done: it shows under All, always.
 
@@ -474,6 +564,19 @@ at the level of the commit. Staged edits survive a tab switch — a dot appears 
 the Inventory tab — and the browser warns before you close the page with any
 outstanding.
 
+A material a vendor wants can be handed over rather than counted twice. Its row
+carries a **Transfer to** button — an outlined pill with the icon of each place
+it can go, where the stepper is filled squares, so the two are told apart by
+shape before anyone reads them; on a phone it sits under the name, a row's width
+from the stepper. It opens a small panel (a sheet along the bottom on a phone)
+naming the material, where it is moving from and how many are there, with a
+labelled stepper per destination: from the Satchel to whichever of Pearson and
+the Trapper want it, or from a vendor back to the Satchel. The Fence gets none —
+it spends straight from the Satchel. A transfer stages like any other change and
+saves as two ledger rows, one out and one in, both `move`; sending some back
+before saving cancels against what is already staged rather than piling up. The
+button only shows while there is something to move or something on its way out.
+
 A plus is recorded as the thing that most likely caused it (`kill` for an animal
 material, `loot` otherwise); a minus as a `correction`, since that is nearly
 always what it is. The same rule (`store.reasonFor`) holds for the buttons in a
@@ -502,8 +605,12 @@ rather than quietly disappearing. It is read-only: the ledger is append-only by
 design, so a mis-entry is corrected with another row or undone from the toast at
 the time, not edited afterwards.
 
-Settings is also where the personal layer can be moved. Export writes the whole
-ledger as a JSON file — the balances are derived from it, so exporting only the
+Settings is also where the personal layer can be moved. **Take it with you**
+says when this device was last backed up and how many changes have been made
+since. Export writes the whole ledger as a JSON file, named for the moment it
+was taken on the reader's own clock — `rdr2_inventory_2026-10-05_18-36-09.json`,
+the time hyphenated since Windows refuses a colon, and to the second so two
+backups on one day never overwrite each other — the balances are derived from it, so exporting only the
 balances would lose the history behind "8 gathered - 1 crafted". A
 copy-to-clipboard button sits beside it, because `<a download>` is unreliable on
 iOS, and a paste box sits beside the file picker for the same reason.
@@ -515,3 +622,9 @@ is inspected first — a `reason` the schema's CHECK would refuse is caught befo
 the transaction rather than halfway through it, and rows naming materials this
 build does not know are reported rather than swallowed, since the ledger stores
 slugs with no foreign key.
+
+**Support the guide**, beside About, is the one tile lit in the accent and
+holds the one filled button on the page: *Buy me a coffee*, a plain link to
+buymeacoffee.com in a new tab. Not that site's widget or button image — those
+load from its servers, which the policy blocks and the privacy promise rules
+out.
