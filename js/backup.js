@@ -86,10 +86,22 @@ export function status() {
 // out and back in
 // ------------------------------------------------------------
 
-/** Save everything as a dated file. */
+/**
+ * "2026-10-05_18-36-09": when, to the second, on the reader's own clock
+ * -- UTC would date an evening's backup tomorrow in the Americas.  The
+ * time is hyphenated because Windows will not have a colon in a file
+ * name, and to the second so two backups on one day sort, and never
+ * overwrite, each other.
+ */
+function fileStamp(d) {
+  const two = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`
+       + `_${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}`;
+}
+
+/** Save everything as a file named for the moment it was taken. */
 export function download() {
-  const stamp = new Date().toISOString().slice(0, 10);
-  const name = `rdr2-inventory-${stamp}.json`;
+  const name = `rdr2_inventory_${fileStamp(new Date())}.json`;
   const blob = new Blob([store.exportJSON()], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
 
