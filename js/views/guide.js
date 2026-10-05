@@ -26,7 +26,7 @@ const ABOUT = `
   ${detailSection('Private by design', `
     <div class="prose">
       <p>There is no account and no server behind it. The recipes ship with
-        the page, and everything you log stays in this browser -- nothing is
+        the page, and everything you log stays in this browser - nothing is
         uploaded, ever. Once it has loaded it works without a signal, and
         added to your home screen it opens like an app.</p>
       <p>The flip side is that your data lives only here. Use
@@ -57,11 +57,11 @@ const HOW_TO = `
 
   ${detailSection('2. Find what you need', `
     <div class="prose">
-      <p><strong>Materials</strong> lists everything there is to collect --
-        animal parts, plants and supplies -- with the recipes each one goes
+      <p><strong>Materials</strong> lists everything there is to collect -
+        animal parts, plants and supplies - with the recipes each one goes
         into and the vendors who still want it. Filter by vendor, or by
         what is still needed. Open a card to see where it comes from, and
-        which weapon -- or for a fish, which bait -- brings it in perfect.</p>
+        which weapon - or for a fish, which bait - brings it in perfect.</p>
     </div>`)}
 
   ${detailSection('3. Log what you gather', `
@@ -74,7 +74,7 @@ const HOW_TO = `
           Trapper, step the counts up or down, then <strong>Save</strong>
           them as one batch. The smaller counter on a row, marked with a
           vendor's icon, hands items from your Satchel to the Trapper or
-          Pearson -- and on their pages, back again.</li>
+          Pearson - and on their pages, back again.</li>
       </ul>
       <p>Every change offers <strong>Undo</strong> for a few seconds.</p>
     </div>`)}
@@ -84,7 +84,7 @@ const HOW_TO = `
       <p>On <strong>Recipes</strong>, <strong>Ready to craft</strong> shows
         what you can make right now. Open a recipe and press
         <strong>Craft</strong>: its ingredients are taken from that vendor's
-        stock -- the Fence draws on your Satchel -- and it is marked crafted.
+        stock - the Fence draws on your Satchel - and it is marked crafted.
         <strong>Skip</strong> retires a recipe you do not want, and
         <strong>Put back</strong> undoes a craft.</p>
       <p>The <strong>Campfire</strong> tab is for looking up: those recipes

@@ -99,7 +99,7 @@ export function mount(root) {
           you have against what a vendor wants, recipes can be crafted, and
           anything crafted or skipped drops out of the way.<br>
           <strong>General</strong> ignores all of it and shows the reference
-          data whole -- every recipe, every material, every quantity.</p>
+          data whole - every recipe, every material, every quantity.</p>
         <div class="panel-actions">
           <button type="button" class="ghost-btn" id="s-mode"></button>
         </div>
@@ -119,7 +119,7 @@ export function mount(root) {
       <section class="panel">
         <h3>Take it with you</h3>
         <p class="note">Everything you have logged, as one text file. Keep it
-          somewhere safe -- clearing this site's data erases the original.</p>
+          somewhere safe - clearing this site's data erases the original.</p>
         <div class="panel-actions">
           <button type="button" class="more-btn" id="s-download">Download</button>
           <button type="button" class="ghost-btn" id="s-copy">Copy to clipboard</button>
@@ -157,7 +157,7 @@ export function mount(root) {
       <section class="panel danger">
         <h3>Erase everything</h3>
         <p class="note">Removes every ledger entry and every recipe you have
-          marked. The reference data is untouched. This cannot be undone --
+          marked. The reference data is untouched. This cannot be undone -
           download a copy first.</p>
         <div class="panel-actions" id="s-danger">
           <button type="button" class="ghost-btn" id="s-reset">Erase my data</button>
@@ -421,7 +421,7 @@ export function mount(root) {
     target.textContent = navigator.serviceWorker.controller
       ? `Cached and ready to use without a signal${
           mine.length ? ` (${mine[0]})` : ''}.`
-      : 'Not cached yet -- reload once while online.';
+      : 'Not cached yet - reload once while online.';
   }
 
   async function reportKept() {
