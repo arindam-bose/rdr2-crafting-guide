@@ -21,10 +21,9 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { materialCard, materialDetail, empty, esc, placeName, plural, pager,
-         stationIcon, PAGE } from '../render.js';
-import { toast } from '../toast.js';
-import { detailDialog, opensCard } from '../dialog.js';
+import { materialCard, empty, esc, plural, pager, stationIcon, PAGE } from '../render.js';
+import { opensCard } from '../dialog.js';
+import { group, materialDialog } from './material-dialog.js';
 import * as nav from '../nav.js';
 import * as toolbar from './toolbar.js';
 
@@ -174,37 +173,9 @@ export function mount(root) {
   // Looked up afresh from the whole list, not the visible page: a
   // material you just finished with may have filtered itself out of
   // the gallery, and the dialog should stay put while you look at it.
-  const detail = detailDialog({
+  const detail = materialDialog({
     route: 'materials',
-
-    render(id) {
-      const card = lastCards.find((m) => m.ingredient_id === id);
-      return card ? materialDetail(card, { personal: store.isPersonal() }) : null;
-    },
-
-    // One tap, one ledger row, straight away: the stepper on Inventory
-    // stages a batch, but here you are logging one thing and looking
-    // right at the result, so a save step would only be in the way.
-    async onClick(event, id) {
-      const button = event.target.closest('[data-delta]');
-      const card = lastCards.find((m) => m.ingredient_id === id);
-      const d = card?.demands.find(
-        (x) => x.location_id === button?.closest('[data-location]').dataset.location);
-      if (!button || !d) return;
-
-      const delta = Number(button.dataset.delta);
-      const written = await store.record({
-        ingredient_id: id,
-        location_id: d.location_id,
-        delta,
-        reason: store.reasonFor(card.source_type, delta),
-      });
-
-      const place = placeName(d.location_id, d.location);
-      toast(delta > 0 ? `Added one ${card.material} to ${place}`
-                      : `Took one ${card.material} from ${place}`,
-            { label: 'Undo', run: () => store.undo(written.id) });
-    },
+    find: (id) => lastCards.find((m) => m.ingredient_id === id),
   });
 
   toolbar.wireTabs(groupTabs, 'group', state, refilter);
@@ -252,51 +223,6 @@ function emptyMessage(state, personal, counts) {
   return 'Every recipe is done. Go buy a hat.';
 }
 
-// ------------------------------------------------------------
-// The demand query returns one row per (material, station), the
-// usage query one row per (material, recipe), and the animals query
-// one per (material, animal).  Cards are per material, so fold all
-// three in.
-// ------------------------------------------------------------
-function group(rows, usage, animals) {
-  const byIngredient = new Map();
-
-  for (const row of rows) {
-    let card = byIngredient.get(row.ingredient_id);
-    if (!card) {
-      card = {
-        ingredient_id: row.ingredient_id,
-        material: row.material,
-        quality: row.quality,
-        source_type: row.source_type,
-        body_part: row.body_part,
-        animals: [],
-        demands: [],
-        usage: [],
-      };
-      byIngredient.set(row.ingredient_id, card);
-    }
-    card.demands.push({
-      station_id: row.station_id,
-      station: row.station,
-      color: row.color,
-      campfire: Boolean(row.campfire),
-      location_id: row.location_id,
-      location: row.location,
-      needed: row.needed,
-      have: row.have,
-    });
-  }
-
-  for (const u of usage) {
-    byIngredient.get(u.ingredient_id)?.usage.push(u);
-  }
-  for (const a of animals) {
-    byIngredient.get(a.ingredient_id)?.animals.push(a);
-  }
-
-  return [...byIngredient.values()];
-}
 
 // Outstanding: some station still wants more than you are holding.
 const outstanding = (card) =>

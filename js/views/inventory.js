@@ -39,6 +39,8 @@ import { esc, empty, heldAt, nameWith, plural, qualityStars, icon } from '../ren
 import * as toolbar from './toolbar.js';
 import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
+import * as nav from '../nav.js';
+import { materialDialog } from './material-dialog.js';
 
 const LOCATION_KEY = 'rdr2:location';
 const OFFER_DISMISSED = 'rdr2:personalize-offer-dismissed';
@@ -132,6 +134,12 @@ export function mount(root) {
   const savebar = root.querySelector('#i-savebar');
   const pending = root.querySelector('#i-pending');
   const movePop = root.querySelector('#i-move');
+
+  // A row's name opens the material's own card, here on Inventory --
+  // what it goes into, who wants it -- the same dialog Materials
+  // opens.  Under this page's address, so shutting it leaves you on
+  // your batch rather than on another tab.
+  const detail = materialDialog({ route: 'inventory' });
 
   // The row whose Transfer panel is open, by what stageMove() needs, or
   // null.  The rows are rebuilt on every change, so the panel keeps
@@ -444,6 +452,8 @@ export function mount(root) {
 
     if (moving) renderMove();
 
+    detail.refresh();
+
     savebar.hidden = staged.size === 0;
     pending.textContent = `${plural(staged.size, 'unsaved change')}`;
 
@@ -487,7 +497,7 @@ export function mount(root) {
   }
 
   update();
-  return { update, destroy() {} };
+  return { update, focus: detail.focus, destroy: detail.destroy };
 }
 
 /**
@@ -600,7 +610,8 @@ function row(m, location, wants, pendingIdx) {
          data-name="${esc(m.name)}" data-source="${esc(m.source_type)}"
          data-qty="${m.qty}"
          data-title="${esc(nameWith(m.name, qualityStars(m.quality)))}">
-      <span class="name">${nameWith(m.name, qualityStars(m.quality))}${history(m)}</span>
+      <span class="name"><a class="xlink" href="${esc(nav.href('inventory', m.ingredient_id))}"
+        >${nameWith(m.name, qualityStars(m.quality))}</a>${history(m)}</span>
       <span class="controls">
         ${moveButton(m, location, wants, shown)}
         <span class="stepper">

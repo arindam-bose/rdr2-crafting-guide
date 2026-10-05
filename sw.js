@@ -61,6 +61,7 @@ const SHELL = [
   'js/theme.js',
   'js/prefs.js',
   'js/views/materials.js',
+  'js/views/material-dialog.js',
   'js/views/inventory.js',
   'js/views/recipes.js',
   'js/views/settings.js',
