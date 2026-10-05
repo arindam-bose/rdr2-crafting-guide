@@ -39,6 +39,7 @@ const tabs = document.querySelector('.tabs');
 const modeToggle = document.getElementById('mode-toggle');
 const backupBtn = document.getElementById('backup-btn');
 const firstNote = document.getElementById('first-note');
+const cover = document.querySelector('.cover');
 
 const FIRST_NOTE_SEEN = 'rdr2:first-note-seen';
 
@@ -100,6 +101,9 @@ function route() {
 function show({ name, id }) {
   if (name !== currentName) {
     current?.destroy?.();
+    // The cover art in full on the first page of a visit, and as a
+    // strip from the first change of tab on.
+    if (currentName !== null) cover.classList.add('compact');
     currentName = name;
 
     for (const tab of tabs.querySelectorAll('a')) {
