@@ -21,6 +21,13 @@ export function get(key, fallback = null) {
   }
 }
 
+/** Forget `key`. */
+export function remove(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch { /* nothing stored to forget */ }
+}
+
 /** Store `value`.  Losing a preference is not worth failing a write for. */
 export function set(key, value) {
   try {

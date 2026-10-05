@@ -12,7 +12,7 @@ import * as nav from './nav.js';
 import * as prefs from './prefs.js';
 import * as store from './store.js';
 import * as theme from './theme.js';
-import { errorBox } from './render.js';
+import { errorBox, plural } from './render.js';
 import { toast } from './toast.js';
 import * as materials from './views/materials.js';
 import * as inventory from './views/inventory.js';
@@ -42,6 +42,10 @@ const firstNote = document.getElementById('first-note');
 
 const FIRST_NOTE_SEEN = 'rdr2:first-note-seen';
 
+// Held here as well as stored, so "Got it" still works for the rest of
+// the visit in a browser that will not keep the preference.
+let firstNoteDismissed = false;
+
 let current = null;     // the mounted view's { update, destroy }
 let currentName = null;
 
@@ -53,7 +57,8 @@ let currentName = null;
 function paintMode() {
   const personal = store.isPersonal();
   modeToggle.setAttribute('aria-checked', String(personal));
-  firstNote.hidden = !personal || prefs.get(FIRST_NOTE_SEEN) !== null;
+  firstNote.hidden = !personal || firstNoteDismissed
+                   || prefs.get(FIRST_NOTE_SEEN) !== null;
 }
 
 /**
@@ -70,7 +75,7 @@ function paintBackup() {
   else backupBtn.dataset.due = level;
 
   const label = count
-    ? `Back up: ${count} ${count === 1 ? 'change' : 'changes'} not in a backup yet`
+    ? `Back up: ${plural(count, 'change')} not in a backup yet`
     : 'Back up: everything is in your last backup';
   backupBtn.title = label;
   backupBtn.setAttribute('aria-label', label);
@@ -136,6 +141,7 @@ async function start() {
     paintMode();                      // the subscription is not up yet
   });
   document.getElementById('first-note-ok').addEventListener('click', () => {
+    firstNoteDismissed = true;
     prefs.set(FIRST_NOTE_SEEN, new Date().toISOString());
     paintMode();
   });

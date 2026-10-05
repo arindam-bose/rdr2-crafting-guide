@@ -17,7 +17,8 @@
 
 import * as store from './store.js';
 import * as prefs from './prefs.js';
-import { toast } from './toast.js';
+import { plural } from './render.js';
+import { toast, showing } from './toast.js';
 
 const LAST_EXPORT = 'rdr2:last-export';
 
@@ -41,7 +42,11 @@ const OVERDUE = { changes: 100, days: 30 };
 
 const listeners = new Set();
 
-/** Call `fn` after every backup or restore.  Returns an unsubscribe. */
+/**
+ * Call `fn` after every backup taken.  A restore is a store change, so
+ * the store's own listeners already hear about that one.  Returns an
+ * unsubscribe.
+ */
 export function subscribe(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);
@@ -92,7 +97,9 @@ export function download() {
   link.href = url;
   link.download = name;
   link.click();
-  URL.revokeObjectURL(url);
+  // Not revoked in the same tick: some browsers start the download a
+  // moment after the click, and would find the file already gone.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 
   saved();
   toast(`Saved ${name}`);
@@ -115,11 +122,22 @@ export async function copy() {
 /**
  * Replace everything with a backup's contents.  What is here now is
  * then exactly what that file holds, so it counts as backed up.
+ *
+ * Stamped first, and quietly: the import's own change notice already
+ * repaints everything that shows the backup's state, so telling this
+ * module's listeners as well would only paint it all twice.  A failed
+ * import puts the old stamp back.
  */
 export async function restore(text) {
-  const found = await store.importJSON(text);
-  saved();
-  return found;
+  const before = prefs.get(LAST_EXPORT);
+  prefs.set(LAST_EXPORT, new Date().toISOString());
+  try {
+    return await store.importJSON(text);
+  } catch (err) {
+    if (before === null) prefs.remove(LAST_EXPORT);
+    else prefs.set(LAST_EXPORT, before);
+    throw err;
+  }
 }
 
 // ------------------------------------------------------------
@@ -128,11 +146,13 @@ export async function restore(text) {
 
 /**
  * Open the visit with a word about an overdue backup -- once a visit,
- * and only in Personalize, where the data is.  Called at startup and
- * never after a write, so it cannot land on top of an Undo.
+ * and only in Personalize, where the data is.  Called once, shortly
+ * after startup, and held back if a toast is already up then: a write
+ * made in that first moment has an Undo showing, and this must not
+ * take its place.
  */
 export function remind() {
-  if (!store.isPersonal()) return;
+  if (!store.isPersonal() || showing()) return;
 
   const { count, level } = status();
   if (level !== 'overdue') return;
@@ -142,7 +162,7 @@ export function remind() {
     sessionStorage.setItem(REMINDED, '1');
   } catch { /* no storage: remind every load rather than never */ }
 
-  toast(`${count} ${count === 1 ? 'change is' : 'changes are'} not in any backup yet.`,
+  toast(`${plural(count, 'change')} ${count === 1 ? 'is' : 'are'} not in any backup yet.`,
         { label: 'Back up', run: download, duration: 12000 });
 }
 

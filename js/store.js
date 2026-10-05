@@ -230,13 +230,15 @@ function referenceBuild() {
 }
 
 const REASONS = ['kill', 'loot', 'buy', 'craft', 'move', 'correction'];
+const TARGET_STATES = ['wanted', 'done', 'skipped'];
 
 /**
  * Read an export without touching anything, and say what is in it.
  *
- * Two things are worth catching before the transaction rather than
- * halfway through it: a `reason` the schema's CHECK will refuse,
- * and rows naming materials this build has never heard of.  The
+ * Three things are worth catching before the transaction rather than
+ * halfway through it: a row missing a column the schema requires, a
+ * `reason` its CHECK will refuse, and rows naming materials this
+ * build has never heard of.  The
  * ledger stores slugs with no foreign key, so if a name is
  * corrected upstream the slug moves and those rows would import
  * silently and then never appear anywhere.
@@ -265,12 +267,26 @@ export function inspectImport(text) {
   const problems = [];
   const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-  const badReason = ledger.filter((r) => !REASONS.includes(r.reason)).length;
+  // A row missing a column the schema requires would only fail once
+  // the import is under way -- after the stored rows were cleared and
+  // the bad ones written in their place, where they would break every
+  // load after.  So the shape is checked here, before anything moves.
+  const filled = (v) => typeof v === 'string' && v.length > 0;
+  const rowsOf = (list) => list.filter((r) => r && typeof r === 'object');
+  const malformed =
+    ledger.filter((r) => !Number.isInteger(r?.id) || !filled(r.ts) || !filled(r.ingredient_id)
+                      || !filled(r.location_id) || !Number.isInteger(r.delta)).length
+    + targets.filter((t) => !filled(t?.recipe_id) || !TARGET_STATES.includes(t.state)
+                         || !filled(t.updated_at)).length;
+  if (malformed) problems.push(count(malformed, 'row is', 'rows are')
+    + ' missing something the database requires');
+
+  const badReason = ledger.filter((r) => !REASONS.includes(r?.reason)).length;
   if (badReason) problems.push(count(badReason, 'entry has', 'entries have')
     + ' a reason this version does not accept');
 
   const unknownIngredient =
-    new Set(ledger.filter((r) => !ingredients.has(r.ingredient_id))
+    new Set(rowsOf(ledger).filter((r) => !ingredients.has(r.ingredient_id))
                   .map((r) => r.ingredient_id));
   if (unknownIngredient.size) {
     problems.push(count(unknownIngredient.size, 'material is', 'materials are')
@@ -278,7 +294,7 @@ export function inspectImport(text) {
   }
 
   const unknownLocation =
-    new Set(ledger.filter((r) => !locations.has(r.location_id))
+    new Set(rowsOf(ledger).filter((r) => !locations.has(r.location_id))
                   .map((r) => r.location_id));
   if (unknownLocation.size) {
     problems.push(count(unknownLocation.size, 'location is', 'locations are')
@@ -286,7 +302,7 @@ export function inspectImport(text) {
   }
 
   const unknownRecipe =
-    new Set(targets.filter((t) => !recipes.has(t.recipe_id))
+    new Set(rowsOf(targets).filter((t) => !recipes.has(t.recipe_id))
                    .map((t) => t.recipe_id));
   if (unknownRecipe.size) {
     problems.push(count(unknownRecipe.size, 'recipe is', 'recipes are')
@@ -294,8 +310,8 @@ export function inspectImport(text) {
   }
 
   return {
-    ok: badReason === 0,
-    fatal: badReason ? 'Some entries would be rejected by the database.' : null,
+    ok: badReason === 0 && malformed === 0,
+    fatal: badReason || malformed ? 'Some entries would be rejected by the database.' : null,
     exported_at: data.exported_at ?? null,
     reference_build: data.reference_build ?? null,
     ledger: ledger.length,
@@ -394,15 +410,16 @@ export function stats() {
       WHERE      r.repeatable = 0
       GROUP BY   st.id
       ORDER BY   made DESC`),
-    referenceBuild: referenceBuild(),
   };
 }
 
 /**
  * What has been written since `since` (a moment as an ISO string, or
  * null for "ever"): how many ledger rows and recipe marks are newer,
- * and the oldest of them.  An undo deletes its row, so taking a change
- * back takes it off this count too.
+ * and the oldest of them.  Undoing a logged entry deletes its row, so
+ * that comes off the count; undoing a Skip or a craft rewrites the
+ * recipe's mark instead, so that still counts as one change -- erring
+ * towards a backup, never away from one.
  *
  * SQLite stamps rows with datetime('now') -- UTC, "YYYY-MM-DD HH:MM:SS"
  * -- so the ISO string is cut to that same shape and the two compare
@@ -423,10 +440,14 @@ export function changesSince(since) {
   };
 }
 
-/** True when there is nothing personal here at all -- nothing to lose. */
+/**
+ * True when there is nothing personal here at all -- nothing to lose.
+ * A recipe marked 'wanted' is what every recipe is with no mark at all
+ * (a Skip undone leaves one behind), so it does not count.
+ */
 export function isEmpty() {
   return !db.one('SELECT 1 AS n FROM ledger LIMIT 1')
-      && !db.one('SELECT 1 AS n FROM targets LIMIT 1');
+      && !db.one("SELECT 1 AS n FROM targets WHERE state <> 'wanted' LIMIT 1");
 }
 
 /** Throw the personal layer away. */

@@ -57,6 +57,11 @@ export function toast(message, action = null) {
   timer = setTimeout(dismiss, action?.duration ?? DURATION);
 }
 
+/** Whether a toast is up -- an Undo still on offer, say. */
+export function showing() {
+  return Boolean(element && !element.hidden);
+}
+
 // Back to the page when that dialog closes, still showing, so an Undo
 // offered inside it stays in reach.  `close` does not bubble; capture
 // sees it anyway.

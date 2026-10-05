@@ -3,7 +3,8 @@
 //
 // The whole personal layer is a browser's worth of rows in
 // IndexedDB: private, and gone if you clear site data.  Export
-// is therefore not a nicety, it is the backup.
+// is therefore not a nicety, it is the backup -- taken here or
+// from the masthead's Back up button, both through backup.js.
 //
 // Import replaces rather than merges.  A ledger id counts up per
 // device, so two devices' rows cannot be told apart; merging them
@@ -301,16 +302,21 @@ export function mount(root) {
       pending = null;
       preview.innerHTML = '';
     } else if (event.target.id === 's-confirm' && pending) {
-      const found = await backup.restore(pending);
+      let found;
+      try {
+        found = await backup.restore(pending);
+      } catch (err) {
+        console.error(err);
+        toast(`That backup could not be loaded: ${err?.message ?? err}`);
+        return;
+      }
       pending = null;
       preview.innerHTML = '';
       $('#s-paste').value = '';
       showPaste(false);
-      toast(`Loaded ${found.ledger} ${found.ledger === 1 ? 'entry' : 'entries'}.`);
+      toast(`Restored ${found.ledger} ${found.ledger === 1 ? 'entry' : 'entries'}.`);
     }
   });
-
-  // ---- mode, offline, erase -------------------------------------------
 
   // ---- appearance -----------------------------------------------------
 
@@ -331,6 +337,8 @@ export function mount(root) {
   });
 
   paintThemeButtons();
+
+  // ---- mode, offline, erase -------------------------------------------
 
   // The masthead switch repaints itself off the same store change.
   $('#s-mode').addEventListener('click', () => store.setPersonal(!store.isPersonal()));
@@ -390,7 +398,7 @@ export function mount(root) {
     $('#s-last').textContent = (last
       ? `Last backed up ${last.toLocaleString()}.`
       : 'Never backed up from this device.')
-      + (count ? ` ${count} ${count === 1 ? 'change' : 'changes'} since.` : '');
+      + (count ? ` ${plural(count, 'change')} since.` : '');
 
     $('#s-mode').textContent = store.isPersonal()
       ? 'Switch to General' : 'Switch to Personalize';

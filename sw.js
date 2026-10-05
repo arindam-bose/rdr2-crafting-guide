@@ -3,9 +3,10 @@
 //
 // Two strategies, because the files divide cleanly in two:
 //
-//   The wasm runtime (650 KB) and the database (210 KB) are
-//   immutable — a rebuild is a new CACHE — so they are served
-//   from the cache and only fetched once.
+//   The wasm runtime (650 KB), the database (210 KB), the fonts
+//   and the artwork are immutable — replacing any of them is a
+//   new release in js/version.js, and so a new CACHE — so they
+//   are served from the cache and only fetched once.
 //
 //   Everything else is app code, served network-first and
 //   falling back to the cache when there is no signal.  That

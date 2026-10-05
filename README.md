@@ -113,7 +113,7 @@ without a bump.
       views/materials.js  "Where to go if you have these items"
       views/inventory.js  entry: pick a location, search, tap +/-
       views/recipes.js    the catalogue, and the recipe dialog you craft in
-      views/settings.js   stats, export, import, reset, and what is stored
+      views/settings.js   stats, backup and restore, reset, and the About tile
       views/ledger.js     the history, as a dialog opened from Settings
       views/guide.js      About and How to use, as dialogs from Settings
       views/toolbar.js    search, chips, sort and pager, shared by the two

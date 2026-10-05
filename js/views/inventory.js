@@ -152,9 +152,9 @@ export function mount(root) {
 
   // The restore offer's file input is rebuilt with the sections, so it
   // is listened for here, the same way the steppers are.  There is
-  // nothing on the device to lose -- that is the only time the offer
-  // shows -- so there is no confirming step: a file that reads cleanly
-  // is loaded, and one that does not says why.
+  // nothing on the device to lose -- the offer only shows with nothing
+  // logged and nothing staged -- so there is no confirming step: a file
+  // that reads cleanly is loaded, and one that does not says why.
   sections.addEventListener('change', async (event) => {
     if (event.target.id !== 'i-restore') return;
     const file = event.target.files?.[0];
@@ -167,7 +167,13 @@ export function mount(root) {
       toast(found.fatal);
       return;
     }
-    await backup.restore(text);
+    try {
+      await backup.restore(text);
+    } catch (err) {
+      console.error(err);
+      toast(`That backup could not be loaded: ${err?.message ?? err}`);
+      return;
+    }
     toast(`Restored ${found.ledger} ${found.ledger === 1 ? 'entry' : 'entries'}.`
       + (found.problems.length ? ` Note: ${found.problems.join('; ')}.` : ''));
   });
@@ -276,7 +282,7 @@ export function mount(root) {
     } else {
       // What you are holding here first, then the quick way back to
       // whatever you were logging lately.
-      sections.innerHTML = (store.isEmpty() ? restoreOffer() : '')
+      sections.innerHTML = (store.isEmpty() && !staged.size ? restoreOffer() : '')
         + section(at, held(state.location), `Nothing ${lower(at)} yet.`)
         + section('Recently Touched', recent(state.location), '');
     }
