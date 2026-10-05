@@ -108,10 +108,25 @@ relative; the one absolute address, for canonical links and the sitemap, is
 The service worker leaves these pages out of the offline cache. Offline, one
 that was never loaded redirects to its card in the app instead.
 
-Search engines read `robots.txt` only at the root of a domain, so this site
-cannot point them at its sitemap itself: submit
-`https://arindam-bose.github.io/adamslab/rdr2-crafting-guide/sitemap.xml` in
-Google Search Console under a URL-prefix property for that address.
+## Hosting
+
+The site is served from a folder of the user-site repository,
+`arindam-bose/arindam-bose.github.io`, at `/adamslab/rdr2-crafting-guide/`,
+beside the other tools under `adamslab/`. Three things follow from sharing
+that domain:
+
+- Search engines read `robots.txt` only at the root of a domain, so the
+  sitemap is announced from the user-site repository's own `robots.txt`
+  (`Sitemap: https://arindam-bose.github.io/adamslab/rdr2-crafting-guide/sitemap.xml`),
+  one line per tool, and submitted in Google Search Console under a URL-prefix
+  property for `https://arindam-bose.github.io/`.
+- GitHub Pages uses one `404.html`, at the root of that repository, for every
+  missing address on the domain -- this folder cannot have its own.
+- Every tool shares one browser origin, so one localStorage, one IndexedDB and
+  one cache storage. Everything this one keeps is named for it -- `rdr2:` keys,
+  the `rdr2-personal` database, `rdr2-crafting-v*` caches -- and its service
+  worker deletes only its own old caches, never another tool's. A new tool
+  under `adamslab/` needs the same care.
 
 ## Layout
 

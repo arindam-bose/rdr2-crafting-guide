@@ -80,7 +80,13 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const names = await caches.keys();
-    await Promise.all(names.filter((n) => n !== CACHE).map((n) => caches.delete(n)));
+    // Only this tool's own old releases.  Every tool served from
+    // arindam-bose.github.io shares one origin, and so one cache
+    // storage: clearing everything that is not CACHE would throw away
+    // the other tools' offline copies each time this one updated.
+    await Promise.all(names
+      .filter((n) => n.startsWith('rdr2-crafting-v') && n !== CACHE)
+      .map((n) => caches.delete(n)));
     await self.clients.claim();
 
     for (const client of await self.clients.matchAll()) {
