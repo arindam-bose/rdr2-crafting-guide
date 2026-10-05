@@ -10,10 +10,7 @@ data/*.building
 data/rdr2_bkp.db
 
 # The cover art at full size (PNG, a few MB).  The page loads the two
-# JPEGs cut from each; these are kept only to cut them again.
-images/cover-art.png
-images/arthur-crafts-oldphoto.png
-images/pixel-cowboy-campfire-at-dusk.png
+# JPEGs cut from it; this is kept only to cut them again.
 images/pixel-cowboy-campfire-at-dusk-cropped.png
 
 # The logo at full size, on its black square.  The icons in images/
