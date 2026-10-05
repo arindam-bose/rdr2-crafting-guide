@@ -228,7 +228,8 @@ body {
    lines — the game above, what this is below.  Two lines because
    the whole name is 36 characters and a phone's top bar is not,
    and because it stacks to the logo's height for free. */
-.topbar h1 {
+.topbar h1,
+.topbar .brand {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -406,7 +407,8 @@ body {
   border-top: 2px solid transparent;
 }
 
-.tabs a[aria-current="page"] {
+.tabs a[aria-current="page"],
+.tabs a.here {
   color: var(--ink);
   border-top-color: var(--accent-text);
   background: var(--surface-2);
@@ -465,7 +467,8 @@ body {
     border-top: 0;
     border-bottom: 2px solid transparent;
   }
-  .tabs a[aria-current="page"] {
+  .tabs a[aria-current="page"],
+  .tabs a.here {
     border-bottom-color: var(--accent-text);
     background: transparent;
   }
@@ -2146,6 +2149,7 @@ ul.buff li::before {
 }
 
 .more-btn {
+  display: inline-block;
   padding: 9px 16px;
   font: inherit;
   font-size: .86rem;
@@ -2166,6 +2170,72 @@ ul.buff li::before {
   border-color: var(--danger);
 }
 .danger-btn:hover { background: var(--rdr-blood); border-color: var(--rdr-blood); }
+
+/* ---------- the search pages ----------
+
+   materials/<slug>/ and recipes/<slug>/, written by
+   scripts/build_pages.py: a material's or a recipe's dialog laid out
+   as a page of its own, for whoever arrives from a search.  The same
+   pieces as the dialog -- the head, the facts, the boxed lists -- in
+   a column of reading width. */
+
+.topbar .brand { color: inherit; text-decoration: none; }
+
+.static-page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.crumbs {
+  margin-bottom: 14px;
+  font-size: .8rem;
+  color: var(--ink-faint);
+}
+.crumbs a { color: var(--ink-dim); }
+.crumbs [aria-current] { color: var(--ink); }
+
+.static-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 20px 20px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.static-detail .detail-head h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  line-height: 1.15;
+  color: var(--ink-name);
+  letter-spacing: .05em;
+}
+.static-detail .detail-head h1 .stars { margin-left: .35em; }
+.static-detail .hint { margin: 0; font-size: .92rem; }
+
+/* The sentence a search result quotes, said first on the page too. */
+.static-intro {
+  margin: 0;
+  font-size: .95rem;
+  line-height: 1.6;
+  color: var(--ink-dim);
+}
+
+.static-cta { margin: 20px 0 0; }
+.static-cta .more-btn { text-decoration: none; }
+
+/* The A-Z lists: as many columns as fit, a name to a line. */
+.az-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  columns: 3 200px;
+  column-gap: 24px;
+  font-size: .9rem;
+}
+.az-list li { padding: 3px 0; break-inside: avoid; }
+.detail-section .list-label .count { margin-left: 6px; color: var(--ink-faint); }
 
 /* ---------- footer ---------- */
 
@@ -2188,6 +2258,11 @@ ul.buff li::before {
 
 /* The face carries no bold, so a name is lifted by colour instead. */
 .footer .by { color: var(--ink-dim); }
+
+/* Browse every material / every recipe: drawn like the page's other
+   links, in the footer's own quiet ink rather than the browser's blue. */
+.footer a { color: var(--ink-dim); text-underline-offset: 2px; }
+.footer a:hover { color: var(--ink); }
 
 /* No typewriter had a (c) key -- you typed the three characters.  This one
    borrows the glyph, and drops back a little so it does not outweigh the
@@ -2274,6 +2349,7 @@ ul.buff li::before {
    rarest on screen. */
 h1, h2,
 .page-title,
+.topbar .brand,
 .tabs a {
   font-family: var(--font-display);
   font-weight: 400;

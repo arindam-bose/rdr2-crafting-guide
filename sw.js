@@ -96,6 +96,17 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
+  // The search pages -- one per material and recipe, written by
+  // scripts/build_pages.py -- are for whoever arrives from a search,
+  // not the app, so they are fetched fresh and never kept: the offline
+  // cache stays the size of the app.  Offline, a reader is sent to the
+  // same card in the app instead, which works without a signal.
+  const page = request.mode === 'navigate' && searchPage(url);
+  if (page) {
+    event.respondWith(fetch(request).catch(() => Response.redirect(page, 302)));
+    return;
+  }
+
   // Decoded, since a request spells a space as %20 and the list above
   // spells it as a space: RDR Lino's file name has two.
   const path = decodeURIComponent(url.pathname).replace(/^\//, '');
@@ -103,6 +114,26 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(immutable ? cacheFirst(request) : networkFirst(request));
 });
+
+/**
+ * Where in the app a search page's address points, or null if it is not
+ * one: materials/perfect-beaver-pelt/ is #/materials/ing-perfect-beaver-pelt,
+ * and the A-Z lists, materials/ and recipes/, are the tabs themselves.
+ * The slug is the id without its prefix, which is what lets this work
+ * without a list of them.
+ */
+function searchPage(url) {
+  const scope = new URL(self.registration.scope);
+  if (!url.pathname.startsWith(scope.pathname)) return null;
+
+  const rest = url.pathname.slice(scope.pathname.length);
+  const match = rest.match(/^(materials|recipes)\/(?:([a-z0-9-]+)\/)?(?:index\.html)?$/);
+  if (!match) return null;
+
+  const [, route, slug] = match;
+  const prefix = route === 'materials' ? 'ing-' : 'recipe-';
+  return new URL(`./#/${route}${slug ? `/${prefix}${slug}` : ''}`, scope).href;
+}
 
 async function cacheFirst(request) {
   const cached = await caches.match(request);

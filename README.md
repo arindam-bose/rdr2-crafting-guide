@@ -84,14 +84,46 @@ the fonts and the artwork are cached hard — they are big and only ever replace
 wholesale — while app code is served network-first, so edits show up on reload
 without a bump.
 
+## Search pages
+
+The app lives behind a `#` in the address and builds every card in the
+browser, which a search engine sees as one empty page. So every material and
+every recipe also gets a plain HTML page of its own, written from `rdr2.db`:
+
+    python3 scripts/build_pages.py            # after every rebuild of rdr2.db
+    python3 scripts/build_pages.py --check    # exit 1 if any page is stale
+
+That writes `materials/<slug>/` and `recipes/<slug>/` — the slug is the id
+without its prefix, so `ing-perfect-beaver-pelt` is
+`materials/perfect-beaver-pelt/` — the A–Z lists `materials/` and `recipes/`,
+and `sitemap.xml`. Like the database, they are generated and committed; never
+edit one by hand. Each carries the facts the app's dialog does, in the app's
+own stylesheet, and an "Open in the crafting guide" link to the same card in
+the app (`#/materials/<id>`). Their only script is the theme line, which the
+generator copies out of `index.html` along with the Content-Security-Policy
+that allows it by hash, so the two never drift apart. Every link in them is
+relative; the one absolute address, for canonical links and the sitemap, is
+`SITE_URL` at the top of the script.
+
+The service worker leaves these pages out of the offline cache. Offline, one
+that was never loaded redirects to its card in the app instead.
+
+Search engines read `robots.txt` only at the root of a domain, so this site
+cannot point them at its sitemap itself: submit
+`https://arindam-bose.github.io/adamslab/rdr2-crafting-guide/sitemap.xml` in
+Google Search Console under a URL-prefix property for that address.
+
 ## Layout
 
     index.html            shell: masthead, tabs, toast, footer
+    materials/, recipes/  the search pages, generated (see Search pages)
+    sitemap.xml           every one of them, generated
     app.css               one layout for phone and desktop, and the theme
     data/rdr2.db          reference data, read-only, built from data/raw/
     data/raw/             its sources: the Notion CSVs, the campfire
                           workbook and the patch workbook
     scripts/build_db.py   the build
+    scripts/build_pages.py  the search pages, from the build
     fonts/
       marston/            Marston, the display face, with its licence
       fb_remington/       FB Remington, the body face
