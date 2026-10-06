@@ -132,7 +132,7 @@ export function mount(root) {
         <p class="note">Reading a file <strong>replaces</strong> what is on this
           device. Nothing is written until you confirm.</p>
         <div class="panel-actions">
-          <label class="ghost-btn file-btn">Choose a file
+          <label class="ghost-btn file-btn">Upload a file
             <input type="file" id="s-file" accept=".json,application/json" hidden>
           </label>
           <button type="button" class="ghost-btn" id="s-paste-toggle"
