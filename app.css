@@ -848,14 +848,11 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .hint.short  { color: var(--danger-text); }
 .hint.spare  { color: var(--ink-dim); }
 /* A material's comment is the answer, not an aside: upright, and
-   boxed like a recipe's description. */
+   boxed like a recipe's description (the box itself is under .buff). */
 .hint.comment-box {
   padding: 12px;
   line-height: 1.5;
   font-style: normal;
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 8px;
 }
 
 /* A material card opens its detail view from anywhere on it.  The name
@@ -1395,6 +1392,13 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   line-height: 1.45;
   white-space: pre-line;
   color: var(--ink-dim);
+}
+
+/* One box for a recipe's description and a material's comment, so the
+   two cannot drift apart.  The dialog's buff table is the same tan
+   behind the same border, as a .detail-list. */
+.buff,
+.hint.comment-box {
   background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: 8px;

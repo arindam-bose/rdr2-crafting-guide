@@ -188,6 +188,29 @@ async function start() {
     nav.open(name, id);
   });
 
+  // The name is a real link home, ./, for a middle-click or a copied
+  // address.  A plain click stays in the app rather than reloading the
+  // database: from anywhere else it goes to the home page under a
+  // clean address, and on the home page already -- where the address
+  // would not change and so nothing would happen -- it goes back to
+  // the top.
+  document.querySelector('.topbar .brand').addEventListener('click', (event) => {
+    if (event.button !== 0
+        || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+
+    const { name, id } = route();
+    const home = location.pathname + location.search;
+    if (name !== DEFAULT_ROUTE || id) {
+      history.pushState(null, '', home);
+      show(route());
+    } else if (location.hash) {
+      history.replaceState(null, '', home);
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
   window.addEventListener('hashchange', () => show(route()));
   show(route());
 

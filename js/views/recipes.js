@@ -184,20 +184,20 @@ export function mount(root) {
       .map((r) => ({ ...r, ingredients: ingredients.get(r.id) ?? [] }));
 
     lastAll = all;
-    const matched = all.filter((r) => matches(r, state, personal));
+    // Every filter but the category, in one pass: the categories on
+    // offer are what that lets through on this tab, and the matches
+    // are the same list narrowed to the one chosen.
+    const loose = all.filter((r) => matches(r, state, personal));
+    toolbar.fillCategories(categorySelect, categoryOptions[state.kind],
+      new Set(loose.filter((r) => kindOf(r) === state.kind).map((r) => r.category)),
+      state.category);
+    const matched = state.category
+      ? loose.filter((r) => r.category === state.category)
+      : loose;
 
     const counts = toolbar.countTabs(kindTabs, 'kind', KINDS, matched, kindOf);
 
     const list = matched.filter((r) => kindOf(r) === state.kind);
-
-    // The categories on offer are the tab's own, and only those that
-    // something matching every other filter falls under.
-    const anyCategory = { ...state, category: '' };
-    toolbar.fillCategories(categorySelect, categoryOptions[state.kind],
-      new Set(all.filter((r) => kindOf(r) === state.kind
-                                && matches(r, anyCategory, personal))
-                 .map((r) => r.category)),
-      state.category);
 
     // Crafted and skipped sink to the bottom whatever the field, so a
     // Skip visibly does something.
@@ -235,13 +235,12 @@ function group(rows) {
 }
 
 /**
- * Everything but the tab: the tabs count what matches on each side.
+ * Everything but the tab and the category: the tabs count what matches
+ * on each side, and update() offers and narrows by the category.
  * The vendor chips and the progress chips are hidden on the campfire
  * tab, so they only ever narrow vendor recipes.
  */
 function matches(r, state, personal) {
-  if (state.category && r.category !== state.category) return false;
-
   if (!r.repeatable) {
     if (state.station && r.station_id !== state.station) return false;
   }

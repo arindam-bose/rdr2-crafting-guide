@@ -36,7 +36,8 @@ const KINDS = [
   { value: ':misc',    type: 'misc',    label: 'Misc. items' },
 ];
 
-// The category filter entry a card falls under, or undefined.
+// The category filter entry a card falls under: its kind of supply,
+// or its body part -- null for a plant, which has neither.
 const categoryOf = (card) =>
   KINDS.find((k) => k.type === card.source_type)?.value ?? card.body_part;
 
@@ -190,15 +191,16 @@ export function mount(root) {
 
     lastCards = group(queries.materials({ personal }), queries.materialUsage(),
                       animals);
-    const matched = lastCards.filter((m) => matches(m, state, personal));
-
-    // The categories on offer are those of what every other filter
-    // lets through, across all three tabs: choosing one moves you to
-    // its tab anyway.
-    const anyPart = { ...state, part: '' };
+    // Every filter but the category, in one pass.  The categories on
+    // offer are what that lets through, across all three tabs --
+    // choosing one moves you to its tab anyway -- and the cards are
+    // the same list narrowed to the one chosen.
+    const loose = lastCards.filter((m) => matches(m, state, personal));
     toolbar.fillCategories(partSelect, categories,
-      new Set(lastCards.filter((m) => matches(m, anyPart, personal)).map(categoryOf)),
-      state.part);
+                           new Set(loose.map(categoryOf)), state.part);
+    const matched = state.part
+      ? loose.filter((m) => categoryOf(m) === state.part)
+      : loose;
 
     const counts = toolbar.countTabs(groupTabs, 'group', GROUPS, matched, groupOf);
 
@@ -255,15 +257,12 @@ function startsWord(name, term) {
   return n.startsWith(term) || n.includes(` ${term}`);
 }
 
+// Everything but the category, which update() offers and narrows by.
 function matches(card, state, personal) {
   if (state.station && !card.demands.some(
         (d) => d.station_id === state.station && (d.needed > 0 || !personal))) {
     return false;
   }
-
-  const kind = KINDS.find((k) => k.value === state.part);
-  if (kind ? card.source_type !== kind.type
-      : state.part && card.body_part !== state.part) return false;
 
   if (personal) {
     // Done: you have enough of it, or nothing is asking for it any
