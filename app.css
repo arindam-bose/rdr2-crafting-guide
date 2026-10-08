@@ -557,19 +557,6 @@ body > main { flex: 1 0 auto; }
   border-radius: var(--radius);
   -webkit-mask-image: linear-gradient(to bottom, #000 72%, transparent);
           mask-image: linear-gradient(to bottom, #000 72%, transparent);
-  transition: height .35s ease;
-}
-
-/* Full height is the welcome, shown on the first page of a visit.
-   Once the reader moves on to another tab it has been seen, so it
-   settles to a strip -- the fire still in it, the page under it back
-   in reach -- for the rest of the visit.  main.js sets the class. */
-.cover.compact img {
-  height: clamp(64px, 8vw, 100px);
-  object-position: 50% 72%;
-}
-@media (prefers-reduced-motion: reduce) {
-  .cover img { transition: none; }
 }
 
 /* ---------- layout ---------- */

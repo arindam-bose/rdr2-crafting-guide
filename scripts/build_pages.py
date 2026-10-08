@@ -320,7 +320,7 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme, wide=
   </nav>
 </div>
 
-<div class="cover compact">
+<div class="cover">
   <img src="{root}images/pixel-cowboy-campfire-at-dusk-960.jpg"
        srcset="{root}images/pixel-cowboy-campfire-at-dusk-960.jpg 960w, {root}images/pixel-cowboy-campfire-at-dusk-1920.jpg 1920w"
        sizes="100vw" alt="" width="1920" height="1080" decoding="async">
