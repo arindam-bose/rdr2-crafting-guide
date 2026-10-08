@@ -286,7 +286,7 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme, wide=
 <meta charset="utf-8">
 {csp}
 <meta name="referrer" content="no-referrer">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#e7dbc0">
 <title>{esc(title)}</title>
 <meta name="description" content="{esc(description)}">
