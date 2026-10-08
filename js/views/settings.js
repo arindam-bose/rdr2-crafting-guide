@@ -302,7 +302,7 @@ export function mount(root) {
         <p><strong>${esc(source)}</strong> holds
           ${found.ledger} ${found.ledger === 1 ? 'entry' : 'entries'} and
           ${found.targets} marked ${found.targets === 1 ? 'recipe' : 'recipes'},
-          exported ${esc(when)}.</p>
+          exported ${esc(when)}${found.device ? ` from ${esc(found.device)}` : ''}.</p>
         <p>This device has ${now.entries} ${now.entries === 1 ? 'entry' : 'entries'}
           and ${now.made + now.skipped} marked. All of it will be replaced.</p>
         ${found.problems.length

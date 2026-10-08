@@ -613,9 +613,13 @@ the time, not edited afterwards.
 Settings is also where the personal layer can be moved. **Take it with you**
 says when this device was last backed up and how many changes have been made
 since. Export writes the whole ledger as a JSON file, named for the moment it
-was taken on the reader's own clock — `rdr2_inventory_2026-10-05_18-36-09.json`,
-the time hyphenated since Windows refuses a colon, and to the second so two
-backups on one day never overwrite each other — the balances are derived from it, so exporting only the
+was taken on the reader's own clock and the device it came from —
+`rdr2_inventory_firefox-android_2026-10-05_18-36-09.json`, the time hyphenated
+since Windows refuses a colon, and to the second so two backups on one day never
+overwrite each other. The device is the browser and system read from the
+user-agent string, since a page is never told a device's own name, and the file
+carries it too ("device": "Firefox on Android") so the import preview can say
+where a backup came from — the balances are derived from it, so exporting only the
 balances would lose the history behind "8 gathered - 1 crafted". A
 copy-to-clipboard button sits beside it, because `<a download>` is unreliable on
 iOS, and a paste box sits beside the file picker for the same reason.

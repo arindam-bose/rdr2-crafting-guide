@@ -222,12 +222,17 @@ export async function setTarget(recipe_id, state) {
 // export / import / reset
 // ------------------------------------------------------------
 
-/** Everything personal, as portable JSON. */
-export function exportJSON() {
+/**
+ * Everything personal, as portable JSON.  `device` is the backup's
+ * "Firefox on Android" label (see backup.js), there for a person
+ * reading the file or the import preview; nothing reads it back.
+ */
+export function exportJSON(device = null) {
   return JSON.stringify({
     format: 'rdr2-crafting-guide/personal',
     version: 1,
     exported_at: new Date().toISOString(),
+    device,
     reference_build: referenceBuild(),
     ledger: db.all('SELECT * FROM ledger ORDER BY id'),
     targets: db.all('SELECT * FROM targets ORDER BY recipe_id'),
@@ -323,6 +328,7 @@ export function inspectImport(text) {
     ok: badReason === 0 && malformed === 0,
     fatal: badReason || malformed ? 'Some entries would be rejected by the database.' : null,
     exported_at: data.exported_at ?? null,
+    device: typeof data.device === 'string' ? data.device : null,
     reference_build: data.reference_build ?? null,
     ledger: ledger.length,
     targets: targets.length,

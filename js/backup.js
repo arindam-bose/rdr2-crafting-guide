@@ -99,10 +99,49 @@ function fileStamp(d) {
        + `_${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}`;
 }
 
-/** Save everything as a file named for the moment it was taken. */
+/**
+ * "Firefox on Android", "Safari on iPhone": which device a backup came
+ * from, so a folder of them from a phone and a laptop can be told
+ * apart.  A page is never told the device's own name, so this is the
+ * browser and the system, read from the user-agent string -- Edge,
+ * Opera and Samsung's browser all claim to be Chrome as well, so they
+ * are asked first.  Null when neither can be made out.
+ */
+export function device() {
+  const ua = navigator.userAgent;
+  const browser = /Edg(e|A|iOS)?\//.test(ua) ? 'Edge'
+    : /OPR\/|Opera/.test(ua) ? 'Opera'
+    : /SamsungBrowser/.test(ua) ? 'Samsung Internet'
+    : /Firefox\/|FxiOS/.test(ua) ? 'Firefox'
+    : /Chrome\/|CriOS/.test(ua) ? 'Chrome'
+    : /Safari\//.test(ua) ? 'Safari'
+    : null;
+  // An iPad asks for the desktop site and says it is a Mac; a touch
+  // screen gives it away.
+  const system = /iPhone/.test(ua) ? 'iPhone'
+    : /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'iPad'
+    : /Android/.test(ua) ? 'Android'
+    : /CrOS/.test(ua) ? 'ChromeOS'
+    : /Windows/.test(ua) ? 'Windows'
+    : /Macintosh/.test(ua) ? 'Mac'
+    : /Linux/.test(ua) ? 'Linux'
+    : null;
+
+  if (!browser && !system) return null;
+  return [browser ?? 'A browser', system && `on ${system}`].filter(Boolean).join(' ');
+}
+
+/** "firefox-android" -- the device, as it can sit in a file name. */
+function deviceSlug(name) {
+  return name.toLowerCase().replace(/\b(on|a browser)\b/g, ' ')
+    .trim().replace(/\s+/g, '-');
+}
+
+/** Save everything as a file named for the device and the moment it was taken. */
 export function download() {
-  const name = `rdr2_inventory_${fileStamp(new Date())}.json`;
-  const blob = new Blob([store.exportJSON()], { type: 'application/json' });
+  const from = device();
+  const name = `rdr2_inventory_${from ? `${deviceSlug(from)}_` : ''}${fileStamp(new Date())}.json`;
+  const blob = new Blob([store.exportJSON(from)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
 
   const link = document.createElement('a');
@@ -123,7 +162,7 @@ export function download() {
  */
 export async function copy() {
   try {
-    await navigator.clipboard.writeText(store.exportJSON());
+    await navigator.clipboard.writeText(store.exportJSON(device()));
     saved();
     toast('Copied. Paste it somewhere safe.');
   } catch {
