@@ -296,7 +296,9 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme, wide=
 <meta property="og:url" content="{esc(url)}">
 <meta property="og:image" content="{SITE_URL}images/pixel-cowboy-campfire-at-dusk-960.jpg">
 <link rel="icon" href="{root}images/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="manifest" href="{root}manifest.webmanifest">
 <link rel="apple-touch-icon" href="{root}images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="RDR2 Crafting">
 <link rel="stylesheet" href="{root}app.css">
 <script type="application/ld+json">{crumb_ld}</script>
 {theme}

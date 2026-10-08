@@ -18,6 +18,7 @@
 import * as store from './store.js';
 import * as prefs from './prefs.js';
 import { plural } from './render.js';
+import { label as device } from './device.js';
 import { toast, showing } from './toast.js';
 
 const LAST_EXPORT = 'rdr2:last-export';
@@ -97,38 +98,6 @@ function fileStamp(d) {
   const two = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}`
        + `_${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}`;
-}
-
-/**
- * "Firefox on Android", "Safari on iPhone": which device a backup came
- * from, so a folder of them from a phone and a laptop can be told
- * apart.  A page is never told the device's own name, so this is the
- * browser and the system, read from the user-agent string -- Edge,
- * Opera and Samsung's browser all claim to be Chrome as well, so they
- * are asked first.  Null when neither can be made out.
- */
-export function device() {
-  const ua = navigator.userAgent;
-  const browser = /Edg(e|A|iOS)?\//.test(ua) ? 'Edge'
-    : /OPR\/|Opera/.test(ua) ? 'Opera'
-    : /SamsungBrowser/.test(ua) ? 'Samsung Internet'
-    : /Firefox\/|FxiOS/.test(ua) ? 'Firefox'
-    : /Chrome\/|CriOS/.test(ua) ? 'Chrome'
-    : /Safari\//.test(ua) ? 'Safari'
-    : null;
-  // An iPad asks for the desktop site and says it is a Mac; a touch
-  // screen gives it away.
-  const system = /iPhone/.test(ua) ? 'iPhone'
-    : /iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? 'iPad'
-    : /Android/.test(ua) ? 'Android'
-    : /CrOS/.test(ua) ? 'ChromeOS'
-    : /Windows/.test(ua) ? 'Windows'
-    : /Macintosh/.test(ua) ? 'Mac'
-    : /Linux/.test(ua) ? 'Linux'
-    : null;
-
-  if (!browser && !system) return null;
-  return [browser ?? 'A browser', system && `on ${system}`].filter(Boolean).join(' ');
 }
 
 /** "firefox-android" -- the device, as it can sit in a file name. */

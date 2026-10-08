@@ -16,6 +16,7 @@ import * as store from '../store.js';
 import * as theme from '../theme.js';
 import { esc, plural, icon, stationIcon, stationColour, money } from '../render.js';
 import * as backup from '../backup.js';
+import * as install from '../install.js';
 import { toast } from '../toast.js';
 import { ledgerDialog } from './ledger.js';
 import { aboutDialog, howToDialog } from './guide.js';
@@ -148,6 +149,16 @@ export function mount(root) {
       </section>
 
       <section class="panel">
+        <h3>Put it on your home screen</h3>
+        <p class="note">Then it opens from its own icon, full screen and with
+          or without a signal, with no address to type.</p>
+        <p class="note" id="s-install-how"></p>
+        <div class="panel-actions" id="s-install-actions" hidden>
+          <button type="button" class="more-btn" id="s-install">Install</button>
+        </div>
+      </section>
+
+      <section class="panel">
         <h3>Offline</h3>
         <p class="note" id="s-offline">Checking…</p>
         <p class="note" id="s-kept" hidden></p>
@@ -249,6 +260,26 @@ export function mount(root) {
     else if (event.target.closest('[data-howto]')) howTo.open();
   });
   let pending = null;          // text waiting for a confirmed import
+
+  // ---- the home screen ------------------------------------------------
+
+  // A real Install button where the browser lends its prompt, and that
+  // browser's own steps where it does not.  The prompt can arrive after
+  // the page is drawn, so the tile repaints when it does.
+  function paintInstall() {
+    const now = install.state();
+    $('#s-install-actions').hidden = now !== 'prompt';
+    $('#s-install-how').innerHTML =
+        now === 'running'   ? 'You are using the installed guide.'
+      : now === 'installed' ? 'Installed. From now on, open it from its icon.'
+      : now === 'prompt'    ? 'This browser can install it in one tap.'
+      : install.steps();
+  }
+  $('#s-install').addEventListener('click', async () => {
+    if (await install.prompt() === 'dismissed') toast('Not installed. The steps are here if you change your mind.');
+  });
+  const unsubscribeInstall = install.subscribe(paintInstall);
+  paintInstall();
 
   // ---- the file itself ------------------------------------------------
 
@@ -490,6 +521,7 @@ export function mount(root) {
     update,
     destroy() {
       unsubscribe();
+      unsubscribeInstall();
       ledger.destroy();
       about.destroy();
       howTo.destroy();

@@ -51,6 +51,8 @@ const SHELL = [
   'js/file-protocol.js',
   'js/main.js',
   'js/backup.js',
+  'js/device.js',
+  'js/install.js',
   'js/db.js',
   'js/store.js',
   'js/queries.js',
