@@ -21,7 +21,7 @@
 import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { esc, empty, nameWith, pager, plural, qualityStars, stationColour,
-         stationIcon, stationLabel, stationMark, detailHead, detailSection, placeName, traits, crossLink,
+         stationIcon, stationLabel, stationMark, detailHead, detailDock, detailSection, placeName, traits, crossLink,
          doneMark, markIcon, money, PAGE } from '../render.js';
 import * as nav from '../nav.js';
 import * as toolbar from './toolbar.js';
@@ -436,7 +436,7 @@ function recipeDetail(r, personal) {
       <ul class="ingredients detail-ingredients">
         ${slots(r).map((s) => slotLine(s, tally(r, personal))).join('')}
       </ul>`)}
-    ${personal ? craftRow(r) : ''}`;
+    ${personal ? detailDock(craftRow(r)) : ''}`;
 }
 
 /**

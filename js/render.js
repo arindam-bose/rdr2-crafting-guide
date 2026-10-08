@@ -250,6 +250,17 @@ export function traits(pairs) {
     </dl>`;
 }
 
+/**
+ * What a dialog is opened to do -- a material's steppers, a recipe's
+ * Craft button -- pinned to the foot of the dialog while the rest
+ * scrolls under it, so a long list above never buries it.  Last in
+ * the body, since it sticks at the bottom; nothing when it is empty.
+ */
+export function detailDock(body) {
+  if (!body) return '';
+  return `<div class="detail-dock">${body}</div>`;
+}
+
 /** A captioned block of a dialog; nothing at all when it has no body. */
 export function detailSection(title, body) {
   if (!body) return '';
@@ -315,16 +326,12 @@ export function materialDetail(material, { personal }) {
   const stockTitle = !fire ? 'Vendors'
     : demands.length > 1 ? 'Vendors and campfire' : 'Campfire';
 
-  // The stations come first, straight under the heading: their steppers
-  // are what the dialog is mostly opened for, and below a long "used
-  // in" list -- Animal Fat goes into nine recipes -- they were out of
-  // sight on a phone.
+  // The stations are docked at the foot: their steppers are what the
+  // dialog is mostly opened for, and under a long "used in" list --
+  // Animal Fat goes into nine recipes -- they were out of sight on a
+  // phone.  Comments sit just above them, the verdict on those counts.
   return `
     ${detailHead(KIND_LABEL[source_type] ?? 'Material', name)}
-    ${detailSection(stockTitle, demands.length && `
-      <div class="detail-stock">
-        ${demands.map((d) => stockLine(d, personal)).join('')}
-      </div>`)}
     ${traits(facts)}
     ${detailSection('Animals', animals.length > 1 && `
       <ul class="detail-list detail-animals">
@@ -334,7 +341,11 @@ export function materialDetail(material, { personal }) {
       <ul class="detail-list detail-recipes">
         ${material.usage.map((u) => recipeLine(u, personal)).join('')}
       </ul>`)}
-    ${detailSection('Comments', verdict(material, personal))}`;
+    ${detailSection('Comments', verdict(material, personal))}
+    ${detailDock(detailSection(stockTitle, demands.length && `
+      <div class="detail-stock">
+        ${demands.map((d) => stockLine(d, personal)).join('')}
+      </div>`))}`;
 }
 
 /** One animal a material comes from, and how to take it. */

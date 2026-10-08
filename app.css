@@ -1123,6 +1123,24 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   padding: 18px 20px 20px;
 }
 
+/* The dock: the dialog's one job -- the steppers, the Craft button --
+   held at the foot of the box while everything above scrolls under
+   it.  Full width, on the dialog's own surface so nothing shows
+   through, with a rule and a faint shadow to say there is more above.
+   The body drops its foot padding for it, so it sits flush with the
+   bottom edge instead of floating 20px over the scrolling text. */
+.detail-body:has(> .detail-dock) { padding-bottom: 0; }
+.detail-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin: 0 -20px;
+  padding: 14px 20px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -10px 14px -12px rgb(20 12 6 / .35);
+}
+
 .detail-head {
   display: flex;
   align-items: flex-start;
@@ -1447,8 +1465,6 @@ ul.buff li::before {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
 }
 .craft-row .craft-btn { flex: 0 0 auto; padding: 10px 22px; font-size: .95rem; }
 .craft-why {
