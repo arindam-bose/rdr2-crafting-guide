@@ -97,7 +97,8 @@ export function mount(root) {
         <p class="note">
           <strong>Personalize</strong> folds in what you own: cards show what
           you have against what a vendor wants, recipes can be crafted, and
-          anything crafted or skipped drops out of the way.<br>
+          anything crafted or skipped drops out of the way.</p>
+        <p class="note">
           <strong>General</strong> ignores all of it and shows the reference
           data whole - every recipe, every material, every quantity.</p>
         <div class="panel-actions">
