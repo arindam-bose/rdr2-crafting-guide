@@ -47,19 +47,9 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-}
-
-/* The same file again, drawn 6% larger, for phones only (see
-   --font-body below).  The typewriter face is small for its size, and
-   a phone is read at arm's length; growing the face rather than the
-   type sizes leaves the display and heading faces as they are.  Same
-   url, so the font is fetched and cached once. */
-@font-face {
-  font-family: "FB Remington Phone";
-  src: url("fonts/fb_remington/FBRemington-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
+  /* The face is small for its size: drawn 6% larger, so every type
+     size set in it reads a step up without touching the sizes
+     themselves, or the display and heading faces beside it. */
   size-adjust: 106%;
 }
 
@@ -94,12 +84,6 @@
 
   --radius: 10px;
   --tabs-h: 56px;
-}
-
-@media (max-width: 719px) {
-  :root {
-    --font-body: "FB Remington Phone", ui-monospace, SFMono-Regular, Menlo, monospace;
-  }
 }
 
 /* ---- parchment ---------------------------------------------
