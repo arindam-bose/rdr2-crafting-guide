@@ -178,7 +178,7 @@ export function mount(root) {
   sections.addEventListener('click', (event) => {
     if (event.target.closest('#i-personalize')) {
       store.setPersonal(true);
-      toast('Personalize is on -- every card now counts what you have.');
+      toast('Personalize is on - every card now counts what you have.');
       return;
     }
     if (event.target.closest('#i-offer-dismiss')) {
@@ -337,7 +337,7 @@ export function mount(root) {
       <ul class="move-dests">
         ${targets.map((to) => moveDest(moving, from, to, available)).join('')}
       </ul>
-      <p class="move-note">Hands over what you already hold -- nothing new
+      <p class="move-note">Hands over what you already hold - nothing new
         is logged.  Saved with the rest of your changes.</p>`;
 
     if (pressed) {

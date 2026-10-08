@@ -448,8 +448,8 @@ export function mount(root) {
     target.hidden = kept === null;
     target.textContent = kept
       ? 'This browser has agreed to keep your data until you clear it yourself.'
-      : 'This browser may clear your data on its own -- if the site goes '
-        + 'unvisited for a while, or space runs low -- so keep a backup.';
+      : 'This browser may clear your data on its own - if the site goes '
+        + 'unvisited for a while, or space runs low - so keep a backup.';
   }
 
   // A term with an `opens` becomes the button that opens its dialog.

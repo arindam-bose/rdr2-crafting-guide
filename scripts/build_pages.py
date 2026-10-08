@@ -170,11 +170,9 @@ def a_or_an(word):
 
 def clip(text, limit=158):
     """
-    A meta description: whole words, under the length a result shows,
-    and a real dash -- the app's typewriter `--` reads as a typo in a
-    search result.
+    A meta description: whole words, under the length a result shows.
     """
-    text = ' '.join(text.replace(' -- ', ' – ').split())
+    text = ' '.join(text.split())
     if len(text) <= limit:
         return text
     return text[:limit - 1].rsplit(' ', 1)[0].rstrip(',;:') + '…'
@@ -349,7 +347,7 @@ def open_in_app(root, route, id_, what):
     return f'''
     <aside class="restore-offer static-cta">
       <p class="note"><strong>Track it in the guide.</strong> Log what you
-        have and see what {what} still needs -- free, no sign-up, nothing
+        have and see what {what} - free, no sign-up, nothing
         leaves your device, and it works offline.</p>
       <a class="more-btn" href="{root}#/{route}/{esc(id_)}">Open in the crafting guide</a>
     </aside>'''
@@ -379,7 +377,7 @@ def material_page(m, data, parts):
     kind = 'crafting recipe' if vendor_uses else 'campfire recipe'
     said = [f'{name} is used in {plural(len(usage), kind)} in Red Dead Redemption 2']
     if vendors:
-        said[0] += ' -- ' + listing(
+        said[0] += ' - ' + listing(
             f'{plural(sum(1 for u in vendor_uses if u["station_id"] == s), "recipe")} '
             f'for {STATION_PROSE[s]}' for s in STATION_ORDER if s in demand)
         if fire_uses:
@@ -443,7 +441,7 @@ def material_page(m, data, parts):
       </div>
     </header>
     <p class="static-intro">{esc(intro)}</p>{traits(facts)}{section("Animals", animal_list)}{section("Recipes used in", recipe_list)}{section("Vendors", stock and f'<div class="detail-stock">{stock}</div>')}
-  </article>{open_in_app(root, "materials", m["id"], "it")}'''
+  </article>{open_in_app(root, "materials", m["id"], "it still needs")}'''
 
     where = listing(vendors + (['your campfire'] if fire_uses and vendors else []))
     description = clip(f'{name} in RDR2: used in {plural(len(usage), "recipe" if vendors else kind)}'
@@ -525,7 +523,7 @@ def recipe_page(r, data, parts):
       </div>
     </header>
     <p class="static-intro">{esc(intro)}</p>{traits(facts)}{section("Description", buff_list)}{section("Ingredients", ingredient_list)}
-  </article>{open_in_app(root, "recipes", r["id"], "you")}'''
+  </article>{open_in_app(root, "recipes", r["id"], "you still need")}'''
 
     first_buff = f' {buffs[0]}' if buffs else ''
     where = 'at your campfire' if campfire else f'by {STATION_PROSE[r["station_id"]]}'
@@ -570,7 +568,7 @@ def materials_index(data, parts):
     return page(root=root, path='materials/',
                 title=f'Every RDR2 Crafting Material, A-Z · {SITE_NAME}',
                 description=clip(f'All {len(data["ingredients"])} crafting materials in Red Dead '
-                                 'Redemption 2 -- pelts, hides, plants and supplies -- with the '
+                                 'Redemption 2 - pelts, hides, plants and supplies - with the '
                                  'recipes each one goes into and where to find it.'),
                 crumbs=[('Crafting Guide', ''), ('Materials', 'materials/')],
                 tab='materials', body=''.join(body), csp=parts[0], theme=parts[1], wide=True)
@@ -597,8 +595,8 @@ def recipes_index(data, parts):
     return page(root=root, path='recipes/',
                 title=f'Every RDR2 Crafting Recipe, A-Z · {SITE_NAME}',
                 description=clip(f'All {len(data["recipes"])} crafting recipes in Red Dead '
-                                 'Redemption 2 -- Pearson, the Trapper, the Fence and the '
-                                 'campfire -- with the ingredients each one takes.'),
+                                 'Redemption 2 - Pearson, the Trapper, the Fence and the '
+                                 'campfire - with the ingredients each one takes.'),
                 crumbs=[('Crafting Guide', ''), ('Recipes', 'recipes/')],
                 tab='recipes', body=''.join(body), csp=parts[0], theme=parts[1], wide=True)
 

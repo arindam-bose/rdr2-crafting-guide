@@ -199,7 +199,7 @@ async function start() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (event.data?.type === 'offline-ready') {
-        toast('Cached -- this works without a signal now.');
+        toast('Cached - this works without a signal now.');
       }
     });
     // `updateViaCache: 'none'` so a check for updates looks past the

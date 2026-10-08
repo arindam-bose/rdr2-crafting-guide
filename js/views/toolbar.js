@@ -202,7 +202,7 @@ export function countTabs(el, attr, tabs, items, tabOf) {
 export function elsewhere(tabs, current, counts) {
   const others = tabs.filter((t) => t.id !== current && counts[t.id]);
   return others.length
-    ? `Nothing here -- ${others.map((t) => `${counts[t.id]} under ${t.title}`).join(', ')}.`
+    ? `Nothing here - ${others.map((t) => `${counts[t.id]} under ${t.title}`).join(', ')}.`
     : '';
 }
 
@@ -251,7 +251,7 @@ export function wireSort(root, id, sorts, state, onChange, name) {
 export function paintDir(button, sorts, state) {
   const { ways } = sorts[state.sort];
   button.textContent = `${state.dir === 'asc' ? '↑' : '↓'} ${ways[state.dir]}`;
-  button.title = `Sorted ${ways[state.dir].toLowerCase()} -- click to reverse`;
+  button.title = `Sorted ${ways[state.dir].toLowerCase()} - click to reverse`;
 }
 
 /** Show more, show less.  `state.shown` is how many are on screen. */

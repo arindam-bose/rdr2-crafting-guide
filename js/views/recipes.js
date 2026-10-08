@@ -498,7 +498,7 @@ function wantSwitch(r) {
   const act = made ? 'uncraft' : on ? 'skip' : 'unskip';
   const why = made
     ? `Put it back: refund the ingredients to ${placeName(r.location_id, r.location)} and want it again`
-    : on ? 'Not making this -- stop asking for its materials'
+    : on ? 'Not making this - stop asking for its materials'
          : 'Put it back on your list';
 
   return `
