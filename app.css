@@ -847,8 +847,16 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .hint.enough { color: var(--ok); }
 .hint.short  { color: var(--danger-text); }
 .hint.spare  { color: var(--ink-dim); }
-/* A material's comment is the answer, not an aside: upright. */
-.hint.verdict { font-style: normal; }
+/* A material's comment is the answer, not an aside: upright, and
+   boxed like a recipe's description. */
+.hint.comment-box {
+  padding: 12px;
+  line-height: 1.5;
+  font-style: normal;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
 
 /* A material card opens its detail view from anywhere on it.  The name
    is the button that does it -- dressed as the heading it replaces --
@@ -1388,7 +1396,8 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   white-space: pre-line;
   color: var(--ink-dim);
   background: var(--surface-2);
-  border-radius: 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
 }
 
 /* The marker is a hyphen rather than a disc: it is the one the typewriter
@@ -1454,7 +1463,7 @@ ul.buff li::before {
 /* ---------- recipe detail dialog ---------- */
 
 /* Buffs as a stat and its value, the values in a column of their own. */
-.detail-buffs li { align-items: baseline; padding-block: 7px; background: var(--page-wash); }
+.detail-buffs li { align-items: baseline; padding-block: 7px; background: var(--surface-2); }
 .detail-buffs .stat  { flex: 1; min-width: 0; color: var(--ink-dim); }
 .detail-buffs .value {
   flex: 0 0 auto;

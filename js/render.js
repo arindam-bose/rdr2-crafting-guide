@@ -501,7 +501,7 @@ function verdict(material, personal) {
   // its row would count the same stock twice.
   const vendors = material.demands.filter((d) => !d.campfire);
   if (!vendors.length) {
-    return '<p class="hint verdict">No vendor wants this. It goes into campfire recipes, as many as you care to make.</p>';
+    return '<p class="hint comment-box">No vendor wants this. It goes into campfire recipes, as many as you care to make.</p>';
   }
 
   const totalNeeded = vendors.reduce((n, d) => n + d.needed, 0);
@@ -531,7 +531,7 @@ function verdict(material, personal) {
       ? ['spare', "You're already golden! If you have more, sell them to Butcher!!"]
       : ['spare', 'You may sell the rest!'];
 
-  return `<p class="hint verdict ${state}">${words}</p>`;
+  return `<p class="hint comment-box ${state}">${words}</p>`;
 }
 
 /** The recipes a material goes into, each with its tick or cross. */
