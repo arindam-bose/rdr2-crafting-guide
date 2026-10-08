@@ -331,8 +331,8 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme, wide=
 
 <footer class="footer">
   <p><span class="sym">&copy;</span> 2026 - Made with love by
-     <span class="by">Arindam Bose</span>,
-     powered by <span class="by">Claude</span></p>
+     <a class="by" href="https://arindambose.com/" target="_blank" rel="noopener noreferrer">Arindam Bose</a>,
+     powered by <a class="by" href="https://claude.ai" target="_blank" rel="noopener noreferrer">Claude</a></p>
   <p class="small-print">Browse <a href="{root}materials/">every material</a>
      or <a href="{root}recipes/">every recipe</a>.</p>
   <p class="small-print">Not affiliated with or endorsed by Rockstar Games

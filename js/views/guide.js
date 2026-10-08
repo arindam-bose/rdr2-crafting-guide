@@ -40,7 +40,9 @@ const ABOUT = `
         credited under Acknowledgements in Settings. It is a fan-made tool,
         not affiliated with or endorsed by Rockstar Games or Take-Two
         Interactive.</p>
-      <p>Made with love by Arindam Bose, powered by Claude.</p>
+      <p>Made with love by <a href="https://arindambose.com/" target="_blank"
+        rel="noopener noreferrer">Arindam Bose</a>, powered by
+        <a href="https://claude.ai" target="_blank" rel="noopener noreferrer">Claude</a>.</p>
     </div>`)}`;
 
 const HOW_TO = `
