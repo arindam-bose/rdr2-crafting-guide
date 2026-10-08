@@ -172,8 +172,8 @@ export function mount(root) {
         <dl class="facts" id="s-about"></dl>
 
         <p class="list-label card-label">On your home screen</p>
-        <p class="note">Installed, it opens from its own icon, full screen and
-          with or without a signal, with no address to type.</p>
+        <p class="note">Installed, it opens from its own icon in a window of
+          its own, with or without a signal, with no address to type.</p>
         <p class="note" id="s-install-how"></p>
         <div class="panel-actions" id="s-install-actions" hidden>
           <button type="button" class="more-btn" id="s-install">Install</button>
@@ -274,7 +274,9 @@ export function mount(root) {
       : install.steps();
   }
   $('#s-install').addEventListener('click', async () => {
-    if (await install.prompt() === 'dismissed') toast('Not installed. The steps are here if you change your mind.');
+    const outcome = await install.prompt();
+    if (outcome === 'dismissed') toast('Not installed. The steps are here if you change your mind.');
+    else if (outcome === 'unavailable') toast('The browser would not install it from here. Try the steps instead.');
   });
   const unsubscribeInstall = install.subscribe(paintInstall);
   paintInstall();
@@ -293,7 +295,7 @@ export function mount(root) {
     event.target.value = '';            // so the same file can be picked twice
   });
 
-  // A button beside Choose a file rather than a disclosure under it, so
+  // A button beside Upload a file rather than a disclosure under it, so
   // the tile's controls stay on one line, level with its neighbours'.
   const pasteToggle = $('#s-paste-toggle');
   function showPaste(open) {

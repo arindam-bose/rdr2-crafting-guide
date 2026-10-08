@@ -207,8 +207,8 @@ hand.
       views/inventory.js  entry: pick a location, search, tap +/-, and
                           the Transfer panel
       views/recipes.js    the catalogue, and the recipe dialog you craft in
-      views/settings.js   stats, backup and restore, reset, About, and
-                          the Support tile
+      views/settings.js   stats, backup and restore, reset, About with
+                          the home-screen install, and the Support tile
       views/ledger.js     the history, as a dialog opened from Settings
       views/guide.js      About and How to use, as dialogs from Settings
       views/toolbar.js    search, chips, sort and pager, shared by the two
@@ -217,6 +217,9 @@ hand.
       theme.js            parchment or leather, remembered per device
       main.js             boot and hash routing
       backup.js           backups: download, restore, and when one is due
+      device.js           which browser on which system, for backups' names
+                          and the install steps
+      install.js          the browser's install prompt, kept for Settings
       version.js          the release number and date, read by sw.js too
       mode-toggle-early.js
                           sets the mode switch before main.js has loaded
@@ -305,6 +308,11 @@ mostly numbers: `3/3`, `2x Oregano`, `$14.95`. It is monospaced, so those
 columns line up on their own. All three are free, and all are vendored under
 `fonts/`.
 
+Each face is drawn larger than its type sizes say, with `size-adjust` on its
+`@font-face` — FB Remington by 20%, since it is small for its size and carries
+all the running text, and the two display faces by 10% — so the whole page
+reads a step up without a type size changing.
+
 FB Remington ships one weight and no italic, so the browser synthesises both.
 That is the right trade here rather than a compromise: a real Remington had one
 weight too, and emphasis was struck twice over the same spot.
@@ -384,11 +392,12 @@ tap does.
 
 ### The page around it
 
-The cover art is shown full height on the first page of a visit, and settles
-to a strip from the first change of tab, for the rest of the visit: it has been
-seen, and the page under it is what you came for. Opening a card does not
-count as moving on. The footer sits at the foot of the window however little a
-page holds.
+The cover art is shown full height on every page. The footer sits at the foot of the window however little a page holds.
+
+The page is not `viewport-fit=cover` and asks for no `env(safe-area-inset-*)`:
+the browser keeps it inside the safe area on its own. Firefox for Android
+reports the system navigation bar as a bottom inset until the first scroll,
+so a fixed tab bar padded by it grew a blank band of that height under it.
 
 ### Cards and dialogs
 
@@ -398,7 +407,9 @@ anywhere — or its name, which is a real button, so the keyboard gets there too
 click on the backdrop. A click that ends a text selection does not open it:
 that is someone copying a name. The dialog is shared (`js/dialog.js`) and
 repaints whenever the store changes, keeping focus on the button just pressed,
-so it never shows stale numbers. Its buttons act one at a time: a write
+so it never shows stale numbers. In Personalize, what a dialog is opened to
+do — a material's steppers, a recipe's Craft button — is docked at its foot
+and the rest scrolls under it, so a long list above never buries it. Its buttons act one at a time: a write
 repaints the dialog only once it has reached IndexedDB, so until then a second
 tap is ignored rather than crafting twice or taking stock below zero. The undo
 toast moves inside an open dialog —
@@ -457,9 +468,9 @@ weapon that leaves it unspoiled — or, for a fish, the bait or lure that
 catches it. A material that comes off several animals (fat, the meats, Flight
 Feather) lists them instead, each with its own weapon or bait. Every animal's
 name links to its page on the Red Dead wiki, in a new tab. Then every recipe with a Crafted / Not crafted /
-Skipped tag; each vendor's demand against what you hold where it draws from — the
-Fence names your Satchel — and the verdict, *You need to go hunting!* and its
-siblings. The dialog's own copy of the recipe list spells out `1x` too, unlike
+Skipped tag; the verdict, *You need to go hunting!* and its siblings; and, docked
+at the foot, each vendor's demand against what you hold where it draws from —
+the Fence names your Satchel. The dialog's own copy of the recipe list spells out `1x` too, unlike
 the card's: a bare name there reads as though the amount were left off rather
 than being one, where the card stays tight on room for a list that can run to
 a dozen recipes. Each station row has `-` and `+ Add to Trapper` buttons. These write
@@ -507,8 +518,9 @@ The card has no buttons.
 The dialog lays out the type, vendor, set and price, the description, the
 ingredients, and the two things you can do:
 
-- **Craft** spends the ingredients from the station's own stock and marks the
-  recipe done, as one commit with undo. It is always present and disabled when
+- **Craft**, docked at the foot of the dialog, spends the ingredients from the
+  station's own stock and marks the recipe done, as one commit with undo. It is
+  always present and disabled when
   it cannot be used, with the reason written beside it — what is still
   missing, or that the recipe is made or skipped — rather than in a tooltip a
   phone cannot show.
@@ -619,8 +631,9 @@ since Windows refuses a colon, and to the second so two backups on one day never
 overwrite each other. The device is the browser and system read from the
 user-agent string, since a page is never told a device's own name, and the file
 carries it too ("device": "Firefox on Android") so the import preview can say
-where a backup came from — the balances are derived from it, so exporting only the
-balances would lose the history behind "8 gathered - 1 crafted". A
+where a backup came from. It is the ledger rather than the balances because the
+balances are derived from it: exporting only those would lose the history
+behind "8 gathered - 1 crafted". A
 copy-to-clipboard button sits beside it, because `<a download>` is unreliable on
 iOS, and a paste box sits beside the file picker for the same reason.
 
@@ -631,6 +644,15 @@ is inspected first — a `reason` the schema's CHECK would refuse is caught befo
 the transaction rather than halfway through it, and rows naming materials this
 build does not know are reported rather than swallowed, since the ledger stores
 slugs with no foreign key.
+
+**About** ends with the guide on the home screen. Where the browser lends its
+install prompt (`beforeinstallprompt`: Chrome, Edge, Samsung Internet) it is a
+real **Install** button; the event is kept rather than cancelled, so the
+browser's own offer still shows for anyone who never opens Settings. Firefox
+and Safari have no such event, so there the tile gives that browser's own
+steps instead, from `js/device.js`. The home-screen name is *RDR2 Crafting*,
+the manifest's `short_name` and, for iOS, `apple-mobile-web-app-title`; the
+static pages link the manifest too, so adding one of them opens the app.
 
 **Support the guide**, beside About, is the one tile lit in the accent and
 holds the one filled button on the page: *Buy me a coffee*, a plain link to

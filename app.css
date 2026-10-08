@@ -2336,18 +2336,19 @@ ul.buff li::before {
    column -- they are scanned, not read -- with as many columns as fit
    and every name on one line with its stars.  Each column is as wide
    as the longest name in its list: a material runs to 33 characters
-   and its stars, a recipe to 42. */
+   and its stars, a recipe to 42.  In ch, a character of the
+   typewriter face, so the columns keep up with its size-adjust. */
 .static-page.static-wide { max-width: 1400px; }
 
 .az-list {
   margin: 0;
   padding: 0;
   list-style: none;
-  columns: 300px;
+  columns: 37ch;
   column-gap: 28px;
   font-size: .9rem;
 }
-.az-list.long { columns: 370px; }
+.az-list.long { columns: 43ch; }
 .az-list li { padding: 3px 0; break-inside: avoid; white-space: nowrap; }
 /* A phone has one column and less than the longest recipe's width, so
    there a name too long for the screen wraps rather than runs off it. */

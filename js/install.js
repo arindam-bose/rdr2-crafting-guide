@@ -57,18 +57,27 @@ export function state() {
 }
 
 /**
- * Show the browser's install prompt.  An event's prompt can be shown
- * once, so it is spent either way; if the reader says no, Chrome may
- * fire a fresh one later.
+ * Show the browser's install prompt: 'accepted', 'dismissed', or
+ * 'unavailable' if there is none or the browser refused to show it.
+ * An event's prompt can be shown once, so it is spent either way; if
+ * the reader says no, Chrome may fire a fresh one later.
  */
 export async function prompt() {
   const event = deferred;
   if (!event) return 'unavailable';
   deferred = null;
-  await event.prompt();
-  const { outcome } = await event.userChoice;
-  changed();
-  return outcome;
+  try {
+    await event.prompt();
+    const { outcome } = await event.userChoice;
+    // Said yes: installed, as far as this tab need know, without
+    // waiting on `appinstalled`, which can come seconds later.
+    if (outcome === 'accepted') justInstalled = true;
+    return outcome;
+  } catch {
+    return 'unavailable';
+  } finally {
+    changed();
+  }
 }
 
 /**

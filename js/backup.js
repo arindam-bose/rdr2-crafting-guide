@@ -18,7 +18,7 @@
 import * as store from './store.js';
 import * as prefs from './prefs.js';
 import { plural } from './render.js';
-import { label as device } from './device.js';
+import { label as device, slug as deviceSlug } from './device.js';
 import { toast, showing } from './toast.js';
 
 const LAST_EXPORT = 'rdr2:last-export';
@@ -100,17 +100,11 @@ function fileStamp(d) {
        + `_${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}`;
 }
 
-/** "firefox-android" -- the device, as it can sit in a file name. */
-function deviceSlug(name) {
-  return name.toLowerCase().replace(/\b(on|a browser)\b/g, ' ')
-    .trim().replace(/\s+/g, '-');
-}
-
 /** Save everything as a file named for the device and the moment it was taken. */
 export function download() {
-  const from = device();
-  const name = `rdr2_inventory_${from ? `${deviceSlug(from)}_` : ''}${fileStamp(new Date())}.json`;
-  const blob = new Blob([store.exportJSON(from)], { type: 'application/json' });
+  const from = deviceSlug();
+  const name = `rdr2_inventory_${from ? `${from}_` : ''}${fileStamp(new Date())}.json`;
+  const blob = new Blob([store.exportJSON(device())], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
 
   const link = document.createElement('a');

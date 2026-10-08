@@ -35,6 +35,13 @@ export function detect() {
   return { browser, system };
 }
 
+/** "firefox-android" -- the same, as it can sit in a file name, or null. */
+export function slug() {
+  const { browser, system } = detect();
+  if (!browser && !system) return null;
+  return [browser, system].filter(Boolean).join(' ').toLowerCase().replace(/\s+/g, '-');
+}
+
 /** "Firefox on Android", "Safari on iPhone" -- or null if neither is known. */
 export function label() {
   const { browser, system } = detect();

@@ -325,11 +325,17 @@ export function materialDetail(material, { personal }) {
   const fire = demands.some((d) => d.campfire);
   const stockTitle = !fire ? 'Vendors'
     : demands.length > 1 ? 'Vendors and campfire' : 'Campfire';
+  const stock = detailSection(stockTitle, demands.length && `
+    <div class="detail-stock">
+      ${demands.map((d) => stockLine(d, personal)).join('')}
+    </div>`);
 
-  // The stations are docked at the foot: their steppers are what the
-  // dialog is mostly opened for, and under a long "used in" list --
-  // Animal Fat goes into nine recipes -- they were out of sight on a
-  // phone.  Comments sit just above them, the verdict on those counts.
+  // In Personalize the stations are docked at the foot: their steppers
+  // are what the dialog is mostly opened for, and under a long "used
+  // in" list -- Animal Fat goes into nine recipes -- they were out of
+  // sight on a phone.  Comments sit just above them, the verdict on
+  // those counts.  General has no steppers, so nothing there is worth
+  // holding over the page, and the stations close it like any section.
   return `
     ${detailHead(KIND_LABEL[source_type] ?? 'Material', name)}
     ${traits(facts)}
@@ -342,10 +348,7 @@ export function materialDetail(material, { personal }) {
         ${material.usage.map((u) => recipeLine(u, personal)).join('')}
       </ul>`)}
     ${detailSection('Comments', verdict(material, personal))}
-    ${detailDock(detailSection(stockTitle, demands.length && `
-      <div class="detail-stock">
-        ${demands.map((d) => stockLine(d, personal)).join('')}
-      </div>`))}`;
+    ${personal ? detailDock(stock) : stock}`;
 }
 
 /** One animal a material comes from, and how to take it. */
