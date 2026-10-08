@@ -39,6 +39,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  size-adjust: 110%;
 }
 
 @font-face {
@@ -47,10 +48,11 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  /* The face is small for its size: drawn 6% larger, so every type
-     size set in it reads a step up without touching the sizes
-     themselves, or the display and heading faces beside it. */
-  size-adjust: 106%;
+  /* All three faces are drawn larger than their type sizes say, so the
+     whole page reads a step up without touching the sizes themselves:
+     Marston and RDR Lino by 10%, and this one by 20%, since it is the
+     smallest for its size and carries all the running text. */
+  size-adjust: 120%;
 }
 
 @font-face {
@@ -59,6 +61,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  size-adjust: 110%;
 }
 
 :root {
