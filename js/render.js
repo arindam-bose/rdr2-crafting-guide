@@ -315,8 +315,16 @@ export function materialDetail(material, { personal }) {
   const stockTitle = !fire ? 'Vendors'
     : demands.length > 1 ? 'Vendors and campfire' : 'Campfire';
 
+  // The stations come first, straight under the heading: their steppers
+  // are what the dialog is mostly opened for, and below a long "used
+  // in" list -- Animal Fat goes into nine recipes -- they were out of
+  // sight on a phone.
   return `
     ${detailHead(KIND_LABEL[source_type] ?? 'Material', name)}
+    ${detailSection(stockTitle, demands.length && `
+      <div class="detail-stock">
+        ${demands.map((d) => stockLine(d, personal)).join('')}
+      </div>`)}
     ${traits(facts)}
     ${detailSection('Animals', animals.length > 1 && `
       <ul class="detail-list detail-animals">
@@ -326,10 +334,6 @@ export function materialDetail(material, { personal }) {
       <ul class="detail-list detail-recipes">
         ${material.usage.map((u) => recipeLine(u, personal)).join('')}
       </ul>`)}
-    ${detailSection(stockTitle, demands.length && `
-      <div class="detail-stock">
-        ${demands.map((d) => stockLine(d, personal)).join('')}
-      </div>`)}
     ${detailSection('Comments', verdict(material, personal))}`;
 }
 
