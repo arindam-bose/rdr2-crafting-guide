@@ -24,8 +24,8 @@ export function searchBox(id, placeholder) {
       <input type="search" class="search" id="${esc(id)}"
              placeholder="${esc(placeholder)}"
              autocomplete="off" spellcheck="false">
-      <button type="button" class="search-clear close-btn" data-clear
-              tabindex="-1" aria-label="Clear search" hidden>x</button>
+      <button type="button" class="search-clear detail-close" data-clear
+              tabindex="-1" aria-label="Clear search" hidden>&times;</button>
     </div>`;
 }
 

@@ -597,7 +597,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .search {
   width: 100%;
-  padding: 9px 34px 9px 12px;
+  padding: 9px 44px 9px 12px;
   font: inherit;
   color: var(--ink);
   background: var(--surface);
@@ -611,9 +611,8 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
    spot a "search" input already reserved. */
 .search::-webkit-search-cancel-button { appearance: none; }
 
-/* The one "×" the app draws, on a toast and on a search box alike:
-   same glyph, same box, same hover, wherever something needs closing
-   or clearing. */
+/* A toast's dismiss: a bare "x", small enough to sit in the toast's
+   line.  The search boxes take the dialogs' boxed × instead. */
 .close-btn {
   font: inherit;
   line-height: 1;
@@ -625,14 +624,17 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .close-btn:hover { color: var(--ink); background: var(--line); }
 
-.search-clear {
+/* The dialogs' close button (.detail-close), the same × in the same
+   box, scaled down to sit inside the search box.  Two classes, so it
+   outranks .detail-close's own size, set further down the file. */
+.search-wrap .search-clear {
   position: absolute;
   top: 50%;
-  right: 4px;
+  right: 5px;
   transform: translateY(-50%);
-  width: 28px;
-  height: 28px;
-  font-size: 1.2rem;
+  width: 30px;
+  height: 30px;
+  font-size: 1.15rem;
 }
 
 
