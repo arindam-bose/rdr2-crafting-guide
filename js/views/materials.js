@@ -21,7 +21,7 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { materialCard, empty, esc, plural, pager, stationIcon, PAGE } from '../render.js';
+import { materialCard, empty, plural, pager, stationIcon, PAGE } from '../render.js';
 import { opensCard } from '../dialog.js';
 import { group, materialDialog } from './material-dialog.js';
 import * as nav from '../nav.js';
@@ -35,6 +35,10 @@ const KINDS = [
   { value: ':alcohol', type: 'alcohol', label: 'Liquor' },
   { value: ':misc',    type: 'misc',    label: 'Misc. items' },
 ];
+
+// The category filter entry a card falls under, or undefined.
+const categoryOf = (card) =>
+  KINDS.find((k) => k.type === card.source_type)?.value ?? card.body_part;
 
 const GROUPS = [
   { id: 'animal',   title: 'Animal Materials', types: ['animal'], icon: 'animals' },
@@ -87,7 +91,10 @@ export function mount(root) {
                                          { sort: 'name', dir: 'asc' }) };
 
   const stations = queries.stations();
-  const parts = queries.bodyParts();
+  const categories = [
+    ...queries.bodyParts().map((p) => ({ value: p, label: p })),
+    ...KINDS,
+  ];
 
   // Reference data, fixed for the life of the page: read once, not on
   // every tap of a stepper.
@@ -96,11 +103,7 @@ export function mount(root) {
   root.innerHTML = `
     <div class="toolbar">
       ${toolbar.searchBox('m-search', 'Search a material or animal…')}
-      <select class="select" id="m-part" aria-label="Category">
-        <option value="">Every category</option>
-        ${parts.map((p) => `<option value="${esc(p)}">${esc(p)}</option>`).join('')}
-        ${KINDS.map((k) => `<option value="${k.value}">${esc(k.label)}</option>`).join('')}
-      </select>
+      <select class="select" id="m-part" aria-label="Category"></select>
       ${toolbar.chipRow('m-stations', 'station', [
         { value: '', label: 'All', pressed: true },
         ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
@@ -122,6 +125,7 @@ export function mount(root) {
   const gallery = root.querySelector('#m-gallery');
   const groupTabs = root.querySelector('#m-groups');
   const dirButton = root.querySelector('#m-dir');
+  const partSelect = root.querySelector('#m-part');
 
   // Anything that changes what is in the list starts it over at the
   // first page; a store change — crafting something — does not, so
@@ -139,7 +143,7 @@ export function mount(root) {
 
   // A category belongs to one tab, so choosing one takes you to the
   // tab its materials are on rather than leaving you on an empty one.
-  root.querySelector('#m-part').addEventListener('change', (event) => {
+  partSelect.addEventListener('change', (event) => {
     state.part = event.target.value;
     if (state.part) {
       toolbar.selectTab(groupTabs, 'group', state,
@@ -187,6 +191,14 @@ export function mount(root) {
     lastCards = group(queries.materials({ personal }), queries.materialUsage(),
                       animals);
     const matched = lastCards.filter((m) => matches(m, state, personal));
+
+    // The categories on offer are those of what every other filter
+    // lets through, across all three tabs: choosing one moves you to
+    // its tab anyway.
+    const anyPart = { ...state, part: '' };
+    toolbar.fillCategories(partSelect, categories,
+      new Set(lastCards.filter((m) => matches(m, anyPart, personal)).map(categoryOf)),
+      state.part);
 
     const counts = toolbar.countTabs(groupTabs, 'group', GROUPS, matched, groupOf);
 

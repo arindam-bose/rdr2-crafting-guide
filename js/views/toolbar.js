@@ -196,6 +196,27 @@ export function countTabs(el, attr, tabs, items, tabOf) {
 }
 
 /**
+ * Fill a category select with only the categories something matching
+ * the other filters falls under -- search "elk" and it offers Antler,
+ * Pelt and Meat, not every body part there is.  `options` is the full
+ * list, { value, label }, in the order it should show; `present` the
+ * values to keep.  The chosen one stays even when nothing is left in
+ * it, so the select never quietly reads "Every category" while still
+ * filtering.  Rebuilt only when the list changes, so an open select is
+ * not torn down under the finger by a store change.
+ */
+export function fillCategories(select, options, present, current) {
+  const shown = options.filter((o) => present.has(o.value) || o.value === current);
+  const key = shown.map((o) => o.value).join('\n');
+  if (select.dataset.key !== key) {
+    select.dataset.key = key;
+    select.innerHTML = `<option value="">Every category</option>${shown
+      .map((o) => `<option value="${esc(o.value)}">${esc(o.label)}</option>`).join('')}`;
+  }
+  select.value = current;
+}
+
+/**
  * What an empty tab says when the matches are on the others --
  * "Nothing here -- 8 under Campfire." -- or '' when there are none.
  */

@@ -71,6 +71,9 @@ export function mount(root) {
                                          { sort: 'name', dir: 'asc' }) };
   const stations = queries.stations();
   const categories = queries.categories();
+  const categoryOptions = Object.fromEntries(KINDS.map((k) => [k.id,
+    categories.filter((c) => c.repeatable === k.repeatable)
+      .map((c) => ({ value: c.category, label: c.category }))]));
 
   root.innerHTML = `
     <div class="toolbar">
@@ -118,20 +121,10 @@ export function mount(root) {
     refilter();
   });
 
-  // The two kinds share no category, so the list is the tab's own,
-  // and a category chosen on one tab is dropped on the way to the other.
-  function fillCategories() {
-    const repeatable = KINDS.find((k) => k.id === state.kind).repeatable;
-    categorySelect.innerHTML = `
-      <option value="">Every category</option>
-      ${categories.filter((c) => c.repeatable === repeatable)
-        .map((c) => `<option value="${esc(c.category)}">${esc(c.category)}</option>`)
-        .join('')}`;
-  }
-
+  // The two kinds share no category, so a category chosen on one tab
+  // is dropped on the way to the other.
   toolbar.wireTabs(kindTabs, 'kind', state, () => {
     state.category = '';
-    fillCategories();
     refilter();
   });
 
@@ -197,6 +190,15 @@ export function mount(root) {
 
     const list = matched.filter((r) => kindOf(r) === state.kind);
 
+    // The categories on offer are the tab's own, and only those that
+    // something matching every other filter falls under.
+    const anyCategory = { ...state, category: '' };
+    toolbar.fillCategories(categorySelect, categoryOptions[state.kind],
+      new Set(all.filter((r) => kindOf(r) === state.kind
+                                && matches(r, anyCategory, personal))
+                 .map((r) => r.category)),
+      state.category);
+
     // Crafted and skipped sink to the bottom whatever the field, so a
     // Skip visibly does something.
     const chosen = toolbar.comparator(SORTS, state);
@@ -219,7 +221,6 @@ export function mount(root) {
     detail.refresh();
   }
 
-  fillCategories();
   update();
   return { update, focus: detail.focus, destroy: detail.destroy };
 }
