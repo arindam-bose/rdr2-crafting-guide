@@ -847,6 +847,8 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .hint.enough { color: var(--ok); }
 .hint.short  { color: var(--danger-text); }
 .hint.spare  { color: var(--ink-dim); }
+/* A material's comment is the answer, not an aside: upright. */
+.hint.verdict { font-style: normal; }
 
 /* A material card opens its detail view from anywhere on it.  The name
    is the button that does it -- dressed as the heading it replaces --
