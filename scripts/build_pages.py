@@ -43,7 +43,7 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SITE_URL = 'https://arindam-bose.github.io/adamslab/rdr2-crafting-guide/'
+SITE_URL = 'https://arindambose.com/rdr2-crafting-guide/'
 SITE_NAME = 'RDR2 Crafting Guide'
 
 # Written into every generated page, and looked for before anything is

@@ -145,23 +145,28 @@ that was never loaded redirects to its card in the app instead.
 
 ## Hosting
 
-The site is served from a folder of the user-site repository,
-`arindam-bose/arindam-bose.github.io`, at `/adamslab/rdr2-crafting-guide/`,
-beside the other tools under `adamslab/`. Three things follow from sharing
-that domain:
+The site is this repository's own GitHub Pages site, built from `main` at the
+root. Pages serves every project site of the account under the user site's
+custom domain, so it lives at <https://arindambose.com/rdr2-crafting-guide/>,
+beside the personal site from `arindam-bose/arindam-bose.github.io`. A push to
+`main` is a deploy. Three things follow from sharing that domain:
 
 - Search engines read `robots.txt` only at the root of a domain, so the
   sitemap is announced from the user-site repository's own `robots.txt`
-  (`Sitemap: https://arindam-bose.github.io/adamslab/rdr2-crafting-guide/sitemap.xml`),
-  one line per tool, and submitted in Google Search Console under a URL-prefix
-  property for `https://arindam-bose.github.io/`.
-- GitHub Pages uses one `404.html`, at the root of that repository, for every
-  missing address on the domain -- this folder cannot have its own.
-- Every tool shares one browser origin, so one localStorage, one IndexedDB and
-  one cache storage. Everything this one keeps is named for it -- `rdr2:` keys,
-  the `rdr2-personal` database, `rdr2-crafting-v*` caches -- and its service
-  worker deletes only its own old caches, never another tool's. A new tool
-  under `adamslab/` needs the same care.
+  (`Sitemap: https://arindambose.com/rdr2-crafting-guide/sitemap.xml`)
+  and submitted in Google Search Console under a property for
+  `https://arindambose.com/`.
+- GitHub Pages uses one `404.html`, at the root of the user-site repository,
+  for every missing address on the domain -- this site cannot have its own.
+- Every site on the domain shares one browser origin, so one localStorage, one
+  IndexedDB and one cache storage. Everything this one keeps is named for it
+  -- `rdr2:` keys, the `rdr2-personal` database, `rdr2-crafting-v*` caches --
+  and its service worker deletes only its own old caches, never another's.
+  Another tool on this domain needs the same care.
+
+The canonical address is `SITE_URL` in `scripts/build_pages.py`; change it
+there and rerun the script, then `index.html`'s canonical and `og:` tags by
+hand.
 
 ## Layout
 
