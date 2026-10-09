@@ -136,9 +136,10 @@ without its prefix, so `ing-perfect-beaver-pelt` is
 and `sitemap.xml`. Like the database, they are generated and committed; never
 edit one by hand. Each carries the facts the app's dialog does, in the app's
 own stylesheet, and an "Open in the crafting guide" link to the same card in
-the app (`#/materials/<id>`). Their only script is the theme line, which the
-generator copies out of `index.html` along with the Content-Security-Policy
-that allows it by hash, so the two never drift apart. Every link in them is
+the app (`#/materials/<id>`). Their only scripts are Google Analytics
+(`gtag.js` and `js/analytics.js`) and the theme line, which the generator
+copies out of `index.html` along with the Content-Security-Policy that allows
+it by hash, so the two never drift apart. Every link in them is
 relative; the one absolute address, for canonical links and the sitemap, is
 `SITE_URL` at the top of the script.
 
