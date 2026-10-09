@@ -1769,7 +1769,9 @@ ul.buff li::before {
   border-radius: 999px;
   cursor: pointer;
 }
-.move-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
+.move-btn:hover:not(:disabled) { color: var(--ink); border-color: var(--ink-faint); }
+/* Read-only in General, faded as a disabled stepper is. */
+.move-btn:disabled { opacity: .3; cursor: default; }
 .move-btn[aria-expanded="true"] { border-color: var(--accent-text); color: var(--ink); }
 .move-btn .move-to { display: inline-flex; gap: 2px; }
 .move-btn .move-to .icon { margin: 0; width: 1.25em; height: 1.25em; }

@@ -43,7 +43,6 @@ import * as nav from '../nav.js';
 import { freshCard, materialDialog } from './material-dialog.js';
 
 const LOCATION_KEY = 'rdr2:location';
-const OFFER_DISMISSED = 'rdr2:personalize-offer-dismissed';
 
 // The icon that matches each location's id, for the segmented tabs
 // and the Transfer button and panel alike.
@@ -181,12 +180,9 @@ export function mount(root) {
       toast('Personalize is on - every card now counts what you have.');
       return;
     }
-    if (event.target.closest('#i-offer-dismiss')) {
-      offerDismissed = true;
-      prefs.set(OFFER_DISMISSED, new Date().toISOString());
-      update();
-      return;
-    }
+    // Logging is Personalize's alone.  The controls are drawn disabled
+    // in General; this is the backstop for a click that lands anyway.
+    if (!store.isPersonal()) return;
 
     const opener = event.target.closest('.move-btn');
     if (opener) {
@@ -479,12 +475,15 @@ export function mount(root) {
       // What you are holding here first, then the quick way back to
       // whatever you were logging lately.
       sections.innerHTML = (store.isEmpty() && !staged.size ? restoreOffer() : '')
-        + (offering() ? personalizeOffer() : '')
+        + (store.isPersonal() ? '' : personalizeOffer())
         + section(at, held(state.location), `Nothing ${lower(at)} yet.`)
         + section('Recently Touched', recent(state.location), '');
     }
 
-    if (moving) renderMove();
+    // Flipped to General with a Transfer panel open: close it, since
+    // nothing in it can be used there.
+    if (moving && !store.isPersonal()) movePop.hidePopover();
+    else if (moving) renderMove();
 
     detail.refresh();
 
@@ -499,21 +498,6 @@ export function mount(root) {
     }
   }
 
-  // Held here as well as stored, so "Not now" still holds for the rest
-  // of the visit in a browser that will not keep the preference.
-  let offerDismissed = false;
-
-  /**
-   * Whether to suggest Personalize: in General, once there is
-   * something logged for it to show -- the moment its value is
-   * plain, rather than a switch to find before there is any reason
-   * to.  Until "Not now", or until it is turned on.
-   */
-  function offering() {
-    return !store.isPersonal() && !store.isEmpty()
-      && !offerDismissed && prefs.get(OFFER_DISMISSED) === null;
-  }
-
   function section(title, list, emptyText, counted = true) {
     if (!list.length && !emptyText) return '';
     return `
@@ -524,7 +508,7 @@ export function mount(root) {
         </div>
         ${list.length
           ? `<div class="rows">${list
-               .map((m) => row(m, state.location, wants, pendingIdx))
+               .map((m) => row(m, state.location, wants, pendingIdx, store.isPersonal()))
                .join('')}</div>`
           : empty(emptyText)}
       </section>`;
@@ -560,19 +544,20 @@ function restoreOffer() {
 }
 
 /**
- * The invitation into Personalize, for someone logging in General:
- * what they have just entered is kept, but nothing else on the site
- * shows it until the switch is on.
+ * Shown for as long as the page is in General, where the inventory is
+ * read-only: why the steppers are greyed out, and the one switch that
+ * wakes them.  Not dismissable -- without it the disabled rows would
+ * be a puzzle.
  */
 function personalizeOffer() {
   return `
     <section class="restore-offer personalize-offer">
-      <p class="note"><strong>Make the guide yours.</strong> Turn on
-        Personalize and every card counts what you have logged: what is
-        ready to craft, and what is still left to hunt.</p>
+      <p class="note"><strong>Logging is for Personalize.</strong> In General
+        the inventory is read-only. Turn on Personalize to log what you
+        have, and every card counts it: what is ready to craft, and what
+        is still left to hunt.</p>
       <div class="panel-actions">
         <button type="button" class="more-btn" id="i-personalize">Turn on Personalize</button>
-        <button type="button" class="ghost-btn" id="i-offer-dismiss">Not now</button>
       </div>
     </section>`;
 }
@@ -639,7 +624,11 @@ function history(m) {
   return `<small class="history">${parts.join(' - ')}</small>`;
 }
 
-function row(m, location, wants, pendingIdx) {
+/**
+ * `personal` false draws the row read-only, as General shows it: the
+ * count stays, but the stepper and the Transfer button are disabled.
+ */
+function row(m, location, wants, pendingIdx, personal) {
   const shown = m.qty + (pendingIdx.get(m.ingredient_id) ?? 0);
   const net = shown - m.qty;
 
@@ -655,13 +644,13 @@ function row(m, location, wants, pendingIdx) {
       <span class="name"><a class="xlink" href="${esc(nav.href('inventory', m.ingredient_id))}"
         >${nameWith(m.name, qualityStars(m.quality))}</a>${history(m)}</span>
       <span class="controls">
-        ${moveButton(m, location, wants, shown)}
+        ${moveButton(m, location, wants, shown, personal)}
         <span class="stepper">
-          <button type="button" data-delta="-1" ${shown <= 0 ? 'disabled' : ''}
+          <button type="button" data-delta="-1" ${shown <= 0 || !personal ? 'disabled' : ''}
                   aria-label="One fewer ${esc(m.name)}">-</button>
           <output class="${shown > 0 ? 'held' : ''}${net ? ' pending' : ''}"
             >${shown}${mark}</output>
-          <button type="button" data-delta="1"
+          <button type="button" data-delta="1" ${personal ? '' : 'disabled'}
                   aria-label="One more ${esc(m.name)}">+</button>
         </span>
       </span>
@@ -698,7 +687,7 @@ function moveTargets(ingredient, location, wants) {
  * here to move and nothing on its way out -- a button that could
  * only open onto disabled steppers is clutter.
  */
-function moveButton(m, location, wants, available) {
+function moveButton(m, location, wants, available, personal) {
   const targets = moveTargets(m.ingredient_id, location, wants);
   if (!targets.length) return '';
 
@@ -709,7 +698,7 @@ function moveButton(m, location, wants, available) {
 
   return `
     <button type="button" class="move-btn${count ? ' staged' : ''}"
-            aria-haspopup="dialog" aria-expanded="false"
+            aria-haspopup="dialog" aria-expanded="false" ${personal ? '' : 'disabled'}
             aria-label="Transfer ${esc(m.name)} to ${esc(names)}${
               count ? ` (${count} staged)` : ''}">
       <span class="move-word">Transfer to</span>

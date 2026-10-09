@@ -385,11 +385,12 @@ Personalize for a device that already holds data from before General was the
 default, so nobody is switched over unasked. The choice is also held in memory,
 so it still takes for the visit where storage is blocked.
 
-General hides every personal control on Materials and Recipes, which leaves
-Inventory as the one place a newcomer can log something. So the first save
-there, in General, brings an invitation into Personalize above the list —
-*Make the guide yours* — with *Not now*, which is remembered. Turning it on
-shows the one-time note on where the data lives, the first moment it applies.
+General hides every personal control on Materials and Recipes, and leaves
+Inventory read-only: the counts show, but the steppers and Transfer buttons
+are disabled, and a Transfer panel left open closes. Above the list sits why —
+*Logging is for Personalize* — with a button that turns it on, shown for as
+long as the page is in General. Turning it on shows the one-time note on where
+the data lives, the first moment it applies.
 
 The masthead switch shows both words on a wide screen. On a phone it shows
 only the one in force, small above the track, and the Back up button beside it

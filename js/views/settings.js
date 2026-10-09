@@ -22,8 +22,9 @@ import { ledgerDialog } from './ledger.js';
 import { aboutDialog, howToDialog } from './guide.js';
 
 // The sources the reference data was built from, credited in the order
-// they were leaned on.  `source` is the site or the author; `title` is
-// what the page calls itself.
+// they were leaned on, with the Reddit posts kept together at the end.
+// `source` is the site or the author; `title` is what the page calls
+// itself.
 const REFERENCES = [
   { source: 'IGN',
     title: 'Red Dead Redemption 2 Guide',
@@ -40,9 +41,18 @@ const REFERENCES = [
   { source: 'RDR2.org',
     title: 'Red Dead Redemption 2 Wiki',
     url: 'https://www.rdr2.org/wiki/' },
+  { source: 'Notion Template',
+    title: 'Red Dead Redemption II Crafting Personalized',
+    url: 'https://www.notion.com/templates/red-dead-redemption-ii-crafting-personalized' },
   { source: 'u/JimmyJames86',
     title: 'RDR2 Hunting and Crafting Guide (story mode)',
     url: 'https://www.reddit.com/r/reddeadredemption/comments/kunnbu/rdr2_hunting_and_crafting_guide_story_mode/' },
+  { source: 'u/BazaarOnion',
+    title: 'All Required Resource Checklist for Story mode Crafting (Camp Upgrades, Fence Crafting, Trapper Crafting)',
+    url: 'https://www.reddit.com/r/RDR2/comments/9u9zjq/all_required_resource_checklist_for_story_mode/' },
+  { source: 'u/kingkashue',
+    title: 'RDR2 Crafting Spreadsheet - Updates your total based on items wanted (.ods, .xlsx, .pdf)',
+    url: 'https://www.reddit.com/r/reddeadredemption/comments/s8wlx3/rdr2_crafting_spreadsheet_updates_your_total/' },
 ];
 
 // The three faces the page sets type in, each named in its own face
