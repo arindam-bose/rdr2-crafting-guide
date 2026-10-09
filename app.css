@@ -1268,6 +1268,9 @@ body:has(dialog.detail[open]) { overflow: hidden; }
 .detail-recipes li.retired .state { color: var(--ink-faint); }
 .detail-recipes li.made .what,
 .detail-recipes li.retired .what  { color: var(--ink-faint); }
+/* Only the recipe's name is crossed out, not the amount or the station. */
+.detail-recipes li.made .what a,
+.detail-recipes li.retired .what a { text-decoration: line-through; }
 
 /* The animals a material comes from: the name, and how to take it --
    a weapon, or the bait for a fish -- set to the right. */

@@ -446,7 +446,7 @@ function stockLine(d, personal) {
   // The Campfire takes any amount, so it is never short or retired.
   const enough = d.campfire || d.have >= d.needed;
   const retired = !d.campfire && d.needed === 0;
-  const needs = retired ? 'needs no more' : `needs ${d.needed}`;
+  const needs = retired ? 'needs no more' : `needs ${d.needed} more`;
 
   // The Campfire is not a vendor wanting something from you: it is you,
   // cooking with what is in your Satchel.  So it reads as something to
