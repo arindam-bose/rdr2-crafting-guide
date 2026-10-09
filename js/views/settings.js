@@ -168,16 +168,18 @@ export function mount(root) {
       </section>
 
       <section class="panel">
-        <h3>About</h3>
-        <dl class="facts" id="s-about"></dl>
-
-        <p class="list-label card-label">On your home screen</p>
+        <h3>On your home screen</h3>
         <p class="note">Installed, it opens from its own icon in a window of
           its own, with or without a signal, with no address to type.</p>
         <p class="note" id="s-install-how"></p>
         <div class="panel-actions" id="s-install-actions" hidden>
           <button type="button" class="more-btn" id="s-install">Install</button>
         </div>
+      </section>
+
+      <section class="panel">
+        <h3>About</h3>
+        <dl class="facts" id="s-about"></dl>
       </section>
 
       <!-- A plain link, not the site's own widget or button image: those

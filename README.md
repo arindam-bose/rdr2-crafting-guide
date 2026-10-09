@@ -652,9 +652,9 @@ the transaction rather than halfway through it, and rows naming materials this
 build does not know are reported rather than swallowed, since the ledger stores
 slugs with no foreign key.
 
-**About**, after the tool version and a link to the source on GitHub, ends
-with the guide on the home screen. Where the browser lends its
-install prompt (`beforeinstallprompt`: Chrome, Edge, Samsung Internet) it is a
+**On your home screen**, a tile of its own just before **About** (which
+holds the two dialogs, the tool version and a link to the source on GitHub),
+installs the guide. Where the browser lends its install prompt (`beforeinstallprompt`: Chrome, Edge, Samsung Internet) it is a
 real **Install** button; the event is kept rather than cancelled, so the
 browser's own offer still shows for anyone who never opens Settings. Firefox
 and Safari have no such event, so there the tile gives that browser's own
