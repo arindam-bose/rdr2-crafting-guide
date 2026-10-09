@@ -300,8 +300,7 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme, wide=
 <link rel="apple-touch-icon" href="{root}images/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="RDR2 Crafting">
 <link rel="stylesheet" href="{root}app.css">
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GJLNDBHJ"></script>
-<script src="{root}js/analytics.js"></script>
+<script defer src="{root}js/analytics.js"></script>
 <script type="application/ld+json">{crumb_ld}</script>
 {theme}
 </head>
@@ -341,6 +340,7 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme, wide=
      or <a href="{root}recipes/">every recipe</a>.</p>
   <p class="small-print">Not affiliated with or endorsed by Rockstar Games
      or Take-Two Interactive</p>
+  <p class="small-print"><button type="button" class="more-link" data-consent-open>Cookie settings</button></p>
 </footer>
 </body>
 </html>

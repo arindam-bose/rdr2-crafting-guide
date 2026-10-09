@@ -35,8 +35,10 @@ now and what you are still short of.
 
 There is no account and no server behind the guide. The recipes ship with the
 page, and everything you log stays in your browser: nothing you enter is ever
-uploaded. The one thing that goes out is a visit count: Google Analytics sees
-which pages are opened, never what you log.
+uploaded. The one thing that can go out is a visit count, and only if you
+accept the cookie banner: Google Analytics then sees which pages are opened,
+never what you log. **Cookie settings**, at the foot of every page, changes
+your answer.
 
 The flip side is that your data lives only in that browser. Use **Back up** now
 and then, and keep the file somewhere safe.

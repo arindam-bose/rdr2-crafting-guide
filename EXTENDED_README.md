@@ -5,15 +5,15 @@ data layers, the build scripts, hosting, the look, and every screen in detail.
 For what the guide is and how to use it, start with the [README](README.md).
 
 A static site with no build step: plain ES modules, [sql.js] in the browser, and
-a service worker so it keeps working out of signal range. Nothing is uploaded —
-the reference data is a read-only SQLite file that ships with the app, and your
+a service worker so it keeps working out of signal range. Nothing you log is
+uploaded — the reference data is a read-only SQLite file that ships with the app, and your
 own inventory lives in your browser.
 
 [sql.js]: https://sql.js.org
 
 ## Privacy, enforced
 
-"Nothing is uploaded" is not a promise the reader has to take on trust: the
+"Nothing you log is uploaded" is not a promise the reader has to take on trust: the
 page tells the browser to refuse anything else. Every page carries a
 Content-Security-Policy as a `<meta>` tag -- GitHub Pages cannot set headers --
 first in `<head>`, so it covers everything after it:
@@ -24,9 +24,8 @@ first in `<head>`, so it covers everything after it:
 - The one exception is Google Analytics, which counts page visits:
   `script-src` adds `https://www.googletagmanager.com` for `gtag.js`, and
   `connect-src` and `img-src` add Google's analytics domains for the hits it
-  sends. Its configuration is a file, `js/analytics.js`, rather than Google's
-  usual inline snippet, so it needs no hash. It sees which pages are opened,
-  never the inventory, which stays in IndexedDB.
+  sends. It sees which pages are opened, never the inventory, which stays in
+  IndexedDB. See Analytics and consent, below.
 - `script-src` adds `'wasm-unsafe-eval'`, which lets sql.js compile its
   WebAssembly and nothing more -- JavaScript `eval` stays blocked -- and the
   SHA-256 hash of the one inline script, the theme line in `<head>`. Change a
@@ -45,6 +44,27 @@ pages, the acknowledgements, the source code, Buy me a coffee -- are plain
 anchors that open in a new tab; apart from Google Analytics nothing from
 another site is embedded, so nothing else is contacted until one is
 followed. `frame-ancestors` cannot be set from a meta tag, so it is not.
+
+## Analytics and consent
+
+Nothing of Google's loads until the visitor agrees. `js/analytics.js`, on
+every page and loaded with `defer` so it never holds up the first paint, asks
+everyone with a banner at the foot of the page: *May we count your visit?*
+Accept loads `gtag.js` and counts the visit; Decline loads nothing. The answer
+is kept in localStorage (`rdr2:analytics-consent`, `granted` or `denied`) and
+held in memory for the visit where storage is blocked.
+
+**Cookie settings** brings the banner back to change the answer: a link in
+every footer, and a row in Settings' About tile that shows the current one.
+Both are just buttons carrying `data-consent-open`, which the script answers
+with a delegated listener, so the static pages need no code of their own.
+Declining after accepting sets `ga-disable-<id>` for the rest of the visit and
+deletes the `_ga` cookies on every parent domain of the host. The script fires
+`rdr2:consent` on `window` when the answer changes, which is how Settings
+repaints its row.
+
+It is a file rather than Google's usual inline snippet, so the policy needs no
+second hash.
 
 ## Two layers
 
@@ -138,8 +158,8 @@ without its prefix, so `ing-perfect-beaver-pelt` is
 and `sitemap.xml`. Like the database, they are generated and committed; never
 edit one by hand. Each carries the facts the app's dialog does, in the app's
 own stylesheet, and an "Open in the crafting guide" link to the same card in
-the app (`#/materials/<id>`). Their only scripts are Google Analytics
-(`gtag.js` and `js/analytics.js`) and the theme line, which the generator
+the app (`#/materials/<id>`). Their only scripts are `js/analytics.js`, with
+its cookie banner, and the theme line, which the generator
 copies out of `index.html` along with the Content-Security-Policy that allows
 it by hash, so the two never drift apart. Every link in them is
 relative; the one absolute address, for canonical links and the sitemap, is
@@ -390,9 +410,11 @@ so it still takes for the visit where storage is blocked.
 
 General hides every personal control on Materials and Recipes, and leaves
 Inventory read-only: the counts show, but the steppers and Transfer buttons
-are disabled, and a Transfer panel left open closes. Above the list sits why —
-*Logging is for Personalize* — with a button that turns it on, shown for as
-long as the page is in General. Turning it on shows the one-time note on where
+are disabled, and a Transfer panel left open closes. Changes staged in
+Personalize are held for its return, but General shows only saved counts and
+puts the save bar away, and staging and saving both refuse there. Above the
+list, and above search results, sits why — *Logging is for Personalize* —
+with a button that turns it on, shown for as long as the page is in General. Turning it on shows the one-time note on where
 the data lives, the first moment it applies.
 
 The masthead switch shows both words on a wide screen. On a phone it shows
@@ -657,7 +679,8 @@ build does not know are reported rather than swallowed, since the ledger stores
 slugs with no foreign key.
 
 **On your home screen**, a tile of its own just before **About** (which
-holds the two dialogs, the tool version and a link to the source on GitHub),
+holds the two dialogs, the tool version, a link to the source on GitHub and
+the cookie settings),
 installs the guide. Where the browser lends its install prompt (`beforeinstallprompt`: Chrome, Edge, Samsung Internet) it is a
 real **Install** button; the event is kept rather than cancelled, so the
 browser's own offer still shows for anyone who never opens Settings. Firefox

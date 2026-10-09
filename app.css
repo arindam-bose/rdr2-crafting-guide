@@ -2405,8 +2405,8 @@ ul.buff li::before {
 
 /* Browse every material / every recipe: drawn like the page's other
    links, in the footer's own quiet ink rather than the browser's blue. */
-.footer a { color: var(--ink-dim); text-underline-offset: 2px; }
-.footer a:hover { color: var(--ink); }
+.footer a, .footer .more-link { color: var(--ink-dim); text-underline-offset: 2px; }
+.footer a:hover, .footer .more-link:hover { color: var(--ink); }
 
 /* No typewriter had a (c) key -- you typed the three characters.  This one
    borrows the glyph, and drops back a little so it does not outweigh the
@@ -2476,6 +2476,38 @@ ul.buff li::before {
   font-size: 1.1rem;
 }
 @media (min-width: 720px) { .toast { bottom: 20px; } }
+
+/* The cookie question, built by js/analytics.js on every page until it
+   is answered.  Docked at the foot like the toast, but above it and the
+   save bar, and wider: it is read, not glanced at. */
+.consent {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--tabs-h, 0px) + 12px);
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  width: calc(100% - 32px);
+  max-width: 640px;
+  padding: 14px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent-text);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.consent-text {
+  flex: 1 1 300px;
+  margin: 0;
+  font-size: .82rem;
+  line-height: 1.5;
+}
+.consent-text strong { color: var(--ink); }
+.consent-actions { display: flex; gap: 8px; margin-left: auto; }
+@media (min-width: 720px) { .consent { bottom: 20px; } }
 
 /* ============================================================
    The lettering, last.

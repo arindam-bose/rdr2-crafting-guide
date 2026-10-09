@@ -181,7 +181,8 @@ export function mount(root) {
       return;
     }
     // Logging is Personalize's alone.  The controls are drawn disabled
-    // in General; this is the backstop for a click that lands anyway.
+    // in General, and stage(), stageMove() and save() refuse there too;
+    // this just stops a stray click opening a Transfer panel.
     if (!store.isPersonal()) return;
 
     const opener = event.target.closest('.move-btn');
@@ -375,6 +376,7 @@ export function mount(root) {
 
   // The row carries what the ledger needs, so a tap costs no query.
   function stage({ ingredient, name, source }, delta) {
+    if (!store.isPersonal()) return;
     const k = editKey(state.location, ingredient);
     const entry = staged.get(k)
       ?? { kind: 'edit', ingredient_id: ingredient, location_id: state.location,
@@ -397,6 +399,7 @@ export function mount(root) {
   // other.  Capped at zero rather than going negative, since there is
   // no such thing as sending fewer than none.
   function stageMove({ ingredient, name, source }, to, delta) {
+    if (!store.isPersonal()) return;
     const from = state.location;
 
     if (delta > 0) {
@@ -431,6 +434,7 @@ export function mount(root) {
   }
 
   async function save() {
+    if (!store.isPersonal()) return;
     const entries = [...staged.values()];
     staged.clear();
     update();
@@ -460,7 +464,12 @@ export function mount(root) {
     const searching = state.search.length > 0;
     const place = locations.find((l) => l.id === state.location).name;
     const at = heldAt(state.location, place);
-    pendingIdx = pendingIndex(state.location);
+    // General is read-only through and through: changes staged in
+    // Personalize are kept for when it is back on, but until then the
+    // rows show only what is saved, and the save bar is put away.
+    const personal = store.isPersonal();
+    pendingIdx = personal ? pendingIndex(state.location) : new Map();
+    const offer = personal ? '' : personalizeOffer(staged.size);
 
     if (searching) {
       const hits = queries.searchMaterials(state.search, state.location);
@@ -468,32 +477,32 @@ export function mount(root) {
       // rather than through `plural`: every other count on the page
       // reads inline ("6 recipes"), but this one stands alone as a
       // heading, in the same sentence case as the rest of the page.
-      sections.innerHTML = section(
+      sections.innerHTML = offer + section(
         `${hits.length} ${hits.length === 1 ? 'Match' : 'Matches'}`,
         hits, 'No material or animal by that name.', false);
     } else {
       // What you are holding here first, then the quick way back to
       // whatever you were logging lately.
       sections.innerHTML = (store.isEmpty() && !staged.size ? restoreOffer() : '')
-        + (store.isPersonal() ? '' : personalizeOffer())
+        + offer
         + section(at, held(state.location), `Nothing ${lower(at)} yet.`)
         + section('Recently Touched', recent(state.location), '');
     }
 
     // Flipped to General with a Transfer panel open: close it, since
     // nothing in it can be used there.
-    if (moving && !store.isPersonal()) movePop.hidePopover();
+    if (moving && !personal) movePop.hidePopover();
     else if (moving) renderMove();
 
     detail.refresh();
 
-    savebar.hidden = staged.size === 0;
+    savebar.hidden = !personal || staged.size === 0;
     pending.textContent = `${plural(staged.size, 'unsaved change')}`;
 
     // Say so on the tab too, since the bar goes with the screen.
     const tab = document.querySelector('.tabs [data-route="inventory"]');
     if (tab) {
-      if (staged.size) tab.dataset.pending = staged.size;
+      if (personal && staged.size) tab.dataset.pending = staged.size;
       else delete tab.dataset.pending;
     }
   }
@@ -545,17 +554,21 @@ function restoreOffer() {
 
 /**
  * Shown for as long as the page is in General, where the inventory is
- * read-only: why the steppers are greyed out, and the one switch that
- * wakes them.  Not dismissable -- without it the disabled rows would
- * be a puzzle.
+ * read-only -- above search results too: why the steppers are greyed
+ * out, and the one switch that wakes them.  Not dismissable -- without
+ * it the disabled rows would be a puzzle.  `waiting` is how many
+ * changes staged in Personalize are being held for its return.
  */
-function personalizeOffer() {
+function personalizeOffer(waiting) {
+  const held = waiting
+    ? ` Your ${plural(waiting, 'unsaved change')} ${waiting === 1 ? 'is' : 'are'} kept for when you do.`
+    : '';
   return `
     <section class="restore-offer personalize-offer">
       <p class="note"><strong>Logging is for Personalize.</strong> In General
         the inventory is read-only. Turn on Personalize to log what you
         have, and every card counts it: what is ready to craft, and what
-        is still left to hunt.</p>
+        is still left to hunt.${held}</p>
       <div class="panel-actions">
         <button type="button" class="more-btn" id="i-personalize">Turn on Personalize</button>
       </div>

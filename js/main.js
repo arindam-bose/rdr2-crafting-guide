@@ -46,6 +46,10 @@ const FIRST_NOTE_SEEN = 'rdr2:first-note-seen';
 // the visit in a browser that will not keep the preference.
 let firstNoteDismissed = false;
 
+// Left behind by the old "Not now" on Inventory's Personalize offer,
+// which General's read-only notice replaced; nothing reads it now.
+prefs.remove('rdr2:personalize-offer-dismissed');
+
 let current = null;     // the mounted view's { update, destroy }
 let currentName = null;
 

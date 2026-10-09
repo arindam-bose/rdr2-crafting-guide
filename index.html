@@ -10,7 +10,8 @@
        'wasm-unsafe-eval'  sql.js compiles its wasm; JS eval stays blocked.
        googletagmanager / google-analytics
                            gtag.js, and the hits it sends (as fetches
-                           and, as a fallback, image pixels).  See
+                           and, as a fallback, image pixels) -- only
+                           after the visitor consents.  See
                            js/analytics.js.
        sha256-…            the inline theme script below.  Edit one byte
                            of it and it stops running -- recompute this
@@ -44,10 +45,11 @@
 <meta name="apple-mobile-web-app-title" content="RDR2 Crafting">
 <link rel="stylesheet" href="app.css">
 
-<!-- Google Analytics: Google's script, then the config in a file of
-     our own (no inline script, so no second hash in the policy). -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GJLNDBHJ"></script>
-<script src="js/analytics.js"></script>
+<!-- Google Analytics, only once the visitor consents: the file asks
+     with a banner, then loads Google's script.  A file of our own, so
+     no second hash in the policy; deferred, so it never holds up the
+     first paint. -->
+<script defer src="js/analytics.js"></script>
 
 <!-- Before the first paint, so a reader who chose leather never sees
      parchment flash first.  Inline for the same reason: a separate
@@ -163,6 +165,7 @@ try {
      or <a href="recipes/">every recipe</a>.</p>
   <p class="small-print">Not affiliated with or endorsed by Rockstar Games
      or Take-Two Interactive</p>
+  <p class="small-print"><button type="button" class="more-link" data-consent-open>Cookie settings</button></p>
 </footer>
 
 <div id="toast" class="toast" hidden></div>

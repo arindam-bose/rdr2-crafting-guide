@@ -257,16 +257,24 @@ export function mount(root) {
     if (event.target.closest('[data-ledger]')) ledger.open();
   });
 
-  // The About tile: the two pages of words, then the release this is.
-  // Nothing here moves with the store, so it is filled once, not on
-  // every update.
+  // The About tile: the two pages of words, the release this is, and
+  // the cookie choice.  Nothing here moves with the store, so it is not
+  // repainted on every update -- only when the cookie answer changes.
+  // "Cookie settings" carries data-consent-open, which js/analytics.js
+  // answers by bringing its banner back.
   const { number, date } = self.APP_VERSION ?? {};
-  $('#s-about').innerHTML = facts([
-    ['About this tool', '', 'about'],
-    ['How to use this tool', '', 'howto'],
-    ['Tool version', number ? `v${number}, updated ${released(date)}` : 'unknown'],
-    ['Source code', 'On GitHub', '', 'https://github.com/arindam-bose/rdr2-crafting-guide'],
-  ]);
+  const CONSENT = { granted: 'Accepted', denied: 'Declined' };
+  function paintAbout() {
+    $('#s-about').innerHTML = facts([
+      ['About this tool', '', 'about'],
+      ['How to use this tool', '', 'howto'],
+      ['Tool version', number ? `v${number}, updated ${released(date)}` : 'unknown'],
+      ['Source code', 'On GitHub', '', 'https://github.com/arindam-bose/rdr2-crafting-guide'],
+      ['Cookie settings', CONSENT[self.rdr2Consent?.get()] ?? 'Not chosen', 'consent-open'],
+    ]);
+  }
+  paintAbout();
+  window.addEventListener('rdr2:consent', paintAbout);
   $('#s-about').addEventListener('click', (event) => {
     if (event.target.closest('[data-about]')) about.open();
     else if (event.target.closest('[data-howto]')) howTo.open();
@@ -538,6 +546,7 @@ export function mount(root) {
   return {
     update,
     destroy() {
+      window.removeEventListener('rdr2:consent', paintAbout);
       unsubscribe();
       unsubscribeInstall();
       ledger.destroy();
