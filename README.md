@@ -110,3 +110,5 @@ you can [buy me a coffee](https://buymeacoffee.com/arindambose).
 
 A fan-made tool, not affiliated with or endorsed by Rockstar Games or
 Take-Two Interactive.
+
+Warning: As you probably noticed already, help from AI was taken to make this tool. If you are against AI, please refrain from using it. Cheers! 
