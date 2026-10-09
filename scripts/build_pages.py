@@ -300,6 +300,8 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme, wide=
 <link rel="apple-touch-icon" href="{root}images/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="RDR2 Crafting">
 <link rel="stylesheet" href="{root}app.css">
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GJLNDBHJ"></script>
+<script src="{root}js/analytics.js"></script>
 <script type="application/ld+json">{crumb_ld}</script>
 {theme}
 </head>
@@ -349,8 +351,8 @@ def open_in_app(root, route, id_, what):
     return f'''
     <aside class="restore-offer static-cta">
       <p class="note"><strong>Track it in the guide.</strong> Log what you
-        have and see what {what} - free, no sign-up, nothing
-        leaves your device, and it works offline.</p>
+        have and see what {what} - free, no sign-up, what you log
+        never leaves your device, and it works offline.</p>
       <a class="more-btn" href="{root}#/{route}/{esc(id_)}">Open in the crafting guide</a>
     </aside>'''
 

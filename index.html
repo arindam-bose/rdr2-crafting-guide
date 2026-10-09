@@ -3,10 +3,15 @@
 <head>
 <meta charset="utf-8">
 <!-- The privacy promise, enforced by the browser rather than taken on
-     trust: this page may load and fetch from its own origin and nowhere
-     else.  First in <head>, so it covers everything after it.
+     trust: this page may load and fetch from its own origin and, for
+     Google Analytics alone, Google's -- nowhere else.  First in <head>,
+     so it covers everything after it.
 
        'wasm-unsafe-eval'  sql.js compiles its wasm; JS eval stays blocked.
+       googletagmanager / google-analytics
+                           gtag.js, and the hits it sends (as fetches
+                           and, as a fallback, image pixels).  See
+                           js/analytics.js.
        sha256-…            the inline theme script below.  Edit one byte
                            of it and it stops running -- recompute this
                            hash (sha256 of the text between the tags,
@@ -16,7 +21,7 @@
 
      A meta tag cannot carry frame-ancestors; GitHub Pages sets no
      headers, so that one is left out. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-+/qS7dCmregQBe3xZrxsAqXlpLcqTFgGyvh3VzGNcjg='; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-+/qS7dCmregQBe3xZrxsAqXlpLcqTFgGyvh3VzGNcjg=' https://www.googletagmanager.com; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com; img-src 'self' https://*.google-analytics.com https://*.googletagmanager.com; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#e7dbc0">
@@ -38,6 +43,11 @@
 <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="RDR2 Crafting">
 <link rel="stylesheet" href="app.css">
+
+<!-- Google Analytics: Google's script, then the config in a file of
+     our own (no inline script, so no second hash in the policy). -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-L8GJLNDBHJ"></script>
+<script src="js/analytics.js"></script>
 
 <!-- Before the first paint, so a reader who chose leather never sees
      parchment flash first.  Inline for the same reason: a separate

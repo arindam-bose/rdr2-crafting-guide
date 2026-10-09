@@ -19,6 +19,12 @@ first in `<head>`, so it covers everything after it:
 - `default-src 'self'`: the page may load and fetch from its own origin and
   nowhere else. A request to any other server is blocked by the browser and
   shows in its console.
+- The one exception is Google Analytics, which counts page visits:
+  `script-src` adds `https://www.googletagmanager.com` for `gtag.js`, and
+  `connect-src` and `img-src` add Google's analytics domains for the hits it
+  sends. Its configuration is a file, `js/analytics.js`, rather than Google's
+  usual inline snippet, so it needs no hash. It sees which pages are opened,
+  never the inventory, which stays in IndexedDB.
 - `script-src` adds `'wasm-unsafe-eval'`, which lets sql.js compile its
   WebAssembly and nothing more -- JavaScript `eval` stays blocked -- and the
   SHA-256 hash of the one inline script, the theme line in `<head>`. Change a
@@ -33,9 +39,10 @@ first in `<head>`, so it covers everything after it:
 
 `<meta name="referrer" content="no-referrer">` keeps the page's address out of
 the `Referer` header when a link leads off the site. Those links -- the wiki
-pages, the acknowledgements, Buy me a coffee -- are plain anchors that open in a
-new tab; nothing from another site is embedded, so nothing is contacted until
-one is followed. `frame-ancestors` cannot be set from a meta tag, so it is not.
+pages, the acknowledgements, the source code, Buy me a coffee -- are plain
+anchors that open in a new tab; apart from Google Analytics nothing from
+another site is embedded, so nothing else is contacted until one is
+followed. `frame-ancestors` cannot be set from a meta tag, so it is not.
 
 ## Two layers
 
@@ -645,7 +652,8 @@ the transaction rather than halfway through it, and rows naming materials this
 build does not know are reported rather than swallowed, since the ledger stores
 slugs with no foreign key.
 
-**About** ends with the guide on the home screen. Where the browser lends its
+**About**, after the tool version and a link to the source on GitHub, ends
+with the guide on the home screen. Where the browser lends its
 install prompt (`beforeinstallprompt`: Chrome, Edge, Samsung Internet) it is a
 real **Install** button; the event is kept rather than cancelled, so the
 browser's own offer still shows for anyone who never opens Settings. Firefox

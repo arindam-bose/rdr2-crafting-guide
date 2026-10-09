@@ -185,9 +185,10 @@ export function mount(root) {
            promise rules out.  Nothing is fetched until it is tapped. -->
       <section class="panel support">
         <h3>Support the guide</h3>
-        <p class="note">The guide is free, with no ads, no accounts and
-          nothing tracked, and it will stay that way. If it saved you a
-          ride back to Valentine, a coffee keeps it going.</p>
+        <p class="note">The guide is free, with no ads and no accounts,
+          and what you log never leaves this browser - it will stay that
+          way. If it saved you a ride back to Valentine, a coffee keeps it
+          going.</p>
         <div class="panel-actions">
           <a class="coffee-btn" href="https://buymeacoffee.com/arindambose"
              target="_blank" rel="noopener noreferrer">
@@ -252,6 +253,7 @@ export function mount(root) {
     ['About this tool', '', 'about'],
     ['How to use this tool', '', 'howto'],
     ['Tool version', number ? `v${number}, updated ${released(date)}` : 'unknown'],
+    ['Source code', 'On GitHub', '', 'https://github.com/arindam-bose/rdr2-crafting-guide'],
   ]);
   $('#s-about').addEventListener('click', (event) => {
     if (event.target.closest('[data-about]')) about.open();
@@ -484,15 +486,19 @@ export function mount(root) {
         + 'unvisited for a while, or space runs low - so keep a backup.';
   }
 
-  // A term with an `opens` becomes the button that opens its dialog.
+  // A term with an `opens` becomes the button that opens its dialog;
+  // a value with an `href` becomes a link out, in a new tab.
   function facts(pairs) {
-    return pairs.map(([term, value, opens]) => `
+    return pairs.map(([term, value, opens, href]) => `
       <div>
         <dt>${opens
           ? `<button type="button" class="fact-open" data-${esc(opens)}
                      aria-haspopup="dialog">${esc(term)}</button>`
           : esc(term)}</dt>
-        <dd>${esc(value)}</dd>
+        <dd>${href
+          ? `<a href="${esc(href)}" target="_blank"
+                rel="noopener noreferrer">${esc(value)}</a>`
+          : esc(value)}</dd>
       </div>`).join('');
   }
 

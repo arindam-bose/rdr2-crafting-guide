@@ -29,6 +29,9 @@ const ABOUT = `
         the page, and everything you log stays in this browser - nothing is
         uploaded, ever. Once it has loaded it works without a signal, and
         added to your home screen it opens like an app.</p>
+      <p>The one thing that does go out is a visit count: Google Analytics
+        sees which pages are opened, the way most websites do. It never
+        sees what you log.</p>
       <p>The flip side is that your data lives only here. Use
         <strong>Back up</strong> at the top now and then, and keep the file
         somewhere safe.</p>

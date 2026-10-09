@@ -2130,6 +2130,12 @@ ul.buff li::before {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
+/* A value that links out, dressed as the credits' links are. */
+.facts dd a {
+  color: var(--accent-text);
+  text-decoration: none;
+}
+.facts dd a:hover { text-decoration: underline; }
 
 /* The acknowledgements, in two groups: the sources beside the fonts
    on a wide screen, the one above the other on a narrow one. */

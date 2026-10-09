@@ -47,6 +47,7 @@ const SHELL = [
   'manifest.webmanifest',
   'database/personal_schema.sql',
   'js/version.js',
+  'js/analytics.js',
   'js/mode-toggle-early.js',
   'js/file-protocol.js',
   'js/main.js',
