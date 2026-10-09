@@ -39,7 +39,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  size-adjust: 110%;
+  size-adjust: 100%;
 }
 
 @font-face {
@@ -52,7 +52,7 @@
      whole page reads a step up without touching the sizes themselves:
      Marston and RDR Lino by 10%, and this one by 20%, since it is the
      smallest for its size and carries all the running text. */
-  size-adjust: 120%;
+  size-adjust: 100%;
 }
 
 @font-face {
@@ -61,7 +61,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  size-adjust: 110%;
+  size-adjust: 100%;
 }
 
 :root {
