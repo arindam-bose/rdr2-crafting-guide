@@ -13,7 +13,7 @@
 // path in and one path out rather than two that can disagree.
 // ============================================================
 
-/** `#/recipes/rec-bear-claw-talisman` -> { name: 'recipes', id: 'rec-…' }. */
+/** `#/recipes/recipe-bear-claw-talisman` -> { name: 'recipes', id: 'recipe-…' }. */
 export function parse(hash = location.hash) {
   const [name, id] = hash.replace(/^#\/?/, '').split('/');
   return { name, id: id ? decodeURIComponent(id) : null };

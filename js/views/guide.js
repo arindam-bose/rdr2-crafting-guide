@@ -3,8 +3,7 @@
 //
 // Dialogs, on the same plumbing as the ledger: opened from a line
 // in the About tile, with no address of their own.  Fixed text,
-// so render() ignores the store; the dialog's refresh still runs
-// on every write and simply paints the same thing again.
+// so nothing ever asks them to repaint.
 // ============================================================
 
 import { detailHead, detailSection } from '../render.js';
@@ -55,11 +54,12 @@ const HOW_TO = `
 
   ${detailSection('1. Pick a mode', `
     <div class="prose">
-      <p><strong>Personalize</strong>, the default, tracks what you have:
-        cards show your stock against what each vendor wants, and anything
-        crafted or skipped drops out of the way. <strong>General</strong> is
-        the plain reference, every recipe and every quantity. Switch between
-        them at the top of any page.</p>
+      <p><strong>General</strong>, where a first visit starts, is the plain
+        reference: every recipe and every quantity. <strong>Personalize</strong>
+        tracks what you have: cards show your stock against what each vendor
+        wants, and anything crafted or skipped drops out of the way. Logging
+        only works in Personalize. Switch between them at the top of any
+        page.</p>
     </div>`)}
 
   ${detailSection('2. Find what you need', `
@@ -79,9 +79,9 @@ const HOW_TO = `
           <strong>-</strong> log one at a time, straight away.</li>
         <li>On <strong>Inventory</strong>, pick the Satchel, Pearson or the
           Trapper, step the counts up or down, then <strong>Save</strong>
-          them as one batch. The smaller counter on a row, marked with a
-          vendor's icon, hands items from your Satchel to the Trapper or
-          Pearson - and on their pages, back again.</li>
+          them as one batch. <strong>Transfer to</strong> on a row hands
+          items from your Satchel to the Trapper or Pearson - and on their
+          pages, back again.</li>
       </ul>
       <p>Every change offers <strong>Undo</strong> for a few seconds.</p>
     </div>`)}

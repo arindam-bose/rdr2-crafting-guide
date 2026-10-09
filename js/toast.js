@@ -1,9 +1,9 @@
 // ============================================================
 // The undo toast.
 //
-// Inventory entry has no save button — every tap is a ledger row
-// the moment you make it.  This is what makes that safe: one tap
-// to put it back.
+// A material card's + and - write a ledger row the moment they are
+// tapped, and Inventory's Save writes a whole batch at once.  This
+// is what makes both safe: one tap to put it back.
 // ============================================================
 
 const DURATION = 6000;

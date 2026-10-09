@@ -79,9 +79,9 @@ export function nameWith(name, trailing) {
     esc(name.slice(cut))}${trailing}</span>`;
 }
 
-/** "1 material", "2 materials". */
-export function plural(n, word) {
-  return `${n} ${word}${n === 1 ? '' : 's'}`;
+/** "1 material", "2 materials" -- or, given its plural, "2 entries". */
+export function plural(n, word, many = `${word}s`) {
+  return `${n} ${n === 1 ? word : many}`;
 }
 
 /** "$40.00" from a recipe's price in cents. */
@@ -213,8 +213,9 @@ function campfireRow(d) {
 // ------------------------------------------------------------
 // detail dialogs
 //
-// The pieces every dialog body is built from, so the three that
-// exist -- a material, a recipe, the ledger -- are laid out alike.
+// The pieces every dialog body is built from, so all of them -- a
+// material, a recipe, the ledger, About and How to use -- are laid
+// out alike.
 // ------------------------------------------------------------
 
 /**
@@ -396,8 +397,8 @@ function recipeLine(u, personal) {
 /** The checkbox standing in for "Crafted" / "Not crafted", the same
     size as `doneMark` draws in a card's corner -- just checked or not. */
 function checkbox(done) {
-  return `<span class="icon ${done ? 'icon-crafted' : 'icon-uncrafted'} crafted-mark"
-            role="img" aria-label="${done ? 'Crafted' : 'Not crafted'}"></span>`;
+  return done ? doneMark('Crafted')
+    : '<span class="icon icon-uncrafted crafted-mark" role="img" aria-label="Not crafted"></span>';
 }
 
 /**
@@ -601,16 +602,26 @@ function demandRow(d, personal) {
   }
 
   const enough = d.have >= d.needed;
-  const pct = d.needed ? Math.min(100, Math.round((d.have / d.needed) * 100)) : 100;
+  return tallyRow({
+    label: d.station, mark: icon(stationIcon(d.station_id)), colour,
+    count: d.have, total: d.needed, countClass: enough ? 'have' : 'short',
+    short: !enough, aria: `${d.have} of ${d.needed} for ${d.station}`,
+    pct: d.needed ? Math.min(100, Math.round((d.have / d.needed) * 100)) : 100,
+  });
+}
 
+/**
+ * A labelled count against its total, with a bar: a card's vendor
+ * demand (have/needed), and Settings' crafted tallies (made/total).
+ * `mark` is an icon's markup; `label` and `aria` are plain text.
+ */
+export function tallyRow({ label, mark = '', colour = '', count, total,
+                           countClass = '', short = false, aria, pct }) {
   return `
     <div class="demand ${colour}">
-      <span class="station">${icon(stationIcon(d.station_id))}${esc(d.station)}:</span>
-      <span class="qty">
-        <span class="${enough ? 'have' : 'short'}">${d.have}</span>/${d.needed}
-      </span>
-      <span class="bar ${enough ? '' : 'short'}"
-            role="img" aria-label="${d.have} of ${d.needed} for ${esc(d.station)}"
+      <span class="station">${mark}${esc(label)}:</span>
+      <span class="qty"><span class="${countClass}">${count}</span>/${total}</span>
+      <span class="bar${short ? ' short' : ''}" role="img" aria-label="${esc(aria)}"
         ><i style="width:${pct}%"></i></span>
     </div>`;
 }

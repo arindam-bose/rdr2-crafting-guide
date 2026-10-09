@@ -139,7 +139,8 @@ those strings.
 After a rebuild, or any change to the images or fonts, bump the release in
 `js/version.js` — its `number` names the offline cache in `sw.js`, and Settings
 shows it with its `date` as the tool version. The database, the wasm runtime,
-the fonts and the artwork are cached hard — they are big and only ever replaced
+the fonts and the artwork (every icon in both colourways, listed in `sw.js`)
+are cached hard — they are big and only ever replaced
 wholesale — while app code is served network-first, so edits show up on reload
 without a bump.
 
@@ -337,11 +338,6 @@ button's label. Both are caps-only display faces, so neither ever sets prose.
 mostly numbers: `3/3`, `2x Oregano`, `$14.95`. It is monospaced, so those
 columns line up on their own. All three are free, and all are vendored under
 `fonts/`.
-
-Each face is drawn larger than its type sizes say, with `size-adjust` on its
-`@font-face` — FB Remington by 20%, since it is small for its size and carries
-all the running text, and the two display faces by 10% — so the whole page
-reads a step up without a type size changing.
 
 FB Remington ships one weight and no italic, so the browser synthesises both.
 That is the right trade here rather than a compromise: a real Remington had one

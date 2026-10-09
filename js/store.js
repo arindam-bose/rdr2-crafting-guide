@@ -14,6 +14,7 @@
 import * as db from './db.js';
 import { craftSpend } from './queries.js';
 import * as prefs from './prefs.js';
+import { plural } from './render.js';
 
 const IDB_NAME = 'rdr2-personal';
 const IDB_VERSION = 1;
@@ -147,25 +148,17 @@ export function reasonFor(sourceType, delta) {
  * negative for a spend.  Returns the stored row, whose id is what
  * `undo` takes.
  */
-export async function record({ ingredient_id, location_id, delta, reason,
-                               recipe_id = null, note = null }) {
-  const row = db.transaction(() => {
-    db.run(
-      `INSERT INTO ledger (ingredient_id, location_id, delta, reason, recipe_id, note)
-       VALUES (:ingredient_id, :location_id, :delta, :reason, :recipe_id, :note)`,
-      { ingredient_id, location_id, delta, reason, recipe_id, note });
-    return db.one('SELECT * FROM ledger WHERE id = :id', { id: db.lastInsertId() });
-  });
-
-  await tx([LEDGER], 'readwrite', (s) => s.put(row));
-  changed();
+export async function record(entry) {
+  const [row] = await recordBatch([entry]);
   return row;
 }
 
 /**
  * Append a whole batch as one commit: one SQLite transaction and
  * one IndexedDB transaction, however many rows.  Returns the rows,
- * whose ids `undoBatch` takes.
+ * whose ids `undoBatch` takes.  If IndexedDB refuses them, they come
+ * back out of SQLite too and the error is rethrown -- otherwise they
+ * would show now and vanish on the next load.
  */
 export async function recordBatch(entries) {
   if (!entries.length) return [];
@@ -179,7 +172,14 @@ export async function recordBatch(entries) {
       return db.one('SELECT * FROM ledger WHERE id = :id', { id: db.lastInsertId() });
     }));
 
-  await tx([LEDGER], 'readwrite', (s) => { for (const r of rows) s.put(r); });
+  try {
+    await tx([LEDGER], 'readwrite', (s) => { for (const r of rows) s.put(r); });
+  } catch (err) {
+    db.transaction(() => {
+      for (const r of rows) db.run('DELETE FROM ledger WHERE id = :id', { id: r.id });
+    });
+    throw err;
+  }
   changed();
   return rows;
 }
@@ -280,7 +280,6 @@ export function inspectImport(text) {
   const locations = known('locations');
 
   const problems = [];
-  const count = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
   // A row missing a column the schema requires would only fail once
   // the import is under way -- after the stored rows were cleared and
@@ -293,18 +292,18 @@ export function inspectImport(text) {
                       || !filled(r.location_id) || !Number.isInteger(r.delta)).length
     + targets.filter((t) => !filled(t?.recipe_id) || !TARGET_STATES.includes(t.state)
                          || !filled(t.updated_at)).length;
-  if (malformed) problems.push(count(malformed, 'row is', 'rows are')
+  if (malformed) problems.push(plural(malformed, 'row is', 'rows are')
     + ' missing something the database requires');
 
   const badReason = ledger.filter((r) => !REASONS.includes(r?.reason)).length;
-  if (badReason) problems.push(count(badReason, 'entry has', 'entries have')
+  if (badReason) problems.push(plural(badReason, 'entry has', 'entries have')
     + ' a reason this version does not accept');
 
   const unknownIngredient =
     new Set(rowsOf(ledger).filter((r) => !ingredients.has(r.ingredient_id))
                   .map((r) => r.ingredient_id));
   if (unknownIngredient.size) {
-    problems.push(count(unknownIngredient.size, 'material is', 'materials are')
+    problems.push(plural(unknownIngredient.size, 'material is', 'materials are')
       + ' not in this build of the reference data');
   }
 
@@ -312,7 +311,7 @@ export function inspectImport(text) {
     new Set(rowsOf(ledger).filter((r) => !locations.has(r.location_id))
                   .map((r) => r.location_id));
   if (unknownLocation.size) {
-    problems.push(count(unknownLocation.size, 'location is', 'locations are')
+    problems.push(plural(unknownLocation.size, 'location is', 'locations are')
       + ' not in this build');
   }
 
@@ -320,7 +319,7 @@ export function inspectImport(text) {
     new Set(rowsOf(targets).filter((t) => !recipes.has(t.recipe_id))
                    .map((t) => t.recipe_id));
   if (unknownRecipe.size) {
-    problems.push(count(unknownRecipe.size, 'recipe is', 'recipes are')
+    problems.push(plural(unknownRecipe.size, 'recipe is', 'recipes are')
       + ' not in this build');
   }
 
@@ -349,17 +348,21 @@ export async function importJSON(text) {
 
   const data = JSON.parse(text);
 
-  db.transaction(() => {
-    db.run('DELETE FROM ledger');
-    db.run('DELETE FROM targets');
-  });
-  await tx([LEDGER, TARGETS], 'readwrite', (l, t) => { l.clear(); t.clear(); });
-
+  // Clear and refill in one IndexedDB transaction, so a failure part
+  // way -- a full disk, a closed tab -- rolls back to the old data
+  // rather than leaving nothing.  SQLite follows only once that has
+  // landed, rebuilt from what IndexedDB now holds.
   await tx([LEDGER, TARGETS], 'readwrite', (l, t) => {
+    l.clear();
+    t.clear();
     for (const r of data.ledger ?? []) l.put(r);
     for (const r of data.targets ?? []) t.put(r);
   });
 
+  db.transaction(() => {
+    db.run('DELETE FROM ledger');
+    db.run('DELETE FROM targets');
+  });
   await hydrate();
   changed();
   return found;
@@ -377,7 +380,7 @@ export function stats() {
   const one = (sql) => db.one(sql)?.n ?? 0;
   return {
     entries: one('SELECT COUNT(*) AS n FROM ledger'),
-    held: one('SELECT COUNT(*) AS n FROM inventory WHERE qty > 0'),
+    places: one('SELECT COUNT(DISTINCT location_id) AS n FROM inventory WHERE qty > 0'),
     materials: one('SELECT COUNT(DISTINCT ingredient_id) AS n FROM inventory WHERE qty > 0'),
     made: one("SELECT COUNT(*) AS n FROM targets WHERE state = 'done'"),
     skipped: one("SELECT COUNT(*) AS n FROM targets WHERE state = 'skipped'"),

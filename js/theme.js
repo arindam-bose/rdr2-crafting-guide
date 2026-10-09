@@ -8,8 +8,8 @@
 // purpose — the same person reads this on a bright phone
 // outdoors and a dark screen at night.
 //
-// index.html sets the attribute inline, before app.css is
-// applied, so a returning reader never sees the other theme
+// index.html sets the attribute inline, before the first
+// paint, so a returning reader never sees the other theme
 // flash first.  Everything here runs after that and only has
 // to keep up.
 // ============================================================

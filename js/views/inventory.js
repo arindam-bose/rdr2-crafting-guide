@@ -35,7 +35,7 @@
 import * as backup from '../backup.js';
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { esc, empty, heldAt, nameWith, plural, qualityStars, icon } from '../render.js';
+import { esc, empty, heldAt, nameWith, placeName, plural, qualityStars, icon } from '../render.js';
 import * as toolbar from './toolbar.js';
 import * as prefs from '../prefs.js';
 import { toast } from '../toast.js';
@@ -322,7 +322,7 @@ export function mount(root) {
     movePop.innerHTML = `
       <div class="move-head">
         <div>
-          <p class="move-kicker">Transfer from ${esc(LOCATION_LABEL[from])}
+          <p class="move-kicker">Transfer from ${esc(locationLabel(from))}
             <span class="move-left">${available} ${
               targets.some((to) => staged.has(moveKey(moving.ingredient, from, to)))
                 ? 'left' : 'here'}</span></p>
@@ -367,7 +367,7 @@ export function mount(root) {
       toast(`That backup could not be loaded: ${err?.message ?? err}`);
       return;
     }
-    toast(`Restored ${found.ledger} ${found.ledger === 1 ? 'entry' : 'entries'}.`
+    toast(`Restored ${plural(found.ledger, 'entry', 'entries')}.`
       + (found.problems.length ? ` Note: ${found.problems.join('; ')}.` : ''));
   });
 
@@ -435,7 +435,10 @@ export function mount(root) {
 
   async function save() {
     if (!store.isPersonal()) return;
-    const entries = [...staged.values()];
+    // Taken off the page at once, so a second tap cannot save the batch
+    // twice -- but put back if the write fails, rather than lost.
+    const batch = new Map(staged);
+    const entries = [...batch.values()];
     staged.clear();
     update();
 
@@ -453,7 +456,19 @@ export function mount(root) {
       delta: e.delta, reason: store.reasonFor(e.source_type, e.delta),
     }]);
 
-    const written = await store.recordBatch(toWrite);
+    let written;
+    try {
+      written = await store.recordBatch(toWrite);
+    } catch {
+      // Anything staged while the write was out joins it, not replaces it.
+      for (const [k, e] of batch) {
+        const since = staged.get(k);
+        staged.set(k, since ? { ...e, delta: e.delta + since.delta } : e);
+      }
+      update();
+      toast('Could not save - your changes are still here. Try again.');
+      return;
+    }
 
     const ids = written.map((r) => r.id);
     toast(`Saved ${plural(entries.length, 'change')}`,
@@ -473,20 +488,20 @@ export function mount(root) {
 
     if (searching) {
       const hits = queries.searchMaterials(state.search, state.location);
-      // The title is already the count here.  Capitalised by hand
-      // rather than through `plural`: every other count on the page
-      // reads inline ("6 recipes"), but this one stands alone as a
-      // heading, in the same sentence case as the rest of the page.
+      // The title is already the count here.  Capitalised, unlike every
+      // other count on the page ("6 recipes"), because this one stands
+      // alone as a heading, in the same sentence case as the rest.
       sections.innerHTML = offer + section(
-        `${hits.length} ${hits.length === 1 ? 'Match' : 'Matches'}`,
+        plural(hits.length, 'Match', 'Matches'),
         hits, 'No material or animal by that name.', false);
     } else {
       // What you are holding here first, then the quick way back to
       // whatever you were logging lately.
+      const holding = held(state.location, personal);
       sections.innerHTML = (store.isEmpty() && !staged.size ? restoreOffer() : '')
         + offer
-        + section(at, held(state.location), `Nothing ${lower(at)} yet.`)
-        + section('Recently Touched', recent(state.location), '');
+        + section(at, holding, `Nothing ${lower(at)} yet.`)
+        + section('Recently Touched', recent(state.location, holding), '');
     }
 
     // Flipped to General with a Transfer panel open: close it, since
@@ -561,7 +576,7 @@ function restoreOffer() {
  */
 function personalizeOffer(waiting) {
   const held = waiting
-    ? ` Your ${plural(waiting, 'unsaved change')} ${waiting === 1 ? 'is' : 'are'} kept for when you do.`
+    ? ` Your ${plural(waiting, 'unsaved change is', 'unsaved changes are')} kept for when you do.`
     : '';
   return `
     <section class="restore-offer personalize-offer">
@@ -580,14 +595,15 @@ const lower = (text) => text[0].toLowerCase() + text.slice(1);
 /**
  * What you are holding here, plus anything staged for it — a
  * material you just added has no stock yet, but it is about to,
- * so it belongs in this list rather than vanishing from view.
+ * so it belongs in this list rather than vanishing from view.  Not
+ * in General, which shows only what is saved.
  */
-function held(location) {
+function held(location, personal) {
   const stock = queries.stockAt(location);
   const seen = new Set(stock.map((m) => m.ingredient_id));
 
   const incoming = [];
-  for (const e of staged.values()) {
+  for (const e of personal ? staged.values() : []) {
     const arrives = e.kind === 'edit' ? e.location_id === location
                                        : e.to_location_id === location;
     if (!arrives || seen.has(e.ingredient_id)) continue;
@@ -599,11 +615,11 @@ function held(location) {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** Touched lately but not currently held — the quick way back. */
-function recent(location) {
-  const holding = new Set(held(location).map((m) => m.ingredient_id));
+/** Touched lately but not in `holding` (held()'s list) — the quick way back. */
+function recent(location, holding) {
+  const ids = new Set(holding.map((m) => m.ingredient_id));
   return queries.recentMaterials(location)
-    .filter((m) => !holding.has(m.ingredient_id));
+    .filter((m) => !ids.has(m.ingredient_id));
 }
 
 function asRow(e) {
@@ -671,12 +687,16 @@ function row(m, location, wants, pendingIdx, personal) {
 }
 
 /**
- * A word for each end of a transfer, matching how the rest of the app
- * names a location -- "the Satchel", but "Pearson" and "Trapper" bare.
+ * A location's name from the reference data, read once.  locationLabel
+ * is how the rest of the app names it, through placeName -- "the
+ * Satchel", but "Pearson" and "Trapper" bare.
  */
-const LOCATION_LABEL = {
-  'loc-satchel': 'the Satchel', 'loc-pearson': 'Pearson', 'loc-trapper': 'Trapper',
-};
+let locationNames = null;
+function locationName(id) {
+  locationNames ??= new Map(queries.locations().map((l) => [l.id, l.name]));
+  return locationNames.get(id);
+}
+const locationLabel = (id) => placeName(id, locationName(id));
 
 /**
  * Where one material can be moved from `location`: on the Satchel,
@@ -707,7 +727,7 @@ function moveButton(m, location, wants, available, personal) {
   const count = targets.reduce((sum, to) =>
     sum + (staged.get(moveKey(m.ingredient_id, location, to))?.delta ?? 0), 0);
   if (available <= 0 && !count) return '';
-  const names = targets.map((to) => LOCATION_LABEL[to]).join(' or ');
+  const names = targets.map(locationLabel).join(' or ');
 
   return `
     <button type="button" class="move-btn${count ? ' staged' : ''}"
@@ -728,8 +748,8 @@ function moveButton(m, location, wants, available, personal) {
  */
 function moveDest(m, from, to, available) {
   const count = staged.get(moveKey(m.ingredient, from, to))?.delta ?? 0;
-  const label = LOCATION_LABEL[to];
-  const place = label.replace(/^the /, '');
+  const label = locationLabel(to);
+  const place = locationName(to);
 
   return `
     <li class="move-dest${count ? ' staged' : ''}">

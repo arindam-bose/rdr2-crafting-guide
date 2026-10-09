@@ -176,7 +176,7 @@ export function remind() {
     sessionStorage.setItem(REMINDED, '1');
   } catch { /* no storage: remind every load rather than never */ }
 
-  toast(`${plural(count, 'change')} ${count === 1 ? 'is' : 'are'} not in any backup yet.`,
+  toast(`${plural(count, 'change is', 'changes are')} not in any backup yet.`,
         { label: 'Back up', run: download, duration: 12000 });
 }
 

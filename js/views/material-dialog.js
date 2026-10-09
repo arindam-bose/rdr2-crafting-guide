@@ -94,12 +94,18 @@ export function materialDialog({ route, find = freshCard }) {
       if (!button || !d) return;
 
       const delta = Number(button.dataset.delta);
-      const written = await store.record({
-        ingredient_id: id,
-        location_id: d.location_id,
-        delta,
-        reason: store.reasonFor(card.source_type, delta),
-      });
+      let written;
+      try {
+        written = await store.record({
+          ingredient_id: id,
+          location_id: d.location_id,
+          delta,
+          reason: store.reasonFor(card.source_type, delta),
+        });
+      } catch {
+        toast('Could not save that - try again.');
+        return;
+      }
 
       const place = placeName(d.location_id, d.location);
       toast(delta > 0 ? `Added one ${card.material} to ${place}`

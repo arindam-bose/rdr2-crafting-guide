@@ -266,7 +266,7 @@ function matches(r, state, personal) {
 function card(r, personal) {
   const colour = stationColour(r.color);
   const settled = personal && r.state !== 'wanted';
-  const crafted = r.state === 'done';
+  const crafted = personal && r.state === 'done';
 
   // The name is a real button, so the card opens from the keyboard
   // too; a click anywhere else on the card is forwarded to it.  The

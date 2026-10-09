@@ -3,8 +3,8 @@
 //
 // Two strategies, because the files divide cleanly in two:
 //
-//   The wasm runtime (650 KB), the database (210 KB), the fonts
-//   and the artwork are immutable — replacing any of them is a
+//   The wasm runtime (650 KB), the database (about 400 KB), the
+//   fonts and the artwork are immutable — replacing any of them is a
 //   new release in js/version.js, and so a new CACHE — so they
 //   are served from the cache and only fetched once.
 //
@@ -19,6 +19,30 @@
 // there is what renews the cache.
 importScripts('js/version.js');
 const CACHE = `rdr2-crafting-v${self.APP_VERSION.number}`;
+
+// Every icon app.css draws, in both colourways -- both, so switching
+// to the other theme offline still has its icons.  Kept in step with
+// the .icon-* rules there: a name missing here is only fetched when
+// first shown, and a name here with no file behind it fails the
+// install outright.  The coffee cup is the one icon whose two themes
+// use opposite cuts.
+function themeIcons() {
+  const both = [
+    'animals', 'animals-inverse', 'campfire', 'campfire-inverse',
+    'checkbox-checked', 'checkbox-unchecked', 'crafting', 'crafting-inverse',
+    'fence', 'fence-inverse', 'inventory-inverse', 'materials-inverse',
+    'pearson', 'pearson-inverse', 'plants', 'plants-inverse',
+    'recipes-inverse', 'satchel', 'satchel-inverse', 'settings-inverse',
+    'stars-legendary', 'stars-perfect', 'supplies', 'supplies-inverse',
+    'trapper', 'trapper-inverse',
+  ];
+  return [
+    ...['parchment', 'leather'].flatMap((theme) =>
+      both.map((name) => `images/icons/${theme}/${name}.png`)),
+    'images/icons/parchment/coffee-inverse.png',
+    'images/icons/leather/coffee.png',
+  ];
+}
 
 // Fetched once and kept: big, and only ever replaced wholesale.
 // The fonts and the artwork join the runtime and the database here —
@@ -38,6 +62,7 @@ const IMMUTABLE = [
   'images/apple-touch-icon.png',
   'images/pixel-cowboy-campfire-at-dusk-960.jpg',
   'images/pixel-cowboy-campfire-at-dusk-1920.jpg',
+  ...themeIcons(),
 ];
 
 const SHELL = [

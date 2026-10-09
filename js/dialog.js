@@ -1,10 +1,10 @@
 // ============================================================
 // The detail dialog a card opens.
 //
-// Materials, Recipes and the ledger all open one, and the
-// plumbing is the same: a native modal <dialog>, a close button,
+// Materials, Recipes, the ledger, About and How to use all open
+// one, and the plumbing is the same: a native modal <dialog>, a close button,
 // Esc and a backdrop click to leave, and a body that repaints
-// whenever the store changes underneath it.  What goes in the
+// when its view calls refresh() after the store changes.  What goes in the
 // body, and what its buttons do, is the view's business.
 //
 //   const detail = detailDialog({

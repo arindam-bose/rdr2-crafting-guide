@@ -68,6 +68,9 @@ STATION_ICON = {
     'station-fence': 'fence', 'station-campfire': 'campfire',
 }
 STATION_ORDER = ['station-pearson', 'station-trapper', 'station-fence', 'station-campfire']
+# The colours app.css draws a station's stripe in -- render.js's
+# stationColour, guarded the same way: anything else draws none.
+STATION_COLOURS = {'blue', 'yellow', 'pink', 'green'}
 
 # A station as the object of a sentence: Pearson is a man, the Trapper
 # and the Fence are what people call them.
@@ -107,6 +110,10 @@ def listing(items):
 
 def icon(name):
     return f'<span class="icon icon-{name}" aria-hidden="true"></span>' if name else ''
+
+
+def colour(name):
+    return name if name in STATION_COLOURS else ''
 
 
 def stars(quality):
@@ -211,7 +218,7 @@ def load(db_path):
     for u in q('''
             SELECT ri.ingredient_id, ri.qty, r.id AS recipe_id, r.name AS recipe,
                    r.repeatable, st.id AS station_id, st.name AS station,
-                   loc.name AS location
+                   st.color AS color, loc.name AS location
             FROM   recipe_ingredients ri
             JOIN   recipes   r   ON r.id   = ri.recipe_id
             JOIN   stations  st  ON st.id  = r.station_id
@@ -428,7 +435,7 @@ def material_page(m, data, parts):
         for u in usage) + '\n        </ul>'
 
     stock = ''.join(
-        f'\n          <div class="stock-line demand">'
+        f'\n          <div class="stock-line demand {colour(stations[s]["color"])}">'
         f'<span class="stock-text"><span class="station">{icon(STATION_ICON.get(s))}'
         f'{esc(stations[s]["station"])}</span> needs {demand[s]}'
         + (f'<small class="from">from your {esc(stations[s]["location"])}</small>'

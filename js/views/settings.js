@@ -14,7 +14,7 @@
 
 import * as store from '../store.js';
 import * as theme from '../theme.js';
-import { esc, plural, icon, stationIcon, stationColour, money } from '../render.js';
+import { esc, plural, icon, stationIcon, stationColour, money, tallyRow } from '../render.js';
 import * as backup from '../backup.js';
 import * as install from '../install.js';
 import { toast } from '../toast.js';
@@ -353,10 +353,10 @@ export function mount(root) {
     preview.innerHTML = `
       <div class="verdict">
         <p><strong>${esc(source)}</strong> holds
-          ${found.ledger} ${found.ledger === 1 ? 'entry' : 'entries'} and
-          ${found.targets} marked ${found.targets === 1 ? 'recipe' : 'recipes'},
+          ${plural(found.ledger, 'entry', 'entries')} and
+          ${plural(found.targets, 'marked recipe')},
           exported ${esc(when)}${found.device ? ` from ${esc(found.device)}` : ''}.</p>
-        <p>This device has ${now.entries} ${now.entries === 1 ? 'entry' : 'entries'}
+        <p>This device has ${plural(now.entries, 'entry', 'entries')}
           and ${now.made + now.skipped} marked. All of it will be replaced.</p>
         ${found.problems.length
           ? `<ul class="problems">${found.problems
@@ -386,7 +386,7 @@ export function mount(root) {
       preview.innerHTML = '';
       $('#s-paste').value = '';
       showPaste(false);
-      toast(`Restored ${found.ledger} ${found.ledger === 1 ? 'entry' : 'entries'}.`);
+      toast(`Restored ${plural(found.ledger, 'entry', 'entries')}.`);
     }
   });
 
@@ -425,8 +425,15 @@ export function mount(root) {
   // Erasing asks twice, in place, rather than through a dialog box.
   $('#s-danger').addEventListener('click', async (event) => {
     if (event.target.id === 's-reset') {
+      // Erase takes the recipe marks as well as the ledger, so the
+      // question counts both -- someone who has only skipped recipes
+      // has no entries, but still has something to lose.
+      const { entries, made, skipped } = store.stats();
+      const what = [entries && plural(entries, 'entry', 'entries'),
+                    made + skipped && plural(made + skipped, 'marked recipe')]
+        .filter(Boolean).join(' and ') || 'everything';
       event.currentTarget.innerHTML = `
-        <span class="state-label">Erase ${store.stats().entries} entries?</span>
+        <span class="state-label">Erase ${what}?</span>
         <button type="button" class="ghost-btn" id="s-reset-no">Keep it</button>
         <button type="button" class="more-btn danger-btn" id="s-reset-yes">Erase</button>`;
     } else if (event.target.id === 's-reset-no') {
@@ -451,7 +458,7 @@ export function mount(root) {
     $('#s-facts').innerHTML = facts([
       ['Ledger entries', s.entries, 'ledger'],
       ['Materials held', s.materials
-        ? `${plural(s.materials, 'kind')} in ${plural(s.held, 'place')}`
+        ? `${plural(s.materials, 'kind')} in ${plural(s.places, 'place')}`
         : 'nothing yet'],
       ['Recipes crafted', `${s.made}/${s.vendorRecipes}`],
       ['Recipes skipped', s.skipped],
@@ -522,22 +529,13 @@ export function mount(root) {
       </div>`).join('');
   }
 
-  /**
-   * A labelled count against its total, with a bar -- the same shape
-   * a material card's vendor demand takes, reused here for a made/total
-   * tally instead of a have/needed one.  `mark` is the vendor's own
-   * icon, where there is one to show.
-   */
+  /** A made/total tally, with its bar -- `mark` the vendor's icon, where there is one. */
   function progressRow(label, made, total, { colour = '', mark = '' } = {}) {
-    const pct = total ? Math.round((made / total) * 100) : 0;
-    return `
-      <div class="demand ${colour}">
-        <span class="station">${mark}${esc(label)}:</span>
-        <span class="qty"><span class="${made ? 'have' : ''}">${made}</span>/${total}</span>
-        <span class="bar" role="img"
-              aria-label="${made} of ${total} crafted for ${esc(label)}"
-          ><i style="width:${pct}%"></i></span>
-      </div>`;
+    return tallyRow({
+      label, mark, colour, count: made, total, countClass: made ? 'have' : '',
+      aria: `${made} of ${total} crafted for ${label}`,
+      pct: total ? Math.round((made / total) * 100) : 0,
+    });
   }
 
   const unsubscribe = backup.subscribe(update);
