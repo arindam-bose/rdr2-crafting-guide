@@ -2436,6 +2436,9 @@ ul.buff li::before {
   padding: 24px 4px;
   text-align: center;
 }
+/* In a gallery the message would take only the first column of the
+   grid; across all of them it sits in the middle. */
+.gallery > :is(.loading, .empty) { grid-column: 1 / -1; }
 
 .error {
   border: 1px solid var(--danger);
