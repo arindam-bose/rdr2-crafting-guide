@@ -226,6 +226,8 @@ export async function setTarget(recipe_id, state) {
  * Everything personal, as portable JSON.  `device` is the backup's
  * "Firefox on Android" label (see backup.js), there for a person
  * reading the file or the import preview; nothing reads it back.
+ * `sorts` is how each list was ordered (see prefs.js), so a restore
+ * on another device sets the lists out the same way.
  */
 export function exportJSON(device = null) {
   return JSON.stringify({
@@ -236,6 +238,7 @@ export function exportJSON(device = null) {
     reference_build: referenceBuild(),
     ledger: db.all('SELECT * FROM ledger ORDER BY id'),
     targets: db.all('SELECT * FROM targets ORDER BY recipe_id'),
+    sorts: prefs.sorts(),
   }, null, 2);
 }
 
@@ -364,6 +367,13 @@ export async function importJSON(text) {
     db.run('DELETE FROM targets');
   });
   await hydrate();
+
+  // Only once the data has landed, so a failed restore keeps the
+  // sorts it found.  The open page keeps its own until it is next
+  // opened, which from Settings is the next page you go to.
+  const sorts = prefs.validSorts(data.sorts);
+  if (sorts) prefs.replaceSorts(sorts);
+
   changed();
   return found;
 }

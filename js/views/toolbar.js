@@ -94,15 +94,13 @@ export function sortControl(id, sorts, label, current) {
 // box and the chips it is worth carrying between visits.
 // ------------------------------------------------------------
 
-const sortKey = (name) => `rdr2:sort:${name}`;
-
 /**
  * The sort last used on this screen, or `fallback` if there is none
  * we can still honour.  A stored field that no longer exists -- a
  * rename, an older build -- falls back rather than throwing.
  */
 export function restoreSort(name, sorts, fallback) {
-  const [sort, dir] = (prefs.get(sortKey(name)) ?? '').split(':');
+  const [sort, dir] = (prefs.get(prefs.sortKey(name)) ?? '').split(':');
   if (!Object.hasOwn(sorts, sort)) return fallback;
   return { sort, dir: dir === 'asc' || dir === 'desc' ? dir : sorts[sort].start };
 }
@@ -269,7 +267,7 @@ export function wireToggles(el, attr, state, onChange) {
  * direction that field is nearly always wanted in.
  */
 export function wireSort(root, id, sorts, state, onChange, name) {
-  const remember = () => prefs.set(sortKey(name), `${state.sort}:${state.dir}`);
+  const remember = () => prefs.set(prefs.sortKey(name), `${state.sort}:${state.dir}`);
 
   root.querySelector(`#${id}-sort`).addEventListener('change', (event) => {
     state.sort = event.target.value;

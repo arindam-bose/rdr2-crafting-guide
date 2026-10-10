@@ -239,7 +239,7 @@ hand.
       dialog.js           the detail dialog every card opens: close
                           button, Esc, backdrop, repaint on a store change
       nav.js              the address: which page, and which card is open
-      prefs.js            localStorage, guarded: theme, location, last export
+      prefs.js            localStorage, guarded: theme, location, sorts, last export
       views/materials.js  "Where to go if you have these items"
       views/material-dialog.js
                           a material, opened -- the one dialog Materials
@@ -670,7 +670,10 @@ user-agent string, since a page is never told a device's own name, and the file
 carries it too ("device": "Firefox on Android") so the import preview can say
 where a backup came from. It is the ledger rather than the balances because the
 balances are derived from it: exporting only those would lose the history
-behind "8 gathered - 1 crafted". A
+behind "8 gathered - 1 crafted". The file also carries how each list was
+sorted (`"sorts": {"recipes": "materials:asc"}`), so the same person restoring
+on another device gets Materials and Recipes back in the order they left them;
+the other preferences (theme, location) stay with the device. A
 copy-to-clipboard button sits beside it, because `<a download>` is unreliable on
 iOS, and a paste box sits beside the file picker for the same reason.
 
@@ -680,7 +683,8 @@ would double anything imported twice. One device is the source of truth. A file
 is inspected first — a `reason` the schema's CHECK would refuse is caught before
 the transaction rather than halfway through it, and rows naming materials this
 build does not know are reported rather than swallowed, since the ledger stores
-slugs with no foreign key.
+slugs with no foreign key. The sorts are replaced with the rest, once the data
+has landed; a backup from before they were carried leaves the device's own.
 
 **On your home screen**, a tile of its own just before **About** (which
 holds the two dialogs, the tool version, a link to the source on GitHub and
