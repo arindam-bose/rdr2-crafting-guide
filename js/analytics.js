@@ -82,7 +82,8 @@
         Google Analytics would set cookies to count visits to this site.
         It never sees what you log in the guide, and nothing loads unless
         you say yes. Every feature works either way, and you can change
-        your mind any time in Settings.</p>
+        your mind any time under Cookie settings, at the foot of every
+        page and in Settings.</p>
       <div class="consent-actions">
         <button type="button" class="ghost-btn" data-choice="denied">Decline</button>
         <button type="button" class="more-btn" data-choice="granted">Accept</button>

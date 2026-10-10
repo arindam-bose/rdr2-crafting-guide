@@ -1034,7 +1034,6 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .tab-count { transition: color .3s, opacity .3s; }
 .tab-count.changed {
   opacity: 1;
-  font-weight: 700;
   animation: count-changed 2s ease-out;
 }
 .segmented button:not([aria-selected="true"]) .tab-count.changed { color: var(--accent-text); }

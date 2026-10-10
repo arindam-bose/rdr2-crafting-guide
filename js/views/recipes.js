@@ -72,6 +72,12 @@ export function mount(root) {
                                          { sort: 'name', dir: 'asc' }) };
   const stations = queries.stations();
   const categories = queries.categories();
+  // Reference data, read once: the plants behind each plant ingredient,
+  // so "red sage" still finds what takes Sage, as it does on Materials.
+  const plantNames = new Map();
+  for (const p of queries.materialPlants()) {
+    plantNames.set(p.ingredient_id, [...(plantNames.get(p.ingredient_id) ?? []), p.name]);
+  }
   const categoryOptions = Object.fromEntries(KINDS.map((k) => [k.id,
     categories.filter((c) => c.repeatable === k.repeatable)
       .map((c) => ({ value: c.category, label: c.category }))]));
@@ -192,7 +198,7 @@ export function mount(root) {
     // Every filter but the category, in one pass: the categories on
     // offer are what that lets through on this tab, and the matches
     // are the same list narrowed to the one chosen.
-    const loose = all.filter((r) => matches(r, state, personal));
+    const loose = all.filter((r) => matches(r, state, personal, plantNames));
     toolbar.fillCategories(categorySelect, categoryOptions[state.kind],
       new Set(loose.filter((r) => kindOf(r) === state.kind).map((r) => r.category)),
       state.category);
@@ -247,7 +253,8 @@ function campfireGap(r) {
     const have = Math.max(...options.map((o) => o.have));
     worst = Math.max(worst, options[0].qty - have);
   }
-  return Number.isFinite(worst) ? worst : 0;
+  // No ingredients to measure is not "ready": it sorts last.
+  return Number.isFinite(worst) ? worst : Infinity;
 }
 
 function group(rows) {
@@ -265,7 +272,7 @@ function group(rows) {
  * The vendor chips and the progress chips are hidden on the campfire
  * tab, so they only ever narrow vendor recipes.
  */
-function matches(r, state, personal) {
+function matches(r, state, personal, plantNames) {
   if (!r.repeatable) {
     if (state.station && r.station_id !== state.station) return false;
   }
@@ -277,7 +284,8 @@ function matches(r, state, personal) {
 
   if (state.search) {
     const haystack = [r.name, r.category, r.set_name, r.station, r.description,
-                      ...r.ingredients.map((i) => i.name)]
+                      ...r.ingredients.map((i) => i.name),
+                      ...r.ingredients.flatMap((i) => plantNames.get(i.ingredient_id) ?? [])]
       .filter(Boolean).join(' ').toLowerCase();
     if (!haystack.includes(state.search)) return false;
   }

@@ -146,8 +146,13 @@ added, removed or reordered — which matters, because the personal layer stores
 those strings.
 
 After a rebuild, or any change to the images or fonts, bump the release in
-`js/version.js` — its `number` names the offline cache in `sw.js`, and Settings
-shows it with its `date` as the tool version. The database, the wasm runtime,
+`js/version.js` — its `number` names the offline cache in `sw.js`, the masthead
+shows it beside the name, and Settings shows it with its `date` as the tool
+version. Versions run x.0.y: x is the GitHub release (tagged `vX.0.0`), y the
+build within it, bumped with every change that ships and started again at 1
+when x moves on (1.0.7, then 2.0.1). Skipping the bump after a rebuild is not
+harmless: a returning visitor would get the new code with the old cached
+database. The database, the wasm runtime,
 the fonts and the artwork (every icon in both colourways, listed in `sw.js`)
 are cached hard — they are big and only ever replaced
 wholesale — while app code is served network-first, so edits show up on reload
@@ -504,8 +509,10 @@ and a progress bar on the right.
 The dialog adds what the card leaves out: the animal, quality, type and the
 weapon that leaves it unspoiled — or, for a fish, the bait or lure that
 catches it. A material that comes off several animals (fat, the meats, Flight
-Feather) lists them instead, each with its own weapon or bait. Every animal's
-name links to its page on the Red Dead wiki, in a new tab. Then every recipe with a Crafted / Not crafted /
+Feather) lists them instead, each with its own weapon or bait. A plant does the
+same: Sage, Currant and Ginseng list the plants they are picked from, and one
+picked from a single plant names it beside the title. Every animal's and every
+plant's name links to its page on the Red Dead wiki, in a new tab. Then every recipe with a Crafted / Not crafted /
 Skipped tag; the verdict, *You need to go hunting!* and its siblings; and, docked
 at the foot, each vendor's demand against what you hold where it draws from —
 the Fence names your Satchel. The dialog's own copy of the recipe list spells out `1x` too, unlike
@@ -537,7 +544,9 @@ is never Still needed or Done: it shows under All, always.
 
 Two tabs: **Vendor recipes**, made once and worked towards, and **Campfire**,
 made at your own fire as often as you have the ingredients. Each tab carries
-its count of the current matches, and has its own categories. The vendor chips
+its count of the current matches, and has its own categories. A count that
+changes flashes on a wash of the accent, so a search that fills a tab you are
+not on still catches the eye; Materials' three tabs do the same. The vendor chips
 and the Ready / Crafted chips only appear on the vendor tab.
 
 A campfire recipe is only ever looked up. It has no switch and no Craft
@@ -582,16 +591,22 @@ personal filters, and the sort, all left-aligned, with the count on the right.
 The Materials search matches a material's name, and the animals it comes from
 from the start of a word, so *wolf* finds Big Game Meat as well as the wolf
 pelts and *perch* finds Flaky Fish Meat, while *ox* finds Prime Beef Joint
-through the Ox without dragging in Stringy Meat through the Fox. Inventory's
-search follows the same rule. The Recipes search also reads sets,
-vendors, buffs and ingredients.
+through the Ox without dragging in Stringy Meat through the Fox. Plants count
+the same way: *red* finds Sage through Red Sage, *golden* finds Currant.
+Inventory's search follows the same rule. The Recipes search also reads sets,
+vendors, buffs and ingredients, and the plants behind them. On a desktop the
+search box takes the focus when you arrive on a page; on a phone it does not,
+since that would bring the keyboard up over the list.
 In personal mode Materials filters to **Still needed** or **Done** — a
 material whose recipes are all crafted or skipped moves to Done rather than
 vanishing — and Recipes to **Ready to craft** or **Crafted**.
 
 Sorting is a field and a direction rather than a list of every combination:
 Materials by what is still needed, quality or name; Recipes by name or by how
-many items they swallow. Both open on name, A–Z. The direction button says what it does — "Most
+many items they swallow. On the Campfire tab in Personalize, *Materials needed*
+counts need less have instead, at the recipe's tightest slot, so what you can
+cook from the Satchel right now sorts first (nothing marks a campfire recipe
+made). Both open on name, A–Z. The direction button says what it does — "Most
 first", "Legendary first", "A-Z" — each field starts in the direction you
 nearly always want, and the choice is remembered per screen.
 

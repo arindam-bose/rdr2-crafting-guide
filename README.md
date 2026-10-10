@@ -20,7 +20,7 @@ The game leaves you to remember which pelt goes to whom. The guide keeps that
 list for you: log what you carry, and it works out what you can craft right
 now and what you are still short of.
 
-- **180 materials**: pelts, animal parts, plants and supplies. Each shows the
+- **176 materials**: pelts, animal parts, plants and supplies. Each shows the
   animal it comes from, the weapon that keeps the pelt perfect (or, for a fish,
   the bait) and which vendors still want it.
 - **255 recipes**: 165 one-time crafts at Pearson, the Trapper and the Fence,
@@ -50,7 +50,7 @@ and then, and keep the file somewhere safe.
    Personalize to keep track of what you have; logging only works there.
 2. **Find what you need.** **Materials** lists everything there is to collect,
    with the recipes each one goes into and the vendors who still want it.
-   Filter by vendor or category, or search by name or animal. Open a card for
+   Filter by vendor or category, or search by name, animal or plant. Open a card for
    where it comes from and how to bring it in perfect.
 3. **Log what you gather.** Either:
    - in a material's card, tap **+ Add** or **-** to log one at a time,

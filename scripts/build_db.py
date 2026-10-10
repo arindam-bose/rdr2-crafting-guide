@@ -312,7 +312,7 @@ def classify_set(name, categories):
     return "outfit"
 
 
-# one line of a workbook recipe:  '2x (Blackcurrant / Golden Currant)'
+# one line of a workbook recipe:  '2x (Currant / Prairie Poppy)'
 SLOT_RE = re.compile(r"^(\d+)\s*x\s+(.+)$")
 
 
@@ -640,6 +640,11 @@ def apply_patch(db, book, warnings, notes, fresh=frozenset()):
     for _, r in book["plants"].iterrows():
         pid, name = blank(r.get("id")), blank(r.get("name"))
         if not pid or not name:
+            continue
+        if db.execute("SELECT 1 FROM plants WHERE id = ? OR name = ?",
+                      (pid, name)).fetchone():
+            warnings.append(f"plant {name!r} ({pid}) is in the sheet twice, "
+                            "first kept")
             continue
         db.execute("INSERT INTO plants(id, name, link) VALUES (?,?,?)",
                    (pid, name, blank(r.get("link"))))
