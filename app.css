@@ -278,6 +278,27 @@ body > main { flex: 1 0 auto; }
   white-space: nowrap;
 }
 
+/* The release, small after the name and sitting on its baseline, so
+   it reads as a footnote to "Crafting Guide" rather than part of it.
+   `last baseline` follows the link down to its last line -- "Crafting
+   Guide", not the game's name above -- and the link takes part too,
+   or there is no baseline to share; the h1 is the link's height, so
+   that moves nothing.  flex-end first, for a browser without it.
+   The negative margin takes back most of the masthead's gap. */
+.topbar h1 > .brand,
+.brand-version {
+  align-self: flex-end;
+  align-self: last baseline;
+}
+.brand-version {
+  flex: 0 0 auto;
+  margin-left: -5px;
+  font-size: .68rem;
+  letter-spacing: .06em;
+  color: var(--ink-dim);
+}
+.brand-version:empty { display: none; }
+
 /* The page's own name, under the menu. */
 .page-title {
   margin: 0;

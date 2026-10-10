@@ -40,6 +40,14 @@ const modeToggle = document.getElementById('mode-toggle');
 const backupBtn = document.getElementById('backup-btn');
 const firstNote = document.getElementById('first-note');
 
+// The release, beside the name, so anyone can say which one they have.
+const { number: version } = self.APP_VERSION ?? {};
+if (version) {
+  const label = document.getElementById('brand-version');
+  label.textContent = `v${version}`;
+  label.title = `Tool version ${version}`;
+}
+
 const FIRST_NOTE_SEEN = 'rdr2:first-note-seen';
 
 // Held here as well as stored, so "Got it" still works for the rest of
