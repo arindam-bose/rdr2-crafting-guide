@@ -158,6 +158,18 @@ are cached hard — they are big and only ever replaced
 wholesale — while app code is served network-first, so edits show up on reload
 without a bump.
 
+A new release's cache is filled with `cache: 'reload'`, past the browser's own
+HTTP cache, and a cache-first file is only ever answered from this release's
+cache. Both were learned the hard way: 1.0.1 shipped the plants tables, and
+returning visitors opened the guide to an error. Their new cache had been filled
+from GitHub Pages' ten-minute HTTP cache, which still held the old database, and
+once cached it was served for good. Only clearing the site's data cleared it.
+1.0.2 fixed the service worker, and `js/notice.js` tells each returning visitor
+once what to do if a page still errors: reload, or back up, clear the site's
+data, and restore. It is only shown to someone who had been here before, read
+from storage before this visit writes to it. Set its `ACTIVE` to `false` once
+it has run its course.
+
 ## Search pages
 
 The app lives behind a `#` in the address and builds every card in the
@@ -266,6 +278,8 @@ hand.
                           and the install steps
       install.js          the browser's install prompt, kept for Settings
       version.js          the release number and date, read by sw.js too
+      notice.js           a one-time notice to returning visitors after an
+                          update (switched off with ACTIVE = false)
       mode-toggle-early.js
                           sets the mode switch before main.js has loaded
       file-protocol.js    explains why the page will not run from file://

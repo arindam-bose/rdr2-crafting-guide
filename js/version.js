@@ -14,4 +14,4 @@
 // which the offline copy otherwise keeps serving.
 // ============================================================
 
-self.APP_VERSION = { number: '1.0.1', date: '2026-10-10' };
+self.APP_VERSION = { number: '1.0.2', date: '2026-10-10' };

@@ -9,6 +9,7 @@
 import * as backup from './backup.js';
 import * as db from './db.js';
 import * as nav from './nav.js';
+import * as notice from './notice.js';
 import * as prefs from './prefs.js';
 import * as store from './store.js';
 import * as theme from './theme.js';
@@ -238,6 +239,10 @@ async function start() {
 
   window.addEventListener('hashchange', () => show(route()));
   show(route());
+
+  // After the page, so it sits over it -- and over its error, if the
+  // page could not load, which is who it is for.
+  notice.maybeShow();
 
   paintBackup();
   if (!store.isEmpty()) backup.keep();

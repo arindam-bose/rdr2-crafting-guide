@@ -96,12 +96,18 @@ const SHELL = [
   'js/views/ledger.js',
   'js/views/guide.js',
   'js/views/toolbar.js',
+  'js/notice.js',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    await cache.addAll([...IMMUTABLE, ...SHELL]);
+    // Past the HTTP cache: GitHub Pages lets a browser keep a file for
+    // ten minutes, and a fresh cache filled from it can take in the
+    // last release's database -- which, served cache-first, it would
+    // then keep for good.
+    await cache.addAll([...IMMUTABLE, ...SHELL]
+      .map((url) => new Request(url, { cache: 'reload' })));
     await self.skipWaiting();
   })());
 });
@@ -171,11 +177,14 @@ function searchPage(url) {
 }
 
 async function cacheFirst(request) {
-  const cached = await caches.match(request);
+  // This release's cache only.  caches.match() searches them all, and
+  // until the last release's is deleted it would answer from that.
+  const cache = await caches.open(CACHE);
+  const cached = await cache.match(request);
   if (cached) return cached;
 
   const response = await fetch(request);
-  if (response.ok) (await caches.open(CACHE)).put(request, response.clone());
+  if (response.ok) cache.put(request, response.clone());
   return response;
 }
 
