@@ -8,4 +8,4 @@
 // Bump it, and set `date`, with every release.
 // ============================================================
 
-self.APP_VERSION = { number: 39, date: '2026-10-09' };
+self.APP_VERSION = { number: 40, date: '2026-10-09' };
