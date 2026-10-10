@@ -158,7 +158,7 @@ const USAGE_SHOWN = 6;
  * the whole card opens.
  *
  *   material = { ingredient_id, material, quality, source_type,
- *                body_part, animals: [...], demands: [...],
+ *                body_part, animals: [...], plants: [...], demands: [...],
  *                usage: [...] }
  *
  * `personal` decides whether the card talks about what you have,
@@ -298,7 +298,7 @@ export function heldAt(id, name) {
  * what you just brought in can be logged without leaving the page.
  */
 export function materialDetail(material, { personal }) {
-  const { material: name, quality, source_type, body_part, animals } = material;
+  const { material: name, quality, source_type, body_part, animals, plants } = material;
   const isAnimal = source_type === 'animal';
 
   // A pelt comes off one animal, and its weapon or bait sits in the
@@ -314,7 +314,9 @@ export function materialDetail(material, { personal }) {
        ['Bait', only && esc(only.bait)]]
     : source_type === 'misc'
       ? [['Source', 'Found out in the world'], ['Quality', qualityLabel(quality)]]
-      : [];
+      : source_type === 'plant'
+        ? [['Plant', onlyPlantLink(plants)]]
+        : [];
 
   // Stations with nothing left to make still show in personal mode --
   // faded, as "needs no more" -- because you may be holding some there
@@ -344,6 +346,10 @@ export function materialDetail(material, { personal }) {
       <ul class="detail-list detail-animals">
         ${animals.map(animalLine).join('')}
       </ul>`)}
+    ${detailSection('Plants', plants.length > 1 && `
+      <ul class="detail-list detail-plants">
+        ${plants.map(plantLine).join('')}
+      </ul>`)}
     ${detailSection('Recipes used in', material.usage.length && `
       <ul class="detail-list detail-recipes">
         ${material.usage.map((u) => recipeLine(u, personal)).join('')}
@@ -359,6 +365,24 @@ function animalLine(a) {
     <li>
       <span class="what">${webLink(a.link, a.name)}</span>
       ${how ? `<span class="how">${esc(how)}</span>` : ''}
+    </li>`;
+}
+
+/**
+ * The wiki link of a plant ingredient picked from one plant.  Yarrow is
+ * picked from Yarrow, so without a link the line would only repeat the
+ * title; it shows once there is somewhere for it to go.
+ */
+function onlyPlantLink(plants) {
+  const [only] = plants.length === 1 ? plants : [];
+  return only?.link && webLink(only.link, only.name);
+}
+
+/** One plant a material is picked from. */
+function plantLine(p) {
+  return `
+    <li>
+      <span class="what">${webLink(p.link, p.name)}</span>
     </li>`;
 }
 

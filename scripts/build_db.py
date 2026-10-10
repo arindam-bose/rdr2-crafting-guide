@@ -24,7 +24,10 @@ Its 'ingredient_animals' sheet is the whole of that table: the build
 reports every link it adds or drops against what the other sources
 said.  Its 'recipes' sheet renames recipes by id, the same way
 'animals' does, without touching the id a name change would otherwise
-produce.
+produce.  Its 'plants' sheet is every plant -- id, name, a wiki
+link -- and 'ingredient_plants' says which plant ingredient each is
+picked for: one plant for most, several for the ones the satchel keeps
+under a general name (Currant, Sage, Ginseng).
 
 --check-ids names an earlier build.  Every ingredient, recipe and
 location id in it must still be produced, because the personal layer
@@ -48,7 +51,7 @@ import pandas as pd
 # --------------------------------------------------------------------------
 
 # Bumped when the shape of the generated database changes.
-SCHEMA_VERSION = "3"
+SCHEMA_VERSION = "4"
 
 # where materials are stored
 LOCATIONS = ["Satchel", "Trapper", "Pearson"]
@@ -163,6 +166,23 @@ CREATE TABLE ingredient_animals (
     PRIMARY KEY (ingredient_id, animal_id)
 );
 
+-- A plant, each with its own wiki page.  The satchel files some under a
+-- general name -- Desert, Hummingbird and Red Sage all go in as Sage --
+-- so the ingredient is the general name and these are where it comes
+-- from, as an animal is for a meat.  Every other plant ingredient is
+-- the one plant of the same name.
+CREATE TABLE plants (
+    id    TEXT PRIMARY KEY,          -- plant-desert-sage
+    name  TEXT NOT NULL UNIQUE,
+    link  TEXT                       -- the plant's wiki page
+);
+
+CREATE TABLE ingredient_plants (
+    ingredient_id  TEXT NOT NULL REFERENCES ingredients(id),
+    plant_id       TEXT NOT NULL REFERENCES plants(id),
+    PRIMARY KEY (ingredient_id, plant_id)
+);
+
 -- things you craft.  A one-time recipe is made once at a merchant and
 -- tracked; a repeatable one is made at your own campfire as often as
 -- you like, and is only ever shown -- never crafted, never ticked off.
@@ -193,6 +213,7 @@ CREATE TABLE recipe_ingredients (
 
 CREATE INDEX idx_ingredients_source ON ingredients(source_type);
 CREATE INDEX idx_ia_animal          ON ingredient_animals(animal_id);
+CREATE INDEX idx_ip_plant           ON ingredient_plants(plant_id);
 CREATE INDEX idx_recipes_category   ON recipes(category);
 CREATE INDEX idx_recipes_station    ON recipes(station_id);
 CREATE INDEX idx_ri_slot            ON recipe_ingredients(recipe_id, slot);
@@ -531,9 +552,10 @@ def blank(value):
 
 
 def load_patch(path):
-    """The patch workbook's two sheets, or a clean exit if one is missing."""
+    """The patch workbook's sheets, or a clean exit if one is missing."""
     book = pd.read_excel(path, sheet_name=None, dtype=str)
-    for sheet in ("animals", "ingredient_animals", "recipes"):
+    for sheet in ("animals", "ingredient_animals", "recipes",
+                  "plants", "ingredient_plants"):
         if sheet not in book:
             sys.exit(f"error: no {sheet!r} sheet in {path}")
     return book
@@ -613,6 +635,34 @@ def apply_patch(db, book, warnings, notes, fresh=frozenset()):
         if known_recipes[rid] != name:
             notes.append(f"renamed {known_recipes[rid]!r} -> {name!r} ({rid})")
             db.execute("UPDATE recipes SET name = ? WHERE id = ?", (name, rid))
+
+    # ---- plants and ingredient_plants: the patch is the only source ---------
+    for _, r in book["plants"].iterrows():
+        pid, name = blank(r.get("id")), blank(r.get("name"))
+        if not pid or not name:
+            continue
+        db.execute("INSERT INTO plants(id, name, link) VALUES (?,?,?)",
+                   (pid, name, blank(r.get("link"))))
+
+    plants = {i for (i,) in db.execute("SELECT id FROM plants")}
+    herbs = {i for (i,) in db.execute(
+        "SELECT id FROM ingredients WHERE source_type = 'plant'")}
+    links = set()
+    for _, r in book["ingredient_plants"].iterrows():
+        iid, pid = blank(r.get("ingredient_id")), blank(r.get("plant_id"))
+        if not iid or not pid:
+            continue
+        if iid not in herbs or pid not in plants:
+            warnings.append(f"link {iid} -> {pid}: unknown "
+                            f"{'plant ingredient' if iid not in herbs else 'plant'}")
+            continue
+        links.add((iid, pid))
+    db.executemany("INSERT INTO ingredient_plants(ingredient_id, plant_id) "
+                   "VALUES (?,?)", sorted(links))
+    for pid in sorted(plants - {p for _, p in links}):
+        warnings.append(f"plant {pid} is picked for no ingredient")
+    for iid in sorted(herbs - {i for i, _ in links}):
+        warnings.append(f"plant ingredient {iid} has no plant: no link")
 
 
 def build_consumables(db, path, animal_id, aliases, campfire, warnings, added,
@@ -775,7 +825,8 @@ def lost_ids(db, baseline):
 
 def report(db, warnings, notes, lost, out_path):
     tables = ("weapons", "animals", "locations", "stations", "sets",
-              "ingredients", "ingredient_animals", "recipes",
+              "ingredients", "ingredient_animals", "plants",
+              "ingredient_plants", "recipes",
               "recipe_ingredients", "meta")
     counts = [(t, db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0])
               for t in tables]

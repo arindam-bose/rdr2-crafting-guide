@@ -100,6 +100,7 @@ export function mount(root) {
   // Reference data, fixed for the life of the page: read once, not on
   // every tap of a stepper.
   const animals = queries.materialAnimals();
+  const plants = queries.materialPlants();
 
   root.innerHTML = `
     <div class="toolbar">
@@ -190,7 +191,7 @@ export function mount(root) {
     showChips.hidden = !personal;
 
     lastCards = group(queries.materials({ personal }), queries.materialUsage(),
-                      animals);
+                      animals, plants);
     // Every filter but the category, in one pass.  The categories on
     // offer are what that lets through, across all three tabs --
     // choosing one moves you to its tab anyway -- and the cards are
@@ -283,10 +284,12 @@ function matches(card, state, personal) {
   // you are looking for a material, or for what an animal you have in
   // your sights is good for.  A pelt's name already carries its animal,
   // but Big Game Meat does not say Wolf, and Flaky Fish Meat does not
-  // say Perch.  Animals match from the start of a word, as they do on
-  // Inventory, so "ox" is the Ox and not the Fox a dozen meats share.
+  // say Perch, and Sage does not say Red.  Animals and plants match
+  // from the start of a word, as they do on Inventory, so "ox" is the
+  // Ox and not the Fox a dozen meats share.
   if (state.search && !card.material.toLowerCase().includes(state.search)
-      && !card.animals.some((a) => startsWord(a.name, state.search))) {
+      && !card.animals.some((a) => startsWord(a.name, state.search))
+      && !card.plants.some((p) => startsWord(p.name, state.search))) {
     return false;
   }
   return true;

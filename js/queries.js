@@ -117,6 +117,24 @@ export function materialAnimals() {
 }
 
 /**
+ * Where each plant ingredient comes from: one row per (ingredient,
+ * plant), with the plant's wiki page.  Most are one plant of the same
+ * name; Currant, Sage and Ginseng are what the satchel files several
+ * under, as Big Game Meat is for a dozen animals.
+ */
+export function materialPlants() {
+  return db.all(`
+    SELECT     ip.ingredient_id,
+               p.id    AS plant_id,
+               p.name  AS name,
+               p.link  AS link
+    FROM       ingredient_plants ip
+    JOIN       plants p ON p.id = ip.plant_id
+    ORDER BY   p.name
+  `);
+}
+
+/**
  * The merchant stations, for the filter chips: Pearson, Trapper,
  * Fence, a chosen order rather than the alphabet's.  Anything new
  * sorts after.  The campfire is not one: nothing made there is
@@ -292,9 +310,9 @@ const STOCK_AT = `
 
 /**
  * Materials matching the search box: by name anywhere in it, or by one
- * of the animals it comes from, from the start of a word -- the same
- * rule Materials uses, so "wolf" finds Big Game Meat on both pages
- * and "ox" finds the Ox without the Fox.
+ * of the animals or plants it comes from, from the start of a word --
+ * the same rule Materials uses, so "wolf" finds Big Game Meat on both
+ * pages, "red" finds Sage, and "ox" finds the Ox without the Fox.
  */
 export function searchMaterials(term, locationId, limit = 40) {
   // What you type is taken literally, as Materials takes it: a % or _
@@ -307,6 +325,11 @@ export function searchMaterials(term, locationId, limit = 40) {
                       WHERE  ia.ingredient_id = ing.id
                         AND  (a.name LIKE :start ESCAPE '\\'
                               OR a.name LIKE :word ESCAPE '\\'))
+       OR     EXISTS (SELECT 1 FROM ingredient_plants ip
+                      JOIN   plants p ON p.id = ip.plant_id
+                      WHERE  ip.ingredient_id = ing.id
+                        AND  (p.name LIKE :start ESCAPE '\\'
+                              OR p.name LIKE :word ESCAPE '\\'))
     ORDER BY  ing.name
     LIMIT     :limit`,
     { location_id: locationId, anywhere: `%${t}%`, start: `${t}%`,

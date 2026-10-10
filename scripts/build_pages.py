@@ -198,6 +198,7 @@ def load(db_path):
         'built_at': con.execute("SELECT value FROM meta WHERE key = 'built_at'").fetchone()[0],
         'ingredients': q('SELECT * FROM ingredients ORDER BY name'),
         'animals': defaultdict(list),
+        'plants': defaultdict(list),
         'usage': defaultdict(list),
         'recipes': q('''
             SELECT r.*, st.name AS station, st.kind AS station_kind,
@@ -215,6 +216,12 @@ def load(db_path):
             LEFT JOIN weapons w ON w.id = a.weapon_id
             ORDER  BY a.name'''):
         data['animals'][a['ingredient_id']].append(a)
+    for p in q('''
+            SELECT ip.ingredient_id, p.name, p.link
+            FROM   ingredient_plants ip
+            JOIN   plants p ON p.id = ip.plant_id
+            ORDER  BY p.name'''):
+        data['plants'][p['ingredient_id']].append(p)
     for u in q('''
             SELECT ri.ingredient_id, ri.qty, r.id AS recipe_id, r.name AS recipe,
                    r.repeatable, st.id AS station_id, st.name AS station,
@@ -371,6 +378,7 @@ def open_in_app(root, route, id_, what):
 def material_page(m, data, parts):
     root = '../../'
     animals = data['animals'][m['id']]
+    plants = data['plants'][m['id']]
     usage = data['usage'][m['id']]
     vendor_uses = [u for u in usage if not u['repeatable']]
     fire_uses = [u for u in usage if u['repeatable']]
@@ -407,6 +415,9 @@ def material_page(m, data, parts):
         shown = [a['name'] for a in animals[:4]]
         more = f' and {len(animals) - 4} more' if len(animals) > 4 else ''
         said.append(f'It comes from {len(animals)} animals, including {", ".join(shown)}{more}.')
+    if len(plants) > 1:
+        said.append(f'It is picked from {len(plants)} plants: '
+                    f'{listing(p["name"] for p in plants)}.')
     intro = ' '.join(said)
 
     only = animals[0] if len(animals) == 1 else None
@@ -418,6 +429,10 @@ def material_page(m, data, parts):
                  ('Bait', only and esc(only['bait']))]
     elif m['source_type'] == 'misc':
         facts = [('Source', 'Found out in the world'), ('Quality', quality_label(m['quality']))]
+    elif m['source_type'] == 'plant':
+        # As in the app: a lone plant only repeats the title until it has a link.
+        only = plants[0] if len(plants) == 1 else None
+        facts = [('Plant', only and only['link'] and web_link(only['link'], only['name']))]
     else:
         facts = []
 
@@ -427,6 +442,11 @@ def material_page(m, data, parts):
             + (f'<span class="how">{esc("Bait: " + a["bait"] if a["bait"] else a["weapon"])}</span>'
                if a['bait'] or a['weapon'] else '') + '</li>'
             for a in animals) + '\n        </ul>')
+
+    plant_list = len(plants) > 1 and (
+        '<ul class="detail-list detail-plants">' + ''.join(
+            f'\n          <li><span class="what">{web_link(p["link"], p["name"])}</span></li>'
+            for p in plants) + '\n        </ul>')
 
     recipe_list = '<ul class="detail-list detail-recipes">' + ''.join(
         f'\n          <li class="plain"><span class="what">{u["qty"]}x for '
@@ -451,7 +471,7 @@ def material_page(m, data, parts):
         <h1>{esc(name)}{stars(m["quality"])}</h1>
       </div>
     </header>
-    <p class="static-intro">{esc(intro)}</p>{traits(facts)}{section("Animals", animal_list)}{section("Recipes used in", recipe_list)}{section("Vendors", stock and f'<div class="detail-stock">{stock}</div>')}
+    <p class="static-intro">{esc(intro)}</p>{traits(facts)}{section("Animals", animal_list)}{section("Plants", plant_list)}{section("Recipes used in", recipe_list)}{section("Vendors", stock and f'<div class="detail-stock">{stock}</div>')}
   </article>{open_in_app(root, "materials", m["id"], "it still needs")}'''
 
     where = listing(vendors + (['your campfire'] if fire_uses and vendors else []))

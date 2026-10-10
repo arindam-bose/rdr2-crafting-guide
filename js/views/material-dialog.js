@@ -9,8 +9,8 @@
 //
 // `group` is the shape both build the card from: the demand query
 // returns one row per (material, station), the usage query one per
-// (material, recipe), the animals query one per (material, animal),
-// and a card is per material, so all three are folded in.
+// (material, recipe), the animals and plants queries one per
+// (material, source), and a card is per material, so all are folded in.
 // ============================================================
 
 import * as queries from '../queries.js';
@@ -19,7 +19,7 @@ import { materialDetail, placeName } from '../render.js';
 import { toast } from '../toast.js';
 import { detailDialog } from '../dialog.js';
 
-export function group(rows, usage, animals) {
+export function group(rows, usage, animals, plants = []) {
   const byIngredient = new Map();
 
   for (const row of rows) {
@@ -32,6 +32,7 @@ export function group(rows, usage, animals) {
         source_type: row.source_type,
         body_part: row.body_part,
         animals: [],
+        plants: [],
         demands: [],
         usage: [],
       };
@@ -55,6 +56,9 @@ export function group(rows, usage, animals) {
   for (const a of animals) {
     byIngredient.get(a.ingredient_id)?.animals.push(a);
   }
+  for (const p of plants) {
+    byIngredient.get(p.ingredient_id)?.plants.push(p);
+  }
 
   return [...byIngredient.values()];
 }
@@ -66,7 +70,8 @@ export function group(rows, usage, animals) {
  */
 export function freshCard(id) {
   return group(queries.materials({ personal: store.isPersonal() }),
-               queries.materialUsage(), queries.materialAnimals())
+               queries.materialUsage(), queries.materialAnimals(),
+               queries.materialPlants())
     .find((m) => m.ingredient_id === id);
 }
 

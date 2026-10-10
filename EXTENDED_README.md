@@ -70,7 +70,7 @@ second hash.
 
 **Reference** — `data/rdr2.db`, built from a Notion export and the
 campfire-recipe workbook by `scripts/build_db.py`. Recipes, ingredients, the
-animals each one comes from, the weapon that leaves each pelt unspoiled, and
+animals or plants each one comes from, the weapon that leaves each pelt unspoiled, and
 which station crafts what. Read-only, rebuilt from source rather than edited.
 
 Recipes come in two kinds. A **one-time** recipe is made once at Pearson, the
@@ -78,8 +78,15 @@ Trapper or the Fence, and is tracked: crafted, skipped, still wanted. A
 **repeatable** one (`recipes.repeatable = 1`) is made at your own campfire as
 often as you have the ingredients; it is shown, never crafted or ticked off,
 and its `price_cents` is what the recipe itself costs to buy. A repeatable
-recipe may take alternatives -- any one sage will do -- which
+recipe may take alternatives -- Currant or Prairie Poppy -- which
 `recipe_ingredients` records as rows sharing a `slot`.
+
+Some plants the satchel files under a general name: Desert, Hummingbird and
+Red Sage all go in as **Sage**, Blackcurrant and Golden Currant as **Currant**,
+Alaskan and American Ginseng as **Ginseng**. The ingredient is the general
+name, and `ingredient_plants` says which `plants` it is picked from, the way
+`ingredient_animals` does for a meat. Oleander Sage is kept apart: it is the
+poisonous one, and only the poison recipes take it.
 
 **Personal** — `database/personal_schema.sql`, created at runtime in the same
 sql.js connection so the two can be joined without an `ATTACH`. It is an
@@ -122,7 +129,9 @@ sheet does the same for a recipe's name alone, by id — `recipe-explosive-slug`
 keeps its id when the sheet renames it to Explosive Shotgun Slug, since the id
 is derived from the name only at the CSV import a step earlier, and a patch
 applied after that must not shift what the personal layer already has pinned
-to it. `--check-ids` names the build being replaced: every ingredient,
+to it. Its `plants` sheet is every plant, each with its own wiki `link`, and its
+`ingredient_plants` sheet is the whole of that table: one plant for most
+ingredients, two or three for Currant, Sage and Ginseng. `--check-ids` names the build being replaced: every ingredient,
 recipe and location id in it must survive, because the personal layer stores
 those strings, and the build fails if one is gone.
 
@@ -534,8 +543,7 @@ and the Ready / Crafted chips only appear on the vendor tab.
 A campfire recipe is only ever looked up. It has no switch and no Craft
 button, is never crafted or skipped, and its price is labelled *Recipe*: it is
 what the recipe cost to buy, once. Where it takes any one of several
-ingredients the line reads `2x ANY OF Blackcurrant (1) / Golden Currant (0) /
-Prairie Poppy (2)`, with how many of each you hold in the Satchel; the tick
+ingredients the line reads `2x ANY OF Currant (1) / Prairie Poppy (2)`, with how many of each you hold in the Satchel; the tick
 means one of them alone covers the amount, since a slot cannot be made up from
 a mix.
 

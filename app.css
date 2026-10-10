@@ -1266,10 +1266,11 @@ body:has(dialog.detail[open]) { overflow: hidden; }
 .detail-recipes li.made .what a,
 .detail-recipes li.retired .what a { text-decoration: line-through; }
 
-/* The animals a material comes from: the name, and how to take it --
+/* The animals a material comes from -- or the plants, for Sage and the
+   like: the name, and how to take it --
    a weapon, or the bait for a fish -- set to the right. */
-.detail-animals li { align-items: baseline; background: var(--surface); }
-.detail-animals .what { flex: 1; min-width: 0; }
+.detail-animals li, .detail-plants li { align-items: baseline; background: var(--surface); }
+.detail-animals .what, .detail-plants .what { flex: 1; min-width: 0; }
 .detail-animals .how {
   flex: 0 1 auto;
   text-align: right;
