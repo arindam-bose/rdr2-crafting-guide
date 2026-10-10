@@ -108,6 +108,12 @@ function route() {
   return { name: name in ROUTES ? name : DEFAULT_ROUTE, id };
 }
 
+// A page you arrive at puts you in its search box, so you can type
+// straight away -- but only with a mouse or trackpad.  On a phone
+// focusing a field brings the keyboard up over half the list, on
+// every change of tab.
+const typesFirst = window.matchMedia('(hover: hover) and (pointer: fine)');
+
 /**
  * Arrive at an address.  The page is mounted only when it changes --
  * a cross-link from Materials to Recipes mounts Recipes, but opening
@@ -115,7 +121,8 @@ function route() {
  * the view is told which of its cards the address wants open.
  */
 function show({ name, id }) {
-  if (name !== currentName) {
+  const arrived = name !== currentName;
+  if (arrived) {
     current?.destroy?.();
     currentName = name;
 
@@ -137,6 +144,12 @@ function show({ name, id }) {
   }
 
   current?.focus?.(id);
+
+  // Not when the address opens a card: the dialog has the focus then.
+  // Settings has no search box, so nothing is found there.
+  if (arrived && !id && typesFirst.matches) {
+    view.querySelector('.toolbar input[type="search"]')?.focus({ preventScroll: true });
+  }
 }
 
 
