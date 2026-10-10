@@ -21,6 +21,14 @@ import { toast } from '../toast.js';
 import { ledgerDialog } from './ledger.js';
 import { aboutDialog, howToDialog } from './guide.js';
 
+// What Share the guide hands on: the canonical address, and a line to
+// go with it for the share sheets that show one.
+const SHARE = {
+  title: 'Red Dead Redemption II Crafting Guide',
+  text: 'Every RDR2 crafting recipe and material, and what you still need for each.',
+  url: 'https://arindambose.com/rdr2-crafting-guide/',
+};
+
 // The sources the reference data was built from, credited in the order
 // they were leaned on, with the Reddit posts kept together at the end.
 // `source` is the site or the author; `title` is what the page calls
@@ -200,7 +208,7 @@ export function mount(root) {
         <p class="note">The guide is free, with no ads and no accounts,
           and what you log never leaves this browser - it will stay that
           way. If it saved you a ride back to Valentine, a coffee keeps it
-          going.</p>
+          going - and so does passing it on to a friend who plays RDR2.</p>
         <div class="panel-actions">
           <a class="coffee-btn" href="https://buymeacoffee.com/arindambose"
              target="_blank" rel="noopener noreferrer">
@@ -208,6 +216,10 @@ export function mount(root) {
             Buy me a coffee
           </a>
           <small class="coffee-note">Opens buymeacoffee.com in a new tab</small>
+        </div>
+        <div class="panel-actions">
+          <a class="ghost-btn share-btn" id="s-share" href="${SHARE.url}">Share the guide</a>
+          <small class="coffee-note" id="s-share-note"></small>
         </div>
       </section>
 
@@ -308,6 +320,32 @@ export function mount(root) {
   // Both mark the backup taken, and the page hears it through the
   // subscription below, the same as from the masthead button.
   $('#s-download').addEventListener('click', backup.download);
+
+  // ---- passing it on --------------------------------------------------
+
+  // A phone gets its own share sheet, the way any app shares a link; a
+  // computer gets the link copied, since a desktop share dialog (Edge,
+  // Safari) is a detour when all anyone wants there is to paste it.
+  // It stays a real link, so a long press or right-click copies it too.
+  const sheet = 'share' in navigator && matchMedia('(pointer: coarse)').matches;
+  $('#s-share-note').textContent = sheet ? 'Opens your share menu' : 'Copies the link';
+  $('#s-share').addEventListener('click', async (event) => {
+    event.preventDefault();
+    if (sheet) {
+      try {
+        await navigator.share(SHARE);
+        return;
+      } catch (err) {
+        if (err.name === 'AbortError') return;        // closed the sheet: nothing to say
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(SHARE.url);
+      toast('Link copied. Paste it to a friend.');
+    } catch {
+      toast(`This browser would not let the page copy. The link is ${SHARE.url}`);
+    }
+  });
   $('#s-copy').addEventListener('click', backup.copy);
 
   $('#s-file').addEventListener('change', async (event) => {

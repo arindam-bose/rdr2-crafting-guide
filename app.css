@@ -2111,6 +2111,7 @@ ul.buff li::before {
 .coffee-btn:hover { filter: brightness(1.06); }
 .coffee-btn .icon { margin: 0; width: 1.6em; height: 1.6em; }
 .coffee-note { font-size: .74rem; color: var(--ink-faint); }
+.share-btn { text-decoration: none; }
 
 /* label-as-button, so the file input can stay hidden */
 .file-btn { display: inline-block; cursor: pointer; }
