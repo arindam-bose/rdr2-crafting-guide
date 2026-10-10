@@ -81,7 +81,8 @@
       <p class="consent-text"><strong>May we count your visit?</strong>
         Google Analytics would set cookies to count visits to this site.
         It never sees what you log in the guide, and nothing loads unless
-        you say yes.</p>
+        you say yes. Every feature works either way, and you can change
+        your mind any time in Settings.</p>
       <div class="consent-actions">
         <button type="button" class="ghost-btn" data-choice="denied">Decline</button>
         <button type="button" class="more-btn" data-choice="granted">Accept</button>
