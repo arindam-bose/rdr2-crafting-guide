@@ -36,7 +36,8 @@ const RANK = { wanted: 0, done: 1, skipped: 2 };
 
 // `total_qty` is how many items the recipe swallows, not how many
 // kinds: one recipe wanting 15 snake skins is a bigger errand than
-// three wanting one pelt each.
+// three wanting one pelt each.  `sort_qty` is that, except for a
+// campfire recipe in Personalize -- see campfireGap().
 const byName = (a, b) => a.name.localeCompare(b.name);
 
 // Ready to craft: a vendor recipe still wanted -- not made, not
@@ -52,7 +53,7 @@ const kindOf = (r) => (r.repeatable ? 'campfire' : 'vendor');
 const SORTS = {
   materials: {
     label: 'Materials needed',
-    fn: (a, b) => a.total_qty - b.total_qty || byName(a, b),
+    fn: (a, b) => a.sort_qty - b.sort_qty || a.total_qty - b.total_qty || byName(a, b),
     ways: { asc: 'Fewest first', desc: 'Most first' },
     start: 'asc',
   },
@@ -180,8 +181,12 @@ export function mount(root) {
     showChips.hidden = !personal || !vendor;
 
     const ingredients = group(queries.recipeIngredients());
-    const all = queries.recipeList()
-      .map((r) => ({ ...r, ingredients: ingredients.get(r.id) ?? [] }));
+    const all = queries.recipeList().map((r) => {
+      const withIngredients = { ...r, ingredients: ingredients.get(r.id) ?? [] };
+      withIngredients.sort_qty = personal && r.repeatable
+        ? campfireGap(withIngredients) : r.total_qty;
+      return withIngredients;
+    });
 
     lastAll = all;
     // Every filter but the category, in one pass: the categories on
@@ -223,6 +228,26 @@ export function mount(root) {
 
   update();
   return { update, focus: detail.focus, destroy: detail.destroy };
+}
+
+/**
+ * How far a campfire recipe is from being made from the Satchel: need
+ * less have, taken at its tightest slot.  Zero or under means you can
+ * make it now -- Coffee wanting one Ground Coffee with four in hand is
+ * -3 -- and nothing marks a campfire recipe made, so sorting on this
+ * is what puts what you can cook tonight at the top.
+ *
+ * The tightest slot rather than the sum: four spare Sage do not make
+ * up for the Yarrow you lack.  A slot of alternatives counts the one
+ * you hold most of, since it cannot be filled from a mix.
+ */
+function campfireGap(r) {
+  let worst = -Infinity;
+  for (const options of slots(r)) {
+    const have = Math.max(...options.map((o) => o.have));
+    worst = Math.max(worst, options[0].qty - have);
+  }
+  return Number.isFinite(worst) ? worst : 0;
 }
 
 function group(rows) {
