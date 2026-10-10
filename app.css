@@ -994,11 +994,41 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 /* ---------- a count riding along on a tab ---------- */
 
+/* Padded as the pill it becomes when it flashes, with the margin cut to
+   match, so the flash moves nothing around it. */
 .tab-count {
-  margin-left: 6px;
+  display: inline-block;             /* so the flash can scale it */
+  margin-left: 2px;
+  padding: 0 4px;
+  border-radius: 999px;
   font-size: .78rem;
   font-variant-numeric: tabular-nums;
   opacity: .6;
+}
+
+/* A count a search just changed: it pops on a wash of the accent and
+   settles back, so a tab you are not on still catches the eye.  Only
+   the wash fades; the figure keeps a colour it reads in throughout,
+   and toolbar.js takes the class off once the animation is done. */
+.tab-count { transition: color .3s, opacity .3s; }
+.tab-count.changed {
+  opacity: 1;
+  font-weight: 700;
+  animation: count-changed 2s ease-out;
+}
+.segmented button:not([aria-selected="true"]) .tab-count.changed { color: var(--accent-text); }
+@keyframes count-changed {
+  0%, 60% { background: color-mix(in srgb, var(--accent-text) 28%, transparent); }
+  10% { transform: scale(1.35); }
+  25% { transform: none; }
+  100% { background: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tab-count.changed { animation-name: count-changed-still; }
+  @keyframes count-changed-still {
+    0%, 60% { background: color-mix(in srgb, var(--accent-text) 28%, transparent); }
+    100% { background: transparent; }
+  }
 }
 
 /* ---------- "used in" and "vendors" on a material card ---------- */

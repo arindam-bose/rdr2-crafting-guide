@@ -185,14 +185,34 @@ export function wireTabs(el, attr, state, onChange) {
  * Share the matches out between the tabs: each tab shows how many it
  * holds, so a search that landed on another tab is visible rather than
  * lost.  Returns the counts, keyed by tab id.
+ *
+ * A count that changes flashes, so the eye is drawn to a tab you are
+ * not on when a search fills or empties it.  The first fill, as the
+ * page opens, is not a change and stays still.
  */
 export function countTabs(el, attr, tabs, items, tabOf) {
   const counts = {};
   for (const t of tabs) {
     counts[t.id] = items.filter((x) => tabOf(x) === t.id).length;
-    el.querySelector(`[data-${attr}="${t.id}"] .tab-count`).textContent = counts[t.id];
+    const badge = el.querySelector(`[data-${attr}="${t.id}"] .tab-count`);
+    const before = badge.textContent;
+    badge.textContent = counts[t.id];
+    if (before !== '' && before !== String(counts[t.id])) flash(badge);
   }
   return counts;
+}
+
+/**
+ * Replay the count's flash from the start, even mid-way through one,
+ * and drop the class at the end so the count settles back to its own
+ * colour.
+ */
+function flash(badge) {
+  badge.classList.remove('changed');
+  void badge.offsetWidth;            // restart the animation
+  badge.classList.add('changed');
+  badge.addEventListener('animationend', () => badge.classList.remove('changed'),
+                         { once: true });
 }
 
 /**
