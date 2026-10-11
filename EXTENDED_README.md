@@ -40,7 +40,7 @@ first in `<head>`, so it covers everything after it:
 
 `<meta name="referrer" content="no-referrer">` keeps the page's address out of
 the `Referer` header when a link leads off the site. Those links -- the wiki
-pages, the acknowledgements, the source code, Buy me a coffee -- are plain
+pages, the acknowledgements, the source code and issues, Buy me a coffee -- are plain
 anchors that open in a new tab; apart from Google Analytics nothing from
 another site is embedded, so nothing else is contacted until one is
 followed. `frame-ancestors` cannot be set from a meta tag, so it is not.
@@ -717,8 +717,8 @@ slugs with no foreign key. The sorts are replaced with the rest, once the data
 has landed; a backup from before they were carried leaves the device's own.
 
 **On your home screen**, a tile of its own just before **About** (which
-holds the two dialogs, the tool version, a link to the source on GitHub and
-the cookie settings),
+holds the two dialogs, the tool version, links to the source and to the
+issue tracker on GitHub, and the cookie settings),
 installs the guide. Where the browser lends its install prompt (`beforeinstallprompt`: Chrome, Edge, Samsung Internet) it is a
 real **Install** button; the event is kept rather than cancelled, so the
 browser's own offer still shows for anyone who never opens Settings. Firefox

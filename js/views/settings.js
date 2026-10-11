@@ -282,6 +282,7 @@ export function mount(root) {
       ['How to use this tool', '', 'howto'],
       ['Tool version', number ? `v${number}, updated ${released(date)}` : 'unknown'],
       ['Source code', 'On GitHub', '', 'https://github.com/arindam-bose/rdr2-crafting-guide'],
+      ['Log Issues and request features', 'On GitHub', '', 'https://github.com/arindam-bose/rdr2-crafting-guide/issues'],
       ['Cookie settings', CONSENT[self.rdr2Consent?.get()] ?? 'Not chosen', 'consent-open'],
     ]);
   }
