@@ -21,6 +21,10 @@ const IDB_VERSION = 1;
 const LEDGER = 'ledger';
 const TARGETS = 'targets';
 
+// The state Skip left behind, before it was removed.  Still read, so
+// an older backup or an older device's rows load: as no mark at all.
+const LEGACY_SKIPPED = 'skipped';
+
 const MODE_KEY = 'rdr2:personal-mode';
 
 // ------------------------------------------------------------
@@ -87,7 +91,17 @@ function changed() {
 
 /** Replay the stored rows into the open sql.js instance. */
 export async function hydrate() {
-  const [ledger, targets] = await Promise.all([readAll(LEDGER), readAll(TARGETS)]);
+  const [ledger, stored] = await Promise.all([readAll(LEDGER), readAll(TARGETS)]);
+
+  // Skip is gone (1.0.3).  A recipe someone skipped before then is
+  // simply wanted again, which is what no mark at all means, so its
+  // row is dropped -- here, and from IndexedDB, so it is gone for good.
+  const targets = stored.filter((t) => t.state !== LEGACY_SKIPPED);
+  if (targets.length < stored.length) {
+    await tx([TARGETS], 'readwrite', (s) => {
+      for (const t of stored) if (t.state === LEGACY_SKIPPED) s.delete(t.recipe_id);
+    });
+  }
 
   db.transaction(() => {
     for (const r of ledger) {
@@ -202,22 +216,6 @@ export async function undo(id) {
   changed();
 }
 
-/** Mark a recipe wanted / done / skipped. */
-export async function setTarget(recipe_id, state) {
-  const row = db.transaction(() => {
-    db.run(
-      `INSERT INTO targets (recipe_id, state) VALUES (:recipe_id, :state)
-       ON CONFLICT (recipe_id)
-       DO UPDATE SET state = :state, updated_at = datetime('now')`,
-      { recipe_id, state });
-    return db.one('SELECT * FROM targets WHERE recipe_id = :recipe_id', { recipe_id });
-  });
-
-  await tx([TARGETS], 'readwrite', (s) => s.put(row));
-  changed();
-  return row;
-}
-
 // ------------------------------------------------------------
 // export / import / reset
 // ------------------------------------------------------------
@@ -248,7 +246,7 @@ function referenceBuild() {
 }
 
 const REASONS = ['kill', 'loot', 'buy', 'craft', 'move', 'correction'];
-const TARGET_STATES = ['wanted', 'done', 'skipped'];
+const TARGET_STATES = ['wanted', 'done'];
 
 /**
  * Read an export without touching anything, and say what is in it.
@@ -274,7 +272,11 @@ export function inspectImport(text) {
   }
 
   const ledger = Array.isArray(data.ledger) ? data.ledger : [];
-  const targets = Array.isArray(data.targets) ? data.targets : [];
+  const all = Array.isArray(data.targets) ? data.targets : [];
+  // Skips from before Skip was removed are not wrong, just spent:
+  // importJSON drops them, so they are counted apart and not checked.
+  const targets = all.filter((t) => t?.state !== LEGACY_SKIPPED);
+  const skipped = all.length - targets.length;
 
   const known = (table) =>
     new Set(db.all(`SELECT id FROM ${table}`).map((r) => r.id));
@@ -326,6 +328,11 @@ export function inspectImport(text) {
       + ' not in this build');
   }
 
+  if (skipped) {
+    problems.push(plural(skipped, 'skipped recipe comes', 'skipped recipes come')
+      + ' back as wanted: Skip has been removed');
+  }
+
   return {
     ok: badReason === 0 && malformed === 0,
     fatal: badReason || malformed ? 'Some entries would be rejected by the database.' : null,
@@ -359,7 +366,7 @@ export async function importJSON(text) {
     l.clear();
     t.clear();
     for (const r of data.ledger ?? []) l.put(r);
-    for (const r of data.targets ?? []) t.put(r);
+    for (const r of data.targets ?? []) if (r.state !== LEGACY_SKIPPED) t.put(r);
   });
 
   db.transaction(() => {
@@ -393,7 +400,6 @@ export function stats() {
     places: one('SELECT COUNT(DISTINCT location_id) AS n FROM inventory WHERE qty > 0'),
     materials: one('SELECT COUNT(DISTINCT ingredient_id) AS n FROM inventory WHERE qty > 0'),
     made: one("SELECT COUNT(*) AS n FROM targets WHERE state = 'done'"),
-    skipped: one("SELECT COUNT(*) AS n FROM targets WHERE state = 'skipped'"),
     vendorRecipes: one('SELECT COUNT(*) AS n FROM recipes WHERE repeatable = 0'),
     spentCents: one(`
       SELECT COALESCE(SUM(r.price_cents), 0) AS n
@@ -446,8 +452,8 @@ export function stats() {
  * What has been written since `since` (a moment as an ISO string, or
  * null for "ever"): how many ledger rows and recipe marks are newer,
  * and the oldest of them.  Undoing a logged entry deletes its row, so
- * that comes off the count; undoing a Skip or a craft rewrites the
- * recipe's mark instead, so that still counts as one change -- erring
+ * that comes off the count; undoing a craft rewrites the recipe's
+ * mark instead, so that still counts as one change -- erring
  * towards a backup, never away from one.
  *
  * SQLite stamps rows with datetime('now') -- UTC, "YYYY-MM-DD HH:MM:SS"
@@ -472,7 +478,7 @@ export function changesSince(since) {
 /**
  * True when there is nothing personal here at all -- nothing to lose.
  * A recipe marked 'wanted' is what every recipe is with no mark at all
- * (a Skip undone leaves one behind), so it does not count.
+ * (a craft put back leaves one behind), so it does not count.
  */
 export function isEmpty() {
   return !db.one('SELECT 1 AS n FROM ledger LIMIT 1')

@@ -57,7 +57,7 @@ const HOW_TO = `
       <p><strong>General</strong>, where a first visit starts, is the plain
         reference: every recipe and every quantity. <strong>Personalize</strong>
         tracks what you have: cards show your stock against what each vendor
-        wants, and anything crafted or skipped drops out of the way. Logging
+        wants, and anything crafted drops out of the way. Logging
         only works in Personalize. Switch between them at the top of any
         page.</p>
     </div>`)}
@@ -92,7 +92,6 @@ const HOW_TO = `
         what you can make right now. Open a recipe and press
         <strong>Craft</strong>: its ingredients are taken from that vendor's
         stock - the Fence draws on your Satchel - and it is marked crafted.
-        <strong>Skip</strong> retires a recipe you do not want, and
         <strong>Put back</strong> undoes a craft.</p>
       <p>The <strong>Campfire</strong> tab is for looking up: those recipes
         can be made as often as you like, so they are never ticked off.</p>

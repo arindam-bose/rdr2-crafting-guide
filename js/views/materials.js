@@ -243,7 +243,7 @@ function emptyMessage(state, personal, counts) {
 const outstanding = (card) =>
   card.demands.some((d) => d.needed > 0 && d.have < d.needed);
 
-// Wanted at all: some recipe that is neither made nor skipped needs it.
+// Wanted at all: some recipe not yet made needs it.
 const live = (card) => card.demands.some((d) => d.needed > 0);
 
 // Worked towards at all: some vendor recipe uses it, wanted or not.

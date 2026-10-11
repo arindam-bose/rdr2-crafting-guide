@@ -10,7 +10,7 @@
    RDR Lino Regular is the middle tier: a card's own name, a tab
    inside a page (Vendor recipes / Campfire), a dialog's title, a
    section's caption (USED IN, INGREDIENTS), the General/Personalize
-   and Skip/Want it switches, and every button's own label.  It is
+   and Put back/Crafted switches, and every button's own label.  It is
    not monospaced, unlike the other two, so it never carries a
    column that has to line up.
 
@@ -941,9 +941,6 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .badge.station.pink   { color: var(--station-pink); }
 .badge.station.green  { color: var(--station-green); }
 
-/* Crafted and Skipped: settled, so in the quiet ink rather than a colour. */
-.badge.state { color: var(--ink-faint); border-style: dashed; }
-
 /* demand rows, one per station that wants this material */
 
 .demands { display: flex; flex-direction: column; gap: 6px; }
@@ -1097,10 +1094,8 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   color: var(--ink-dim);
 }
 .used-in .mark { font-size: .85rem; line-height: 1; }
-.used-in li.made          { color: var(--ink-faint); }
-.used-in li.retired       { color: var(--ink-faint); }
-.used-in li.made .what    { text-decoration: line-through; }
-.used-in li.retired .what { text-decoration: line-through; }
+.used-in li.made       { color: var(--ink-faint); }
+.used-in li.made .what { text-decoration: line-through; }
 
 .used-in .more {
   color: var(--ink-faint);
@@ -1302,19 +1297,9 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   font-size: .72rem;
   color: var(--ink-faint);
 }
-.detail-recipes .state {
-  flex: 0 0 auto;
-  padding: 2px 8px;
-  font-size: .72rem;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-}
-.detail-recipes li.retired .state { color: var(--ink-faint); }
-.detail-recipes li.made .what,
-.detail-recipes li.retired .what  { color: var(--ink-faint); }
+.detail-recipes li.made .what { color: var(--ink-faint); }
 /* Only the recipe's name is crossed out, not the amount or the station. */
-.detail-recipes li.made .what a,
-.detail-recipes li.retired .what a { text-decoration: line-through; }
+.detail-recipes li.made .what a { text-decoration: line-through; }
 
 /* The animals a material comes from -- or the plants, for Sage and the
    like: the name, and how to take it --
@@ -1368,7 +1353,7 @@ body:has(dialog.detail[open]) { overflow: hidden; }
 .card.recipe.yellow { border-left-color: var(--station-yellow); }
 .card.recipe.pink   { border-left-color: var(--station-pink); }
 .card.recipe.green  { border-left-color: var(--station-green); }
-.card.recipe.settled { opacity: .62; }
+.card.recipe.crafted { opacity: .62; }
 
 /* The name gets the whole width, and the price sits under it, flush
    right: beside the name it took the room a long name needed, and
@@ -1547,8 +1532,9 @@ ul.buff li::before {
 }
 .craft-why.ready { color: var(--ok); }
 
-/* The want switch in the dialog's corner: both words always showing,
-   the one that is in force drawn in ink, the other faint. */
+/* The Put back/Crafted switch in a crafted recipe's dialog corner: both
+   words always showing, the one that is in force drawn in ink, the
+   other faint. */
 .want-switch,
 .mode-switch {
   flex: 0 0 auto;
@@ -2576,7 +2562,7 @@ h1, h2,
 
 /* RDR Lino Regular: a card's own name, a tab inside a page, a
    dialog's title, a section's caption, the General/Personalize and
-   Skip/Want it switches, and every button's own label -- one tier
+   Put back/Crafted switches, and every button's own label -- one tier
    down from the above, and everywhere else something reads as a
    header or a control rather than prose. */
 h3,

@@ -394,17 +394,14 @@ function forQty(qty) {
 /** One recipe in the detail view, with its state spelled out. */
 function recipeLine(u, personal) {
   // Crafted and not crafted are the checkbox, exactly as Recipes
-  // stamps a card once it is made; Skipped keeps the word Recipes
-  // uses for the same state everywhere else, since there is no
-  // skipped icon to stand in for it.
-  const [state, label] = !personal || u.state === 'campfire' ? ['plain', '']
-    : u.state === 'done' ? ['made', '']
-    : u.state === 'skipped' ? ['retired', 'Skipped']
-    : ['open', ''];
+  // stamps a card once it is made.
+  const state = !personal || u.state === 'campfire' ? 'plain'
+    : u.state === 'done' ? 'made'
+    : 'open';
 
   const mark = state === 'made' ? checkbox(true)
     : state === 'open' ? checkbox(false)
-    : label ? `<span class="state">${label}</span>` : '';
+    : '';
 
   // Unlike forQty elsewhere, the amount always shows here: a bare name
   // in this list reads as though the amount were left out rather than
@@ -502,7 +499,7 @@ function stockLine(d, personal) {
  * Notion table used.  Two numbers decide it:
  *
  *   totalNeeded  what the recipes you still intend to make ask for.
- *                A made or skipped recipe stops asking, so this falls
+ *                A made recipe stops asking, so this falls
  *                to zero once you are finished with a material.
  *   moreNeeded   totalNeeded minus what you are holding.  Negative
  *                means you have more than anything still wants.
@@ -570,16 +567,14 @@ function usedIn(usage = [], personal, expanded = false) {
   const line = (u) => {
     const state = !personal || u.state === 'campfire' ? 'plain'
       : u.state === 'done' ? 'made'
-      : u.state === 'skipped' ? 'retired'
       : 'open';
     // Made and open are the same checkbox the card corners use, checked
-    // or not; retired and plain have no such icon, so they stay type --
-    // each alone in a .mark span with its own font stack, so the
-    // typewriter face not having them is contained, unlike a gap in the
-    // middle of a word.
+    // or not; plain has no such icon, so it stays type -- alone in a
+    // .mark span with its own font stack, so the typewriter face not
+    // having it is contained, unlike a gap in the middle of a word.
     const mark = state === 'made' ? markIcon(true)
       : state === 'open' ? markIcon(false)
-      : `<span class="mark" aria-hidden="true">${{ retired: '\u2013', plain: '\u00b7' }[state]}</span>`;
+      : '<span class="mark" aria-hidden="true">\u00b7</span>';
 
     return `<li class="${state}">
       ${mark}

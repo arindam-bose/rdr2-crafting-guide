@@ -116,7 +116,7 @@ export function mount(root) {
         <p class="note">
           <strong>Personalize</strong> folds in what you own: cards show what
           you have against what a vendor wants, recipes can be crafted, and
-          anything crafted or skipped drops out of the way.</p>
+          anything crafted drops out of the way.</p>
         <p class="note">
           <strong>General</strong> ignores all of it and shows the reference
           data whole - every recipe, every material, every quantity.</p>
@@ -395,7 +395,7 @@ export function mount(root) {
           ${plural(found.targets, 'marked recipe')},
           exported ${esc(when)}${found.device ? ` from ${esc(found.device)}` : ''}.</p>
         <p>This device has ${plural(now.entries, 'entry', 'entries')}
-          and ${now.made + now.skipped} marked. All of it will be replaced.</p>
+          and ${plural(now.made, 'crafted recipe')}. All of it will be replaced.</p>
         ${found.problems.length
           ? `<ul class="problems">${found.problems
               .map((w) => `<li>${esc(w)}</li>`).join('')}</ul>`
@@ -464,11 +464,10 @@ export function mount(root) {
   $('#s-danger').addEventListener('click', async (event) => {
     if (event.target.id === 's-reset') {
       // Erase takes the recipe marks as well as the ledger, so the
-      // question counts both -- someone who has only skipped recipes
-      // has no entries, but still has something to lose.
-      const { entries, made, skipped } = store.stats();
+      // question counts both.
+      const { entries, made } = store.stats();
       const what = [entries && plural(entries, 'entry', 'entries'),
-                    made + skipped && plural(made + skipped, 'marked recipe')]
+                    made && plural(made, 'crafted recipe')]
         .filter(Boolean).join(' and ') || 'everything';
       event.currentTarget.innerHTML = `
         <span class="state-label">Erase ${what}?</span>
@@ -499,7 +498,6 @@ export function mount(root) {
         ? `${plural(s.materials, 'kind')} in ${plural(s.places, 'place')}`
         : 'nothing yet'],
       ['Recipes crafted', `${s.made}/${s.vendorRecipes}`],
-      ['Recipes skipped', s.skipped],
       ['Spent crafting', money(s.spentCents)],
       ['Outfits completed', `${s.outfitsDone} of ${s.outfits}`],
     ]);

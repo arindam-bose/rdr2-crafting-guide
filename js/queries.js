@@ -32,7 +32,7 @@ import * as db from './db.js';
 // ------------------------------------------------------------
 export function materials({ personal = true } = {}) {
   // Open demand is what wanted recipes still ask for; the total is
-  // what every recipe asks for, done and skipped included.  Keeping
+  // what every recipe asks for, done included.  Keeping
   // both means a material whose recipes are all finished can still
   // be listed — as retired, rather than vanishing.
   //
