@@ -14,7 +14,7 @@ import * as prefs from './prefs.js';
 import * as store from './store.js';
 import * as backup from './backup.js';
 
-const ACTIVE = true;
+const ACTIVE = false;
 
 const SEEN = 'rdr2:notice-db-update-seen';
 
