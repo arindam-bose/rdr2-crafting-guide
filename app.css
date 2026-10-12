@@ -588,6 +588,42 @@ body > main { flex: 1 0 auto; }
 
 main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
+/* A page's search, filters and tabs, pinned under the masthead as its
+   list scrolls -- on a desktop only: a wide window, a mouse, and the
+   height to spare, since on a phone or a short laptop the pinned block
+   would eat the list it is there to filter.  The band runs out over
+   main's gutters, and wears the body's own background (fixed, so the
+   two line up) rather than a flat colour.  --chrome-h and --head-h are
+   measured by main.js, which also adds .pinned once it has stuck. */
+@media (min-width: 1024px) and (min-height: 600px) and (hover: hover) and (pointer: fine) {
+  .view-head {
+    position: sticky;
+    top: var(--chrome-h, 0px);
+    z-index: 5;
+    margin: -16px -16px 0;
+    padding: 16px 16px 2px;
+    border-bottom: 1px solid transparent;
+    background:
+      radial-gradient(130% 70% at 50% -10%,
+                      var(--page-wash) 0%, var(--bg) 62%)
+      no-repeat fixed,
+      var(--bg);
+    transition: box-shadow .15s;
+  }
+  .view-head.pinned {
+    border-bottom-color: var(--line);
+    box-shadow: 0 10px 14px -12px rgb(20 12 6 / .35);
+  }
+  /* Tabbing to a card or row scrolls it clear of the pinned block,
+     not underneath it.  --head-h is measured with --chrome-h. */
+  html:has(.view-head) {
+    scroll-padding-top: calc(var(--chrome-h, 0px) + var(--head-h, 0px) + 8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .view-head { transition: none; }
+}
+
 .gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));

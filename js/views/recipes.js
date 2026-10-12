@@ -81,6 +81,7 @@ export function mount(root) {
       .map((c) => ({ value: c.category, label: c.category }))]));
 
   root.innerHTML = `
+    <div class="view-head">
     <div class="toolbar">
       ${toolbar.searchBox('r-search', 'Search a recipe, set or material…')}
       <select class="select" id="r-category" aria-label="Category"></select>
@@ -96,6 +97,7 @@ export function mount(root) {
       <span class="count" id="r-count"></span>
     </div>
     ${toolbar.tabRow('r-kinds', 'kind', KINDS)}
+    </div>
     <div class="gallery" id="r-gallery"></div>
     <div id="r-pager"></div>`;
 

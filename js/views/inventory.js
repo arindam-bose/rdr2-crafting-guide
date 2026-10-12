@@ -145,6 +145,7 @@ export function mount(root) {
 
   const tabs = locations.map((l) => ({ id: l.id, title: l.name, icon: LOCATION_ICON[l.id] }));
   root.innerHTML = `
+    <div class="view-head">
     <div class="toolbar">
       ${toolbar.searchBox('i-search', 'Search a material or animal…')}
       <select class="select" id="i-part" aria-label="Category"></select>
@@ -152,6 +153,7 @@ export function mount(root) {
     </div>
     ${toolbar.tabRow('i-locations', 'location', tabs,
                      { selected: state.location, counts: false })}
+    </div>
     <div id="i-sections"></div>
     <div class="move-pop" id="i-move" popover role="dialog"
          aria-labelledby="i-move-title"></div>

@@ -84,6 +84,7 @@ export function mount(root) {
   const plants = queries.materialPlants();
 
   root.innerHTML = `
+    <div class="view-head">
     <div class="toolbar">
       ${toolbar.searchBox('m-search', 'Search a material or animal…')}
       <select class="select" id="m-part" aria-label="Category"></select>
@@ -99,6 +100,7 @@ export function mount(root) {
       <span class="count" id="m-count"></span>
     </div>
     ${toolbar.tabRow('m-groups', 'group', GROUPS)}
+    </div>
     <div class="gallery" id="m-gallery"></div>
     <div id="m-pager"></div>`;
 
