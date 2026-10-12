@@ -2648,9 +2648,10 @@ h1, h2,
 
 /* RDR Lino Regular: a card's own name, a tab inside a page, a
    dialog's title, a section's caption, the General/Personalize and
-   Put back/Crafted switches, and every button's own label -- one tier
-   down from the above, and everywhere else something reads as a
-   header or a control rather than prose. */
+   Put back/Crafted switches, every button's own label, and the version
+   beside the masthead's name -- one tier down from the above, and
+   everywhere else something reads as a header or a control rather
+   than prose. */
 h3,
 #detail-title, .detail-head h1,
 .chip,
@@ -2664,6 +2665,7 @@ h3,
 .entry .reason,
 .mode-switch, .want-switch, .backup-btn,
 .move-btn .move-word, .move-place,
+.brand-version,
 .footer p {
   font-family: var(--font-heading);
   font-weight: 400;

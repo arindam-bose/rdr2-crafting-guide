@@ -360,8 +360,8 @@ enforced, before editing it.
 Three faces, in three tiers. [Marston] by Neale Davidson is the loudest and the
 rarest: the site's own name, a page's title and the tab bar. [RDR Lino Regular]
 sets everything that reads as a header or a control rather than prose — a
-card's name, a dialog's title, a section's caption, the switches and every
-button's label. Both are caps-only display faces, so neither ever sets prose.
+card's name, a dialog's title, a section's caption, the switches, every
+button's label and the version beside the site's name. Both are caps-only display faces, so neither ever sets prose.
 [FB Remington] by Fred Brutus sets everything else, which on these screens is
 mostly numbers: `3/3`, `2x Oregano`, `$14.95`. It is monospaced, so those
 columns line up on their own. All three are free, and all are vendored under
