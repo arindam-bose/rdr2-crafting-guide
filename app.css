@@ -1726,6 +1726,36 @@ ul.buff li::before {
    Satchel", "6 Matches") and reads oddly shouted. */
 .section-head .list-label { margin: 0; text-transform: none; }
 
+/* A section title that shows and hides its rows (Recently Touched):
+   the same caption, with a chevron pointing right when shut and down
+   when open.  Drawn in CSS, so no glyph depends on the typeface. */
+.section-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 0;
+  font: inherit;
+  font-size: .76rem;
+  letter-spacing: .06em;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.section-toggle::before {
+  content: '';
+  width: .42em;
+  height: .42em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform .15s;
+}
+.section-toggle[aria-expanded="true"]::before { transform: rotate(45deg); }
+.section-toggle:hover { color: var(--ink); }
+@media (prefers-reduced-motion: reduce) {
+  .section-toggle::before { transition: none; }
+}
+
 .rows {
   display: flex;
   flex-direction: column;

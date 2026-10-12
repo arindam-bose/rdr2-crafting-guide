@@ -639,7 +639,9 @@ your place.
 Inventory lists what you are holding at the selected location first — *In the
 Satchel*, *With Trapper*, *With Pearson*, each with a count of the rows under
 it — then what you logged recently, so it reads as a stock list rather than
-only a search box. Each row also reports how many have passed through your
+only a search box. *Recently Touched* starts shut: its title is a toggle with a
+chevron, its count shows either way, and whether it is open is kept per device,
+like the location. Each row also reports how many have passed through your
 hands there and how many went into crafting, read from `inventory_totals` — the
 same ledger as `inventory`, without the balance's habit of dropping rows that
 netted to zero. `qty <= gathered` holds by construction, since one sums every

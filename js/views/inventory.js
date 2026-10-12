@@ -43,6 +43,9 @@ import * as nav from '../nav.js';
 import { freshCard, materialDialog } from './material-dialog.js';
 
 const LOCATION_KEY = 'rdr2:location';
+// Whether Recently Touched is open.  Shut until someone opens it, and
+// kept per device like the location: it is a way back, not the list.
+const RECENT_KEY = 'rdr2:recent-open';
 
 // The icon that matches each location's id, for the segmented tabs
 // and the Transfer button and panel alike.
@@ -214,6 +217,15 @@ export function mount(root) {
   // One listener for every stepper: the rows are replaced on each
   // change, so per-row listeners would not survive anyway.
   sections.addEventListener('click', (event) => {
+    // Before the Personalize check: opening a list is reading, and
+    // General can read.  The repaint replaces the button, so the
+    // focus is handed to its successor.
+    if (event.target.closest('#i-recent-toggle')) {
+      prefs.set(RECENT_KEY, recentOpen() ? 'no' : 'yes');
+      update();
+      sections.querySelector('#i-recent-toggle')?.focus();
+      return;
+    }
     if (event.target.closest('#i-personalize')) {
       store.setPersonal(true);
       toast('Personalize is on - every card now counts what you have.');
@@ -557,7 +569,7 @@ export function mount(root) {
         + offer
         + section(at, sorted(holding), state.part
           ? `Nothing in that category ${lower(at)}.` : `Nothing ${lower(at)} yet.`)
-        + section('Recently Touched', inPart(lately), '');
+        + section('Recently Touched', inPart(lately), '', true, true);
     }
 
     // Flipped to General with a Transfer panel open: close it, since
@@ -578,15 +590,22 @@ export function mount(root) {
     }
   }
 
-  function section(title, list, emptyText, counted = true) {
+  // `toggled` makes the title a button that shows and hides the rows;
+  // the count stays either way, so a shut list still says what is in
+  // it.  Shut, the rows are not drawn at all.
+  function section(title, list, emptyText, counted = true, toggled = false) {
     if (!list.length && !emptyText) return '';
+    const open = !toggled || recentOpen();
     return `
       <section class="stock-section">
         <div class="section-head">
-          <p class="list-label">${esc(title)}</p>
+          ${toggled
+            ? `<button type="button" class="list-label section-toggle" id="i-recent-toggle"
+                       aria-expanded="${open}">${esc(title)}</button>`
+            : `<p class="list-label">${esc(title)}</p>`}
           ${counted ? `<span class="count">${plural(list.length, 'item')}</span>` : ''}
         </div>
-        ${list.length
+        ${!open ? '' : list.length
           ? `<div class="rows">${list
                .map((m) => row(m, state.location, wants, pendingIdx, store.isPersonal()))
                .join('')}</div>`
@@ -647,6 +666,8 @@ function personalizeOffer(waiting) {
 }
 
 const lower = (text) => text[0].toLowerCase() + text.slice(1);
+
+const recentOpen = () => prefs.get(RECENT_KEY) === 'yes';
 
 /**
  * What you are holding here, plus anything staged for it — a
