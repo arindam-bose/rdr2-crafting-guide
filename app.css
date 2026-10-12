@@ -10,7 +10,7 @@
    RDR Lino Regular is the middle tier: a card's own name, a tab
    inside a page (Vendor recipes / Campfire), a dialog's title, a
    section's caption (USED IN, INGREDIENTS), the General/Personalize
-   and Skip/Want it switches, and every button's own label.  It is
+   and Put back/Crafted switches, and every button's own label.  It is
    not monospaced, unlike the other two, so it never carries a
    column that has to line up.
 
@@ -588,6 +588,44 @@ body > main { flex: 1 0 auto; }
 
 main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
+/* A page's search, filters and tabs, pinned under the masthead as its
+   list scrolls -- on everything but a phone: the wide layout (tablets,
+   laptops, desktops), with the height to spare.  A phone keeps the
+   plain page, where the pinned block would eat the list it is there to
+   filter; the height guard keeps a phone turned sideways, wide but
+   short, among them.  The band runs out over
+   main's gutters, and wears the body's own background (fixed, so the
+   two line up) rather than a flat colour.  --chrome-h and --head-h are
+   measured by main.js, which also adds .pinned once it has stuck. */
+@media (min-width: 720px) and (min-height: 500px) {
+  .view-head {
+    position: sticky;
+    top: var(--chrome-h, 0px);
+    z-index: 5;
+    margin: -16px -16px 0;
+    padding: 16px 16px 2px;
+    border-bottom: 1px solid transparent;
+    background:
+      radial-gradient(130% 70% at 50% -10%,
+                      var(--page-wash) 0%, var(--bg) 62%)
+      no-repeat fixed,
+      var(--bg);
+    transition: box-shadow .15s;
+  }
+  .view-head.pinned {
+    border-bottom-color: var(--line);
+    box-shadow: 0 10px 14px -12px rgb(20 12 6 / .35);
+  }
+  /* Tabbing to a card or row scrolls it clear of the pinned block,
+     not underneath it.  --head-h is measured with --chrome-h. */
+  html:has(.view-head) {
+    scroll-padding-top: calc(var(--chrome-h, 0px) + var(--head-h, 0px) + 8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .view-head { transition: none; }
+}
+
 .gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -941,9 +979,6 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .badge.station.pink   { color: var(--station-pink); }
 .badge.station.green  { color: var(--station-green); }
 
-/* Crafted and Skipped: settled, so in the quiet ink rather than a colour. */
-.badge.state { color: var(--ink-faint); border-style: dashed; }
-
 /* demand rows, one per station that wants this material */
 
 .demands { display: flex; flex-direction: column; gap: 6px; }
@@ -1097,10 +1132,8 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   color: var(--ink-dim);
 }
 .used-in .mark { font-size: .85rem; line-height: 1; }
-.used-in li.made          { color: var(--ink-faint); }
-.used-in li.retired       { color: var(--ink-faint); }
-.used-in li.made .what    { text-decoration: line-through; }
-.used-in li.retired .what { text-decoration: line-through; }
+.used-in li.made       { color: var(--ink-faint); }
+.used-in li.made .what { text-decoration: line-through; }
 
 .used-in .more {
   color: var(--ink-faint);
@@ -1302,19 +1335,9 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   font-size: .72rem;
   color: var(--ink-faint);
 }
-.detail-recipes .state {
-  flex: 0 0 auto;
-  padding: 2px 8px;
-  font-size: .72rem;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-}
-.detail-recipes li.retired .state { color: var(--ink-faint); }
-.detail-recipes li.made .what,
-.detail-recipes li.retired .what  { color: var(--ink-faint); }
+.detail-recipes li.made .what { color: var(--ink-faint); }
 /* Only the recipe's name is crossed out, not the amount or the station. */
-.detail-recipes li.made .what a,
-.detail-recipes li.retired .what a { text-decoration: line-through; }
+.detail-recipes li.made .what a { text-decoration: line-through; }
 
 /* The animals a material comes from -- or the plants, for Sage and the
    like: the name, and how to take it --
@@ -1368,7 +1391,7 @@ body:has(dialog.detail[open]) { overflow: hidden; }
 .card.recipe.yellow { border-left-color: var(--station-yellow); }
 .card.recipe.pink   { border-left-color: var(--station-pink); }
 .card.recipe.green  { border-left-color: var(--station-green); }
-.card.recipe.settled { opacity: .62; }
+.card.recipe.crafted { opacity: .62; }
 
 /* The name gets the whole width, and the price sits under it, flush
    right: beside the name it took the room a long name needed, and
@@ -1512,6 +1535,24 @@ ul.buff li::before {
   font-variant-numeric: tabular-nums;
 }
 
+/* How many of a campfire recipe the Satchel makes as it stands.  On a
+   card it sits at the foot under a rule, pushed down by margin-top:auto
+   so a row of cards keeps the line level; in the dialog it follows the
+   Comments hint.  Green once it is one or more. */
+.can-make {
+  margin: 0;
+  font-size: .85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+}
+.can-make.ready { color: var(--ok); }
+.card .can-make {
+  margin-top: auto;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+.detail-body .can-make { margin-top: 8px; }
+
 /* ---------- recipe detail dialog ---------- */
 
 /* Buffs as a stat and its value, the values in a column of their own. */
@@ -1547,9 +1588,10 @@ ul.buff li::before {
 }
 .craft-why.ready { color: var(--ok); }
 
-/* The want switch in the dialog's corner: both words always showing,
-   the one that is in force drawn in ink, the other faint. */
-.want-switch,
+/* The Put back/Crafted switch in a crafted recipe's dialog corner: both
+   words always showing, the one that is in force drawn in ink, the
+   other faint. */
+.crafted-switch,
 .mode-switch {
   flex: 0 0 auto;
   align-self: center;
@@ -1564,12 +1606,12 @@ ul.buff li::before {
   border: 0;
   cursor: pointer;
 }
-.want-switch .side,
+.crafted-switch .side,
 .mode-switch .side { white-space: nowrap; }
-.want-switch[aria-checked="true"]  .side.on,
-.want-switch[aria-checked="false"] .side.off { color: var(--ink); }
+.crafted-switch[aria-checked="true"]  .side.on,
+.crafted-switch[aria-checked="false"] .side.off { color: var(--ink); }
 
-.want-switch .track,
+.crafted-switch .track,
 .mode-switch .track {
   position: relative;
   width: 36px;
@@ -1579,7 +1621,7 @@ ul.buff li::before {
   border: 1px solid var(--line);
   transition: background .15s;
 }
-.want-switch .track i,
+.crafted-switch .track i,
 .mode-switch .track i {
   position: absolute;
   top: 2px;
@@ -1590,18 +1632,18 @@ ul.buff li::before {
   background: var(--ink-faint);
   transition: transform .15s, background .15s;
 }
-.want-switch[aria-checked="true"] .track {
+.crafted-switch[aria-checked="true"] .track {
   background: color-mix(in srgb, var(--ok) 22%, var(--surface-2));
   border-color: var(--ok);
 }
-.want-switch[aria-checked="true"] .track i {
+.crafted-switch[aria-checked="true"] .track i {
   transform: translateX(16px);
   background: var(--ok);
 }
-.want-switch:hover .track,
+.crafted-switch:hover .track,
 .mode-switch:hover .track { border-color: var(--ink-faint); }
 @media (prefers-reduced-motion: reduce) {
-  .want-switch .track, .want-switch .track i,
+  .crafted-switch .track, .crafted-switch .track i,
   .mode-switch .track, .mode-switch .track i { transition: none; }
 }
 
@@ -1609,7 +1651,7 @@ ul.buff li::before {
 @media (max-width: 480px) {
   .detail-head { flex-wrap: wrap; }
   .detail-head > div { flex-basis: calc(100% - 48px); }
-  .detail-head .want-switch { order: 3; margin-left: -4px; }
+  .detail-head .crafted-switch { order: 3; margin-left: -4px; }
 }
 
 .craft-btn {
@@ -1721,6 +1763,36 @@ ul.buff li::before {
    gets: this one is closer to a sentence than a tag ("In the
    Satchel", "6 Matches") and reads oddly shouted. */
 .section-head .list-label { margin: 0; text-transform: none; }
+
+/* A section title that shows and hides its rows (Recently Touched):
+   the same caption, with a chevron pointing right when shut and down
+   when open.  Drawn in CSS, so no glyph depends on the typeface. */
+.section-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 2px 0;
+  font: inherit;
+  font-size: .76rem;
+  letter-spacing: .06em;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.section-toggle::before {
+  content: '';
+  width: .42em;
+  height: .42em;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform .15s;
+}
+.section-toggle[aria-expanded="true"]::before { transform: rotate(45deg); }
+.section-toggle:hover { color: var(--ink); }
+@media (prefers-reduced-motion: reduce) {
+  .section-toggle::before { transition: none; }
+}
 
 .rows {
   display: flex;
@@ -2576,9 +2648,10 @@ h1, h2,
 
 /* RDR Lino Regular: a card's own name, a tab inside a page, a
    dialog's title, a section's caption, the General/Personalize and
-   Skip/Want it switches, and every button's own label -- one tier
-   down from the above, and everywhere else something reads as a
-   header or a control rather than prose. */
+   Put back/Crafted switches, every button's own label, and the version
+   beside the masthead's name -- one tier down from the above, and
+   everywhere else something reads as a header or a control rather
+   than prose. */
 h3,
 #detail-title, .detail-head h1,
 .chip,
@@ -2590,8 +2663,9 @@ h3,
 .panel h3,
 .trait dt, .detail-kicker,
 .entry .reason,
-.mode-switch, .want-switch, .backup-btn,
+.mode-switch, .crafted-switch, .backup-btn,
 .move-btn .move-word, .move-place,
+.brand-version,
 .footer p {
   font-family: var(--font-heading);
   font-weight: 400;

@@ -12,8 +12,8 @@
 // you have the ingredients: it is only ever looked up, never crafted
 // or ticked off, and may take any one of several ingredients.
 //
-// The cards are for scanning.  Crafting, skipping and putting back
-// happen in the dialog a vendor card opens: crafting spends the
+// The cards are for scanning.  Crafting and putting back happen in
+// the dialog a vendor card opens: crafting spends the
 // ingredients from the station's own stock and marks the recipe
 // done, as one commit with an undo.
 // ============================================================
@@ -29,10 +29,8 @@ import { toast } from '../toast.js';
 import { detailDialog, opensCard } from '../dialog.js';
 
 // What you are still working on comes first; what you have crafted
-// next; what you have retired last.  A skipped recipe keeping its
-// alphabetical slot was the thing that made Skip feel like it had
-// not done anything.
-const RANK = { wanted: 0, done: 1, skipped: 2 };
+// after it.
+const RANK = { wanted: 0, done: 1 };
 
 // `total_qty` is how many items the recipe swallows, not how many
 // kinds: one recipe wanting 15 snake skins is a bigger errand than
@@ -40,8 +38,8 @@ const RANK = { wanted: 0, done: 1, skipped: 2 };
 // campfire recipe in Personalize -- see campfireGap().
 const byName = (a, b) => a.name.localeCompare(b.name);
 
-// Ready to craft: a vendor recipe still wanted -- not made, not
-// skipped -- with every ingredient in the station's stock.
+// Ready to craft: a vendor recipe not yet made, with every
+// ingredient in the station's stock.
 const ready = (r) => !r.repeatable && r.state === 'wanted' && r.satisfied === r.needs;
 
 const KINDS = [
@@ -83,6 +81,7 @@ export function mount(root) {
       .map((c) => ({ value: c.category, label: c.category }))]));
 
   root.innerHTML = `
+    <div class="view-head">
     <div class="toolbar">
       ${toolbar.searchBox('r-search', 'Search a recipe, set or material…')}
       <select class="select" id="r-category" aria-label="Category"></select>
@@ -98,6 +97,7 @@ export function mount(root) {
       <span class="count" id="r-count"></span>
     </div>
     ${toolbar.tabRow('r-kinds', 'kind', KINDS)}
+    </div>
     <div class="gallery" id="r-gallery"></div>
     <div id="r-pager"></div>`;
 
@@ -168,13 +168,6 @@ export function mount(root) {
     } else if (action === 'uncraft') {
       await store.uncraft(recipeId);
       toast(`${name} is wanted again`);
-    } else if (action === 'skip') {
-      await store.setTarget(recipeId, 'skipped');
-      toast(`Skipped ${name}`,
-            { label: 'Undo', run: () => store.setTarget(recipeId, 'wanted') });
-    } else if (action === 'unskip') {
-      await store.setTarget(recipeId, 'wanted');
-      toast(`${name} is wanted again`);
     }
   }
 
@@ -210,8 +203,7 @@ export function mount(root) {
 
     const list = matched.filter((r) => kindOf(r) === state.kind);
 
-    // Crafted and skipped sink to the bottom whatever the field, so a
-    // Skip visibly does something.
+    // Crafted sinks to the bottom whatever the field.
     const chosen = toolbar.comparator(SORTS, state);
     list.sort(personal
       ? (a, b) => RANK[a.state] - RANK[b.state] || chosen(a, b)
@@ -257,6 +249,33 @@ function campfireGap(r) {
   return Number.isFinite(worst) ? worst : Infinity;
 }
 
+/**
+ * How many of a campfire recipe the Satchel makes as it stands: each
+ * slot's holding divided by what it takes, rounded down, and the
+ * smallest of those.  Minty Pork at 2 Tender Pork Loin and 1 Wild Mint,
+ * with 5 and 3 in hand, is min(2, 3) = 2.  A slot of alternatives counts
+ * the one you hold most of, since it cannot be filled from a mix -- the
+ * same rule as campfireGap().  Null for a recipe with no ingredients.
+ */
+function canMake(r) {
+  const each = slots(r).map((options) =>
+    Math.max(...options.map((o) => Math.floor(o.have / o.qty))));
+  // Never under zero: a stock taken below nothing (an old batch undone
+  // after its items were spent) still makes none, not "-3".
+  return each.length ? Math.max(0, Math.min(...each)) : null;
+}
+
+/** "You can make 2", under a rule at the foot of a campfire card. */
+function canMakeLine(r) {
+  const n = canMake(r);
+  if (n === null) return '';
+  return `<p class="can-make${n ? ' ready' : ''}">${canMakeWords(n)}</p>`;
+}
+
+function canMakeWords(n) {
+  return n ? `You can make ${n}` : 'You can make none yet';
+}
+
 function group(rows) {
   const byRecipe = new Map();
   for (const row of rows) {
@@ -298,26 +317,24 @@ function matches(r, state, personal, plantNames) {
 
 function card(r, personal) {
   const colour = stationColour(r.color);
-  const settled = personal && r.state !== 'wanted';
   const crafted = personal && r.state === 'done';
 
   // The name is a real button, so the card opens from the keyboard
   // too; a click anywhere else on the card is forwarded to it.  The
-  // station and the state go inside it: a button is a box, and a name
-  // that wraps widens it to the whole line, so anything after it would
-  // drop to a line of its own even with room beside the last word.
-  // nameWith keeps them with that word when there is none.  Crafted
-  // gets the checkbox instead, held apart from the name so a long one
-  // wrapping never drags it down with it.
+  // station goes inside it: a button is a box, and a name that wraps
+  // widens it to the whole line, so anything after it would drop to a
+  // line of its own even with room beside the last word.  nameWith
+  // keeps it with that word when there is none.  Crafted gets the
+  // checkbox, held apart from the name so a long one wrapping never
+  // drags it down with it.
   return `
-    <article class="card recipe ${colour}${settled ? ' settled' : ''}"
+    <article class="card recipe ${colour}${crafted ? ' crafted' : ''}"
              data-recipe="${esc(r.id)}">
       <header class="recipe-head">
         <div class="card-title">
           <h3><button type="button" class="card-open" data-open
                 aria-haspopup="dialog">${nameWith(r.name,
-            stationMark(r.station_id, r.station, r.color)
-            + (settled && !crafted ? stateBadge() : ''))}</button></h3>
+            stationMark(r.station_id, r.station, r.color))}</button></h3>
           ${crafted ? doneMark('Crafted') : ''}
         </div>
         <span class="price">${r.price_cents ? priceLabel(r) : ''}</span>
@@ -330,6 +347,8 @@ function card(r, personal) {
         <ul class="ingredients">
           ${slots(r).map((s) => slotLine(s, tally(r, personal))).join('')}
         </ul>` : ''}
+
+      ${personal && r.repeatable ? canMakeLine(r) : ''}
     </article>`;
 }
 
@@ -387,15 +406,6 @@ function slotLine(options, personal) {
 }
 
 /**
- * "Skipped", beside the vendor, once a recipe is settled without
- * being made -- crafted gets the checkbox instead, so this text badge
- * is the only settled state that still reaches one.
- */
-function stateBadge() {
-  return '<span class="badge state skipped">Skipped</span>';
-}
-
-/**
  * The buff text.  Most recipes have one line of it; the saddles have five,
  * stored one per line since the build stopped keeping Notion's bullets.
  * A list is what that always was, so it is marked up as one -- and the
@@ -446,15 +456,15 @@ function ingredient(i, personal) {
 
 /**
  * The same recipe, opened: what it is, what it does, what it takes,
- * and the two things you can do about it -- craft it, or change
- * your mind about wanting it.
+ * and what you can do about it -- craft it, or once crafted, put it
+ * back.
  */
 function recipeDetail(r, personal) {
   if (r.repeatable) return campfireDetail(r, personal);
   const buffs = buffLines(r.description);
 
   return `
-    ${detailHead('Recipe', r.name, personal ? wantSwitch(r) : '')}
+    ${detailHead('Recipe', r.name, personal ? craftedSwitch(r) : '')}
     ${traits([
       ['Type', esc(r.category)],
       ['Vendor', stationLabel(r.station_id, r.station)],
@@ -501,7 +511,7 @@ function campfireDetail(r, personal) {
     ${detailSection('Comments', `<p class="hint">Made at your own campfire, as
       often as you have the ingredients${personal
         ? `. The counts are what is in ${esc(placeName(r.location_id, r.location))}.`
-        : '.'}</p>`)}`;
+        : '.'}</p>${personal ? canMakeLine(r) : ''}`)}`;
 }
 
 /**
@@ -518,29 +528,24 @@ function buffLine(line) {
 }
 
 /**
- * The switch in the corner.  Two-sided, with both words showing, so
- * it reads the same whichever way it is set:
+ * The switch in the corner, once a recipe is made.  Two-sided, with
+ * both words showing, so it reads the same whichever way it is set:
  *
- *   not made    Skip  [--o]  Want it     off skips it, on wants it back
- *   made    Put back  [--o]  Crafted     off refunds the ingredients
+ *   Put back  [--o]  Crafted     off refunds the ingredients
+ *
+ * Nothing until then: the Craft button is how a recipe gets made.
  */
-function wantSwitch(r) {
-  const made = r.state === 'done';
-  const on = r.state !== 'skipped';
-  const [off, onText] = made ? ['Put back', 'Crafted'] : ['Skip', 'Want it'];
-  const act = made ? 'uncraft' : on ? 'skip' : 'unskip';
-  const why = made
-    ? `Put it back: refund the ingredients to ${placeName(r.location_id, r.location)} and want it again`
-    : on ? 'Not making this - stop asking for its materials'
-         : 'Put it back on your list';
+function craftedSwitch(r) {
+  if (r.state !== 'done') return '';
+  const why = `Put it back: refund the ingredients to ${placeName(r.location_id, r.location)} and want it again`;
 
   return `
-    <button type="button" class="want-switch" role="switch" aria-checked="${on}"
-            data-act="${act}" data-key="switch" title="${esc(why)}"
-            aria-label="${esc(onText)}">
-      <span class="side off" aria-hidden="true">${off}</span>
+    <button type="button" class="crafted-switch" role="switch" aria-checked="true"
+            data-act="uncraft" data-key="switch" title="${esc(why)}"
+            aria-label="Crafted">
+      <span class="side off" aria-hidden="true">Put back</span>
       <span class="track" aria-hidden="true"><i></i></span>
-      <span class="side on" aria-hidden="true">${onText}</span>
+      <span class="side on" aria-hidden="true">Crafted</span>
     </button>`;
 }
 
@@ -555,9 +560,7 @@ function craftRow(r) {
     ? `Spends these from ${esc(placeName(r.location_id, r.location))} and marks it made.`
     : r.state === 'done'
       ? 'Already crafted. Switch to Put back to undo it.'
-      : r.state === 'skipped'
-        ? 'Skipped. Switch to Want it to craft it.'
-        : `Still need ${esc(shortfall(r))}.`;
+      : `Still need ${esc(shortfall(r))}.`;
 
   return `
     <div class="craft-row">

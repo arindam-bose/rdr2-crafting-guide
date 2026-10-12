@@ -82,7 +82,7 @@ CREATE VIEW inventory_totals AS
 CREATE TABLE targets (
     recipe_id   TEXT PRIMARY KEY,   -- recipes.id
     state       TEXT NOT NULL DEFAULT 'wanted'
-                CHECK (state IN ('wanted','done','skipped')),
+                CHECK (state IN ('wanted','done')),
     updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

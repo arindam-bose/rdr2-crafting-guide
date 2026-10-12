@@ -26,8 +26,8 @@ now and what you are still short of.
 - **255 recipes**: 165 one-time crafts at Pearson, the Trapper and the Fence,
   and 90 campfire recipes you can make as often as you like.
 - **Two modes**: *General* is the plain reference. *Personalize* counts what
-  you hold against what each vendor wants, and moves anything crafted or
-  skipped out of the way.
+  you hold against what each vendor wants, and moves anything crafted out
+  of the way.
 - **Works offline** once it has loaded, and installs to your home screen.
 - **Two looks**: parchment or leather, set in Settings.
 
@@ -62,9 +62,10 @@ and then, and keep the file somewhere safe.
    Every change offers **Undo** for a few seconds.
 4. **Craft.** On **Recipes**, *Ready to craft* shows what you can make now.
    Open a recipe and press **Craft**: its ingredients come out of that vendor's
-   stock (the Fence draws on your Satchel), and it is marked crafted. **Skip**
-   sets aside a recipe you do not want, and **Put back** undoes a craft. The
-   **Campfire** recipes are there to look up; they are never ticked off.
+   stock (the Fence draws on your Satchel), and it is marked crafted.
+   **Put back** undoes a craft. The **Campfire** recipes are there to look up;
+   they are never ticked off, but in Personalize each says how many you can make
+   from your Satchel.
 5. **Keep a backup.** **Back up** at the top saves everything to one file, and
    a dot on it says when one is due. To restore, use **Bring it back** in
    Settings.

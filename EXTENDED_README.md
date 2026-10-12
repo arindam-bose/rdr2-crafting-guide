@@ -40,7 +40,7 @@ first in `<head>`, so it covers everything after it:
 
 `<meta name="referrer" content="no-referrer">` keeps the page's address out of
 the `Referer` header when a link leads off the site. Those links -- the wiki
-pages, the acknowledgements, the source code, Buy me a coffee -- are plain
+pages, the acknowledgements, the source code and issues, Buy me a coffee -- are plain
 anchors that open in a new tab; apart from Google Analytics nothing from
 another site is embedded, so nothing else is contacted until one is
 followed. `frame-ancestors` cannot be set from a meta tag, so it is not.
@@ -54,9 +54,10 @@ Accept loads `gtag.js` and counts the visit; Decline loads nothing. The answer
 is kept in localStorage (`rdr2:analytics-consent`, `granted` or `denied`) and
 held in memory for the visit where storage is blocked.
 
-**Cookie settings** brings the banner back to change the answer: a link in
-every footer, and a row in Settings' About tile that shows the current one.
-Both are just buttons carrying `data-consent-open`, which the script answers
+**Cookie settings** brings the banner back to change the answer: a row in
+Settings' About tile that shows the current one, and -- since they have no
+Settings -- a link in the footer of the static browse pages. The app's own
+footer leaves it out, to keep it short. Both are just buttons carrying `data-consent-open`, which the script answers
 with a delegated listener, so the static pages need no code of their own.
 Declining after accepting sets `ga-disable-<id>` for the rest of the visit and
 deletes the `_ga` cookies on every parent domain of the host. The script fires
@@ -74,7 +75,7 @@ animals or plants each one comes from, the weapon that leaves each pelt unspoile
 which station crafts what. Read-only, rebuilt from source rather than edited.
 
 Recipes come in two kinds. A **one-time** recipe is made once at Pearson, the
-Trapper or the Fence, and is tracked: crafted, skipped, still wanted. A
+Trapper or the Fence, and is tracked: crafted or still wanted. A
 **repeatable** one (`recipes.repeatable = 1`) is made at your own campfire as
 often as you have the ingredients; it is shown, never crafted or ticked off,
 and its `price_cents` is what the recipe itself costs to buy. A repeatable
@@ -360,8 +361,8 @@ enforced, before editing it.
 Three faces, in three tiers. [Marston] by Neale Davidson is the loudest and the
 rarest: the site's own name, a page's title and the tab bar. [RDR Lino Regular]
 sets everything that reads as a header or a control rather than prose — a
-card's name, a dialog's title, a section's caption, the switches and every
-button's label. Both are caps-only display faces, so neither ever sets prose.
+card's name, a dialog's title, a section's caption, the switches, every
+button's label and the version beside the site's name. Both are caps-only display faces, so neither ever sets prose.
 [FB Remington] by Fred Brutus sets everything else, which on these screens is
 mostly numbers: `3/3`, `2x Oregano`, `$14.95`. It is monospaced, so those
 columns line up on their own. All three are free, and all are vendored under
@@ -451,6 +452,19 @@ tap does.
 
 The cover art is shown full height on every page. The footer sits at the foot of the window however little a page holds.
 
+On anything but a phone -- the wide layout, 720px and up, at least 500px tall --
+the search box, filters, sort and tabs of Materials, Recipes and Inventory (each
+page's `.view-head`) stay pinned under the masthead as the list scrolls, so they
+are in reach at the foot of a long list. The page title scrolls away with the
+cover. The band wears the body's own fixed background, takes a shadow only once
+it has stuck, and `main.js` measures the masthead and the band so it pins in the
+right place and keyboard focus scrolls clear of it. A phone keeps the plain
+scrolling page, where the band would crowd out the list; the height guard
+covers a phone turned sideways. Inventory's Transfer panel treats the band's
+foot as the top of the screen: it closes once its button slides under the band.
+With no room below its row it may still open upwards over the band, rather than
+over the row it is about.
+
 The page is not `viewport-fit=cover` and asks for no `env(safe-area-inset-*)`:
 the browser keeps it inside the safe area on its own. Firefox for Android
 reports the system navigation bar as a bottom inset until the first scroll,
@@ -526,8 +540,8 @@ catches it. A material that comes off several animals (fat, the meats, Flight
 Feather) lists them instead, each with its own weapon or bait. A plant does the
 same: Sage, Currant and Ginseng list the plants they are picked from, and one
 picked from a single plant names it beside the title. Every animal's and every
-plant's name links to its page on the Red Dead wiki, in a new tab. Then every recipe with a Crafted / Not crafted /
-Skipped tag; the verdict, *You need to go hunting!* and its siblings; and, docked
+plant's name links to its page on the Red Dead wiki, in a new tab. Then every recipe with a Crafted / Not crafted
+checkbox; the verdict, *You need to go hunting!* and its siblings; and, docked
 at the foot, each vendor's demand against what you hold where it draws from —
 the Fence names your Satchel. The dialog's own copy of the recipe list spells out `1x` too, unlike
 the card's: a bare name there reads as though the amount were left off rather
@@ -564,36 +578,41 @@ not on still catches the eye; Materials' three tabs do the same. The vendor chip
 and the Ready / Crafted chips only appear on the vendor tab.
 
 A campfire recipe is only ever looked up. It has no switch and no Craft
-button, is never crafted or skipped, and its price is labelled *Recipe*: it is
+button, is never crafted, and its price is labelled *Recipe*: it is
 what the recipe cost to buy, once. Where it takes any one of several
 ingredients the line reads `2x ANY OF Currant (1) / Prairie Poppy (2)`, with how many of each you hold in the Satchel; the tick
 means one of them alone covers the amount, since a slot cannot be made up from
 a mix.
+In personal mode a campfire card ends, under a rule, with how many you can make
+from the Satchel as it stands -- each slot's holding over what it takes, rounded
+down, and the smallest of those, a slot of alternatives counting the one held
+most -- and the dialog repeats it under Comments.
 
 A vendor recipe card has its name with its vendor's icon, its price, its buff and an
-**Ingredients** list with have/need tallies. A crafted or skipped recipe is
-dimmed, carries a dashed *Crafted* or *Skipped* tag, and sorts to the bottom.
+**Ingredients** list with have/need tallies. A crafted recipe is dimmed,
+carries the *Crafted* checkbox, and sorts to the bottom.
 The card has no buttons.
 
 The dialog lays out the type, vendor, set and price, the description, the
-ingredients, and the two things you can do:
+ingredients, and what you can do:
 
 - **Craft**, docked at the foot of the dialog, spends the ingredients from the
   station's own stock and marks the recipe done, as one commit with undo. It is
   always present and disabled when
   it cannot be used, with the reason written beside it — what is still
-  missing, or that the recipe is made or skipped — rather than in a tooltip a
+  missing, or that the recipe is made — rather than in a tooltip a
   phone cannot show.
-- **The switch** in the corner reads *Skip / Want it* while a recipe is not
-  made, and *Put back / Crafted* once it is. Skipping retires a recipe without
-  spending anything — only the target's state is written. Putting back refunds
-  the ingredients and wants the recipe again.
+- **The switch** in the corner, *Put back / Crafted*, appears once a recipe
+  is made. Putting back refunds the ingredients and wants the recipe again.
+  There is no Skip: it was removed in 1.0.3. Skip marks already stored on a
+  device are dropped when it loads, and an older backup that holds them
+  restores them as wanted, saying so in the preview.
 
 Once a recipe is crafted its ingredient list drops the checkboxes and
 tallies: the ingredients were spent making it, and a row of them still marked
 short under something already made reads as a shortfall.
 
-A recipe that is done or skipped stops asking for its materials, so it drops out
+A recipe that is done stops asking for its materials, so it drops out
 of the Materials screen. Demand is per station, so that only removes the demand
 at *that* station: a material two recipes want still shows for the other one.
 
@@ -612,7 +631,7 @@ vendors, buffs and ingredients, and the plants behind them. On a desktop the
 search box takes the focus when you arrive on a page; on a phone it does not,
 since that would bring the keyboard up over the list.
 In personal mode Materials filters to **Still needed** or **Done** — a
-material whose recipes are all crafted or skipped moves to Done rather than
+material whose recipes are all crafted moves to Done rather than
 vanishing — and Recipes to **Ready to craft** or **Crafted**.
 
 Sorting is a field and a direction rather than a list of every combination:
@@ -634,11 +653,22 @@ your place.
 Inventory lists what you are holding at the selected location first — *In the
 Satchel*, *With Trapper*, *With Pearson*, each with a count of the rows under
 it — then what you logged recently, so it reads as a stock list rather than
-only a search box. Each row also reports how many have passed through your
+only a search box. *Recently Touched* starts shut: its title is a toggle with a
+chevron, its count shows either way, and whether it is open is kept per device,
+like the location. Each row also reports how many have passed through your
 hands there and how many went into crafting, read from `inventory_totals` — the
 same ledger as `inventory`, without the balance's habit of dropping rows that
 netted to zero. `qty <= gathered` holds by construction, since one sums every
 delta and the other only the positive ones.
+
+Under the search box sit the same category dropdown Materials has, plus
+*Plants* (a tab of its own on Materials), offering only the categories the
+lists on screen hold, and a sort: name, quality
+(Legendary first or last) or quantity held (most or least first), remembered
+like the others. The category narrows every list; the sort orders the main one
+and the search matches, while *Recently Touched* keeps its newest-first order.
+Quantity sorts on the saved count, not one with a staged change folded in, so a
+row never jumps out from under the stepper being tapped — it settles on Save.
 
 Inventory stages rather than writes. Steppers adjust a pending batch; Save
 commits the lot as one SQLite transaction and one IndexedDB transaction, one
@@ -669,7 +699,7 @@ Satchel*, *with Pearson*.
 ### Settings and the ledger
 
 **Your stats** is a scoreboard over the same ledger and targets: materials
-held, recipes crafted against the 165 that can be, recipes skipped, money
+held, recipes crafted against the 165 that can be, money
 spent crafting, and how many of the sixteen wearable outfits are complete —
 every piece in a set crafted, not just started. Below that, two breakdowns
 with a bar each, by vendor and by category. All of it, the outfit count
@@ -701,7 +731,8 @@ where a backup came from. It is the ledger rather than the balances because the
 balances are derived from it: exporting only those would lose the history
 behind "8 gathered - 1 crafted". The file also carries how each list was
 sorted (`"sorts": {"recipes": "materials:asc"}`), so the same person restoring
-on another device gets Materials and Recipes back in the order they left them;
+on another device gets Materials, Recipes and Inventory back in the order they
+left them;
 the other preferences (theme, location) stay with the device. A
 copy-to-clipboard button sits beside it, because `<a download>` is unreliable on
 iOS, and a paste box sits beside the file picker for the same reason.
@@ -716,8 +747,8 @@ slugs with no foreign key. The sorts are replaced with the rest, once the data
 has landed; a backup from before they were carried leaves the device's own.
 
 **On your home screen**, a tile of its own just before **About** (which
-holds the two dialogs, the tool version, a link to the source on GitHub and
-the cookie settings),
+holds the two dialogs, the tool version, links to the source and to the
+issue tracker on GitHub, and the cookie settings),
 installs the guide. Where the browser lends its install prompt (`beforeinstallprompt`: Chrome, Edge, Samsung Internet) it is a
 real **Install** button; the event is kept rather than cancelled, so the
 browser's own offer still shows for anyone who never opens Settings. Firefox

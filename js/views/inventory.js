@@ -43,6 +43,9 @@ import * as nav from '../nav.js';
 import { freshCard, materialDialog } from './material-dialog.js';
 
 const LOCATION_KEY = 'rdr2:location';
+// Whether Recently Touched is open.  Shut until someone opens it, and
+// kept per device like the location: it is a way back, not the list.
+const RECENT_KEY = 'rdr2:recent-open';
 
 // The icon that matches each location's id, for the segmented tabs
 // and the Transfer button and panel alike.
@@ -83,6 +86,32 @@ function pendingIndex(location) {
   return index;
 }
 
+// The same category list and sorts as Materials.  Quantity is the
+// saved count, not what a row shows with its staged change: sorting on
+// that would move a row out from under the finger at every tap of its
+// stepper.  It settles into place on Save.
+const byName = (a, b) => a.name.localeCompare(b.name);
+const SORTS = {
+  name: {
+    label: 'Name',
+    fn: byName,
+    ways: { asc: 'A\u2013Z', desc: 'Z\u2013A' },
+    start: 'asc',
+  },
+  quality: {
+    label: 'Quality',
+    fn: (a, b) => toolbar.qualityRank(a) - toolbar.qualityRank(b) || byName(a, b),
+    ways: { asc: 'Legendary first', desc: 'Legendary last' },
+    start: 'asc',
+  },
+  qty: {
+    label: 'Quantity held',
+    fn: (a, b) => a.qty - b.qty || byName(a, b),
+    ways: { asc: 'Least first', desc: 'Most first' },
+    start: 'desc',
+  },
+};
+
 window.addEventListener('beforeunload', (event) => {
   if (staged.size) event.preventDefault();
 });
@@ -92,7 +121,10 @@ export function mount(root) {
   const state = {
     location: prefs.get(LOCATION_KEY) ?? locations[0].id,
     search: '',
+    part: '',
+    ...toolbar.restoreSort('inventory', SORTS, { sort: 'name', dir: 'asc' }),
   };
+  const categories = toolbar.categoryOptions(queries.bodyParts(), { plants: true });
   if (!locations.some((l) => l.id === state.location)) {
     state.location = locations[0].id;
   }
@@ -113,11 +145,15 @@ export function mount(root) {
 
   const tabs = locations.map((l) => ({ id: l.id, title: l.name, icon: LOCATION_ICON[l.id] }));
   root.innerHTML = `
+    <div class="view-head">
     <div class="toolbar">
       ${toolbar.searchBox('i-search', 'Search a material or animal…')}
+      <select class="select" id="i-part" aria-label="Category"></select>
+      ${toolbar.sortControl('i', SORTS, 'Sort inventory by', state.sort)}
     </div>
     ${toolbar.tabRow('i-locations', 'location', tabs,
                      { selected: state.location, counts: false })}
+    </div>
     <div id="i-sections"></div>
     <div class="move-pop" id="i-move" popover role="dialog"
          aria-labelledby="i-move-title"></div>
@@ -133,6 +169,8 @@ export function mount(root) {
   const savebar = root.querySelector('#i-savebar');
   const pending = root.querySelector('#i-pending');
   const movePop = root.querySelector('#i-move');
+  const partSelect = root.querySelector('#i-part');
+  const dirButton = root.querySelector('#i-dir');
 
   // A row's name opens the material's own card, here on Inventory --
   // what it goes into, who wants it -- the same dialog Materials
@@ -172,9 +210,24 @@ export function mount(root) {
   });
   toolbar.wireClear(searchBox);
 
+  toolbar.wireSort(root, 'i', SORTS, state, update, 'inventory');
+  partSelect.addEventListener('change', (event) => {
+    state.part = event.target.value;
+    update();
+  });
+
   // One listener for every stepper: the rows are replaced on each
   // change, so per-row listeners would not survive anyway.
   sections.addEventListener('click', (event) => {
+    // Before the Personalize check: opening a list is reading, and
+    // General can read.  The repaint replaces the button, so the
+    // focus is handed to its successor.
+    if (event.target.closest('#i-recent-toggle')) {
+      prefs.set(RECENT_KEY, recentOpen() ? 'no' : 'yes');
+      update();
+      sections.querySelector('#i-recent-toggle')?.focus();
+      return;
+    }
     if (event.target.closest('#i-personalize')) {
       store.setPersonal(true);
       toast('Personalize is on - every card now counts what you have.');
@@ -228,10 +281,12 @@ export function mount(root) {
     for (const b of sections.querySelectorAll('.move-btn[aria-expanded="true"]')) {
       b.setAttribute('aria-expanded', 'false');
     }
-    // Back where the reader was, unless they have already moved on.
+    // Back where the reader was, unless they have already moved on --
+    // without scrolling to it: a panel shut by scrolling its button
+    // away would otherwise drag the page straight back.
     if (opener && (!document.activeElement || document.activeElement === document.body
                    || movePop.contains(document.activeElement))) {
-      opener.focus();
+      opener.focus({ preventScroll: true });
     }
   });
 
@@ -263,6 +318,20 @@ export function mount(root) {
   // makes it a sheet along the bottom instead, and the inline
   // position would only fight that.
   const narrow = window.matchMedia('(max-width: 559px)');
+
+  // The top of what can be seen: under the masthead, and under this
+  // page's search and tabs where they are pinned (app.css).  A button
+  // scrolled up under those is out of sight as surely as one scrolled
+  // off the screen, so its panel closes.  The panel itself may still
+  // open up over them when there is no room below: covering the head
+  // for a moment is better than covering the row it is about.
+  const chromeBar = document.querySelector('.chrome');
+  const viewHead = root.querySelector('.view-head');
+  function ceiling() {
+    return Math.max(0, chromeBar?.getBoundingClientRect().bottom ?? 0,
+                    viewHead.getBoundingClientRect().bottom);
+  }
+
   function placeMove() {
     const opener = moving && moveButtonFor(moving.ingredient);
     if (narrow.matches || !opener) {
@@ -295,7 +364,7 @@ export function mount(root) {
       following = false;
       if (!moving || !movePop.matches(':popover-open')) return;
       const at = moveButtonFor(moving.ingredient)?.getBoundingClientRect();
-      if (!at || at.bottom < 0 || at.top > window.innerHeight) movePop.hidePopover();
+      if (!at || at.bottom < ceiling() || at.top > window.innerHeight) movePop.hidePopover();
       else placeMove();
     });
   }
@@ -486,22 +555,39 @@ export function mount(root) {
     pendingIdx = personal ? pendingIndex(state.location) : new Map();
     const offer = personal ? '' : personalizeOffer(staged.size);
 
+    // The category offers what the lists on screen hold, as on
+    // Materials, and narrows them all.  The sort orders the main list;
+    // Recently Touched keeps its own order, newest first, which is the
+    // whole point of it.
+    const inPart = (list) => (state.part
+      ? list.filter((m) => toolbar.categoryOf(m) === state.part) : list);
+    const sorted = (list) => inPart(list).sort(toolbar.comparator(SORTS, state));
+    const offerFrom = (...lists) => toolbar.fillCategories(partSelect, categories,
+      new Set(lists.flat().map(toolbar.categoryOf)), state.part);
+    toolbar.paintDir(dirButton, SORTS, state);
+
     if (searching) {
       const hits = queries.searchMaterials(state.search, state.location);
+      offerFrom(hits);
+      const shown = sorted(hits);
       // The title is already the count here.  Capitalised, unlike every
       // other count on the page ("6 recipes"), because this one stands
       // alone as a heading, in the same sentence case as the rest.
       sections.innerHTML = offer + section(
-        plural(hits.length, 'Match', 'Matches'),
-        hits, 'No material or animal by that name.', false);
+        plural(shown.length, 'Match', 'Matches'),
+        shown, state.part ? 'Nothing in that category by that name.'
+                          : 'No material or animal by that name.', false);
     } else {
       // What you are holding here first, then the quick way back to
       // whatever you were logging lately.
       const holding = held(state.location, personal);
+      const lately = recent(state.location, holding);
+      offerFrom(holding, lately);
       sections.innerHTML = (store.isEmpty() && !staged.size ? restoreOffer() : '')
         + offer
-        + section(at, holding, `Nothing ${lower(at)} yet.`)
-        + section('Recently Touched', recent(state.location, holding), '');
+        + section(at, sorted(holding), state.part
+          ? `Nothing in that category ${lower(at)}.` : `Nothing ${lower(at)} yet.`)
+        + section('Recently Touched', inPart(lately), '', true, true);
     }
 
     // Flipped to General with a Transfer panel open: close it, since
@@ -522,15 +608,22 @@ export function mount(root) {
     }
   }
 
-  function section(title, list, emptyText, counted = true) {
+  // `toggled` makes the title a button that shows and hides the rows;
+  // the count stays either way, so a shut list still says what is in
+  // it.  Shut, the rows are not drawn at all.
+  function section(title, list, emptyText, counted = true, toggled = false) {
     if (!list.length && !emptyText) return '';
+    const open = !toggled || recentOpen();
     return `
       <section class="stock-section">
         <div class="section-head">
-          <p class="list-label">${esc(title)}</p>
+          ${toggled
+            ? `<button type="button" class="list-label section-toggle" id="i-recent-toggle"
+                       aria-expanded="${open}">${esc(title)}</button>`
+            : `<p class="list-label">${esc(title)}</p>`}
           ${counted ? `<span class="count">${plural(list.length, 'item')}</span>` : ''}
         </div>
-        ${list.length
+        ${!open ? '' : list.length
           ? `<div class="rows">${list
                .map((m) => row(m, state.location, wants, pendingIdx, store.isPersonal()))
                .join('')}</div>`
@@ -592,6 +685,8 @@ function personalizeOffer(waiting) {
 
 const lower = (text) => text[0].toLowerCase() + text.slice(1);
 
+const recentOpen = () => prefs.get(RECENT_KEY) === 'yes';
+
 /**
  * What you are holding here, plus anything staged for it — a
  * material you just added has no stock yet, but it is about to,
@@ -608,11 +703,10 @@ function held(location, personal) {
                                        : e.to_location_id === location;
     if (!arrives || seen.has(e.ingredient_id)) continue;
     seen.add(e.ingredient_id);
-    incoming.push(asRow(e));
+    incoming.push(e.ingredient_id);
   }
 
-  return [...stock, ...incoming]
-    .sort((a, b) => a.name.localeCompare(b.name));
+  return [...stock, ...queries.stockOf(location, incoming)];
 }
 
 /** Touched lately but not in `holding` (held()'s list) — the quick way back. */
@@ -620,19 +714,6 @@ function recent(location, holding) {
   const ids = new Set(holding.map((m) => m.ingredient_id));
   return queries.recentMaterials(location)
     .filter((m) => !ids.has(m.ingredient_id));
-}
-
-function asRow(e) {
-  return {
-    ingredient_id: e.ingredient_id,
-    name: e.name,
-    source_type: e.source_type,
-    quality: null,
-    qty: 0,
-    gathered: 0,
-    received: 0,
-    used_crafting: 0,
-  };
 }
 
 /**

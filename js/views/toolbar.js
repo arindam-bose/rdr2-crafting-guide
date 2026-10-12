@@ -1,5 +1,6 @@
 // ============================================================
-// The gallery toolbar, shared by Materials and Recipes.
+// The gallery toolbar, shared by Materials and Recipes -- and the
+// category filter and sort, by Inventory too.
 //
 // The two screens list different things, but they list them the
 // same way: a search box, chips that pick one thing, chips that
@@ -212,6 +213,36 @@ function flash(badge) {
   badge.addEventListener('animationend', () => badge.classList.remove('changed'),
                          { once: true });
 }
+
+/**
+ * The category filter Materials and Inventory share: every body part,
+ * then the kinds of supply, which have none.  Their values are ones no
+ * body part can collide with, since the rest come from the data.
+ */
+export const SUPPLY_KINDS = [
+  { value: ':ammo',    type: 'ammo',    label: 'Ammo & throwables' },
+  { value: ':alcohol', type: 'alcohol', label: 'Liquor' },
+  { value: ':misc',    type: 'misc',    label: 'Misc. items' },
+];
+
+// Plants as one category too, for Inventory, whose list mixes every
+// kind of material.  Materials leaves it out: Plants is a tab there.
+const PLANT_KIND = { value: ':plant', type: 'plant', label: 'Plants' };
+
+export function categoryOptions(bodyParts, { plants = false } = {}) {
+  return [...bodyParts.map((p) => ({ value: p, label: p })),
+          ...(plants ? [PLANT_KIND] : []), ...SUPPLY_KINDS];
+}
+
+/** The entry a material falls under: its kind of supply, Plants, or
+ *  its body part. */
+export const categoryOf = (m) =>
+  [PLANT_KIND, ...SUPPLY_KINDS].find((k) => k.type === m.source_type)?.value
+    ?? m.body_part;
+
+/** Legendary first: it is the rarest and the most annoying to go get. */
+const QUALITY_RANK = { Legendary: 0, Perfect: 1 };
+export const qualityRank = (m) => QUALITY_RANK[m.quality] ?? 2;
 
 /**
  * Fill a category select with only the categories something matching

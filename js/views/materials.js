@@ -27,20 +27,6 @@ import { group, materialDialog } from './material-dialog.js';
 import * as nav from '../nav.js';
 import * as toolbar from './toolbar.js';
 
-// The category filter's entries that are not body parts: the kinds
-// of supply, which have none.  Values no body part can collide with,
-// since the rest come from the data.
-const KINDS = [
-  { value: ':ammo',    type: 'ammo',    label: 'Ammo & throwables' },
-  { value: ':alcohol', type: 'alcohol', label: 'Liquor' },
-  { value: ':misc',    type: 'misc',    label: 'Misc. items' },
-];
-
-// The category filter entry a card falls under: its kind of supply,
-// or its body part -- null for a plant, which has neither.
-const categoryOf = (card) =>
-  KINDS.find((k) => k.type === card.source_type)?.value ?? card.body_part;
-
 const GROUPS = [
   { id: 'animal',   title: 'Animal Materials', types: ['animal'], icon: 'animals' },
   { id: 'plant',    title: 'Plants',           types: ['plant'], icon: 'plants' },
@@ -49,9 +35,7 @@ const GROUPS = [
 const groupOf = (card) =>
   GROUPS.find((g) => g.types.includes(card.source_type))?.id;
 
-// Legendary first: it is the rarest and the most annoying to go get.
-const QUALITY_RANK = { Legendary: 0, Perfect: 1 };
-const rank = (c) => QUALITY_RANK[c.quality] ?? 2;
+const { categoryOf, qualityRank: rank } = toolbar;
 
 const byName = (a, b) => a.material.localeCompare(b.material);
 const shortfall = (c) => c.demands.reduce(
@@ -92,10 +76,7 @@ export function mount(root) {
                                          { sort: 'name', dir: 'asc' }) };
 
   const stations = queries.stations();
-  const categories = [
-    ...queries.bodyParts().map((p) => ({ value: p, label: p })),
-    ...KINDS,
-  ];
+  const categories = toolbar.categoryOptions(queries.bodyParts());
 
   // Reference data, fixed for the life of the page: read once, not on
   // every tap of a stepper.
@@ -103,6 +84,7 @@ export function mount(root) {
   const plants = queries.materialPlants();
 
   root.innerHTML = `
+    <div class="view-head">
     <div class="toolbar">
       ${toolbar.searchBox('m-search', 'Search a material or animal…')}
       <select class="select" id="m-part" aria-label="Category"></select>
@@ -118,6 +100,7 @@ export function mount(root) {
       <span class="count" id="m-count"></span>
     </div>
     ${toolbar.tabRow('m-groups', 'group', GROUPS)}
+    </div>
     <div class="gallery" id="m-gallery"></div>
     <div id="m-pager"></div>`;
 
@@ -149,7 +132,7 @@ export function mount(root) {
     state.part = event.target.value;
     if (state.part) {
       toolbar.selectTab(groupTabs, 'group', state,
-        KINDS.some((k) => k.value === state.part) ? 'supplies' : 'animal');
+        toolbar.SUPPLY_KINDS.some((k) => k.value === state.part) ? 'supplies' : 'animal');
     }
     refilter();
   });
@@ -243,7 +226,7 @@ function emptyMessage(state, personal, counts) {
 const outstanding = (card) =>
   card.demands.some((d) => d.needed > 0 && d.have < d.needed);
 
-// Wanted at all: some recipe that is neither made nor skipped needs it.
+// Wanted at all: some recipe not yet made needs it.
 const live = (card) => card.demands.some((d) => d.needed > 0);
 
 // Worked towards at all: some vendor recipe uses it, wanted or not.

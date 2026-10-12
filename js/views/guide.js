@@ -31,8 +31,7 @@ const ABOUT = `
       <p>The one thing that can go out is a visit count, and only if you
         accept the cookie banner: Google Analytics then sees which pages
         are opened, never what you log. Change your answer any time under
-        <strong>Cookie settings</strong>, in Settings or at the foot of
-        any page.</p>
+        <strong>Cookie settings</strong> in Settings.</p>
       <p>The flip side is that your data lives only here. Use
         <strong>Back up</strong> at the top now and then, and keep the file
         somewhere safe.</p>
@@ -57,7 +56,7 @@ const HOW_TO = `
       <p><strong>General</strong>, where a first visit starts, is the plain
         reference: every recipe and every quantity. <strong>Personalize</strong>
         tracks what you have: cards show your stock against what each vendor
-        wants, and anything crafted or skipped drops out of the way. Logging
+        wants, and anything crafted drops out of the way. Logging
         only works in Personalize. Switch between them at the top of any
         page.</p>
     </div>`)}
@@ -92,10 +91,11 @@ const HOW_TO = `
         what you can make right now. Open a recipe and press
         <strong>Craft</strong>: its ingredients are taken from that vendor's
         stock - the Fence draws on your Satchel - and it is marked crafted.
-        <strong>Skip</strong> retires a recipe you do not want, and
         <strong>Put back</strong> undoes a craft.</p>
       <p>The <strong>Campfire</strong> tab is for looking up: those recipes
-        can be made as often as you like, so they are never ticked off.</p>
+        can be made as often as you like, so they are never ticked off. In
+        Personalize, each one says how many you can make from what is in
+        your Satchel.</p>
     </div>`)}
 
   ${detailSection('5. Keep a backup', `

@@ -49,6 +49,58 @@ if (version) {
   label.title = `Tool version ${version}`;
 }
 
+// ------------------------------------------------------------
+// the pinned page head
+//
+// On a desktop, a page's search, filters and tabs (its .view-head)
+// stay pinned under the masthead as the list scrolls -- see app.css.
+// The masthead's height is not fixed (its type loads late, and it
+// wraps), so it is measured, and the head pins just under it; the
+// head's own height is measured too, so that tabbing to a card
+// scrolls it clear of the head rather than under it.  watchHead()
+// follows the head from page to page.  Once
+// it is pinned it takes a shadow, so the list visibly runs under it;
+// before then, sitting in the page, it should look like the page.
+// ------------------------------------------------------------
+
+const chrome = document.querySelector('.chrome');
+let watchedHead = null;
+const sizes = new ResizeObserver(() => {
+  const root = document.documentElement.style;
+  root.setProperty('--chrome-h', `${chrome.offsetHeight}px`);
+  root.setProperty('--head-h', `${watchedHead?.offsetHeight ?? 0}px`);
+});
+sizes.observe(chrome);
+
+// Run on every page change as well as on scroll: the page is not
+// scrolled back to the top between pages, so a head can arrive already
+// stuck, and with no scroll to tell it so.
+function watchHead() {
+  if (watchedHead) sizes.unobserve(watchedHead);
+  watchedHead = view.querySelector('.view-head');
+  if (watchedHead) sizes.observe(watchedHead);
+  markPinned();
+}
+
+function markPinned() {
+  const head = watchedHead;
+  if (!head) return;
+  const pinned = window.scrollY > 0
+    && head.getBoundingClientRect().top <= chrome.offsetHeight + 0.5
+    && getComputedStyle(head).position === 'sticky';
+  head.classList.toggle('pinned', pinned);
+}
+
+let pinning = false;
+window.addEventListener('scroll', () => {
+  if (pinning || !watchedHead) return;
+  pinning = true;
+  requestAnimationFrame(() => {
+    pinning = false;
+    markPinned();
+  });
+}, { passive: true });
+
 const FIRST_NOTE_SEEN = 'rdr2:first-note-seen';
 
 // Held here as well as stored, so "Got it" still works for the rest of
@@ -142,6 +194,7 @@ function show({ name, id }) {
       view.innerHTML = errorBox(err);
       current = null;
     }
+    watchHead();
   }
 
   current?.focus?.(id);
