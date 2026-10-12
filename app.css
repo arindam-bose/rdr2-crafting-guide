@@ -1591,7 +1591,7 @@ ul.buff li::before {
 /* The Put back/Crafted switch in a crafted recipe's dialog corner: both
    words always showing, the one that is in force drawn in ink, the
    other faint. */
-.want-switch,
+.crafted-switch,
 .mode-switch {
   flex: 0 0 auto;
   align-self: center;
@@ -1606,12 +1606,12 @@ ul.buff li::before {
   border: 0;
   cursor: pointer;
 }
-.want-switch .side,
+.crafted-switch .side,
 .mode-switch .side { white-space: nowrap; }
-.want-switch[aria-checked="true"]  .side.on,
-.want-switch[aria-checked="false"] .side.off { color: var(--ink); }
+.crafted-switch[aria-checked="true"]  .side.on,
+.crafted-switch[aria-checked="false"] .side.off { color: var(--ink); }
 
-.want-switch .track,
+.crafted-switch .track,
 .mode-switch .track {
   position: relative;
   width: 36px;
@@ -1621,7 +1621,7 @@ ul.buff li::before {
   border: 1px solid var(--line);
   transition: background .15s;
 }
-.want-switch .track i,
+.crafted-switch .track i,
 .mode-switch .track i {
   position: absolute;
   top: 2px;
@@ -1632,18 +1632,18 @@ ul.buff li::before {
   background: var(--ink-faint);
   transition: transform .15s, background .15s;
 }
-.want-switch[aria-checked="true"] .track {
+.crafted-switch[aria-checked="true"] .track {
   background: color-mix(in srgb, var(--ok) 22%, var(--surface-2));
   border-color: var(--ok);
 }
-.want-switch[aria-checked="true"] .track i {
+.crafted-switch[aria-checked="true"] .track i {
   transform: translateX(16px);
   background: var(--ok);
 }
-.want-switch:hover .track,
+.crafted-switch:hover .track,
 .mode-switch:hover .track { border-color: var(--ink-faint); }
 @media (prefers-reduced-motion: reduce) {
-  .want-switch .track, .want-switch .track i,
+  .crafted-switch .track, .crafted-switch .track i,
   .mode-switch .track, .mode-switch .track i { transition: none; }
 }
 
@@ -1651,7 +1651,7 @@ ul.buff li::before {
 @media (max-width: 480px) {
   .detail-head { flex-wrap: wrap; }
   .detail-head > div { flex-basis: calc(100% - 48px); }
-  .detail-head .want-switch { order: 3; margin-left: -4px; }
+  .detail-head .crafted-switch { order: 3; margin-left: -4px; }
 }
 
 .craft-btn {
@@ -2663,7 +2663,7 @@ h3,
 .panel h3,
 .trait dt, .detail-kicker,
 .entry .reason,
-.mode-switch, .want-switch, .backup-btn,
+.mode-switch, .crafted-switch, .backup-btn,
 .move-btn .move-word, .move-place,
 .brand-version,
 .footer p {

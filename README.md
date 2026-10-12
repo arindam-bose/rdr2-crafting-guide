@@ -63,7 +63,9 @@ and then, and keep the file somewhere safe.
 4. **Craft.** On **Recipes**, *Ready to craft* shows what you can make now.
    Open a recipe and press **Craft**: its ingredients come out of that vendor's
    stock (the Fence draws on your Satchel), and it is marked crafted.
-   **Put back** undoes a craft. The **Campfire** recipes are there to look up; they are never ticked off.
+   **Put back** undoes a craft. The **Campfire** recipes are there to look up;
+   they are never ticked off, but in Personalize each says how many you can make
+   from your Satchel.
 5. **Keep a backup.** **Back up** at the top saves everything to one file, and
    a dot on it says when one is due. To restore, use **Bring it back** in
    Settings.

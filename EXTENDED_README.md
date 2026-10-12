@@ -460,8 +460,9 @@ it has stuck, and `main.js` measures the masthead and the band so it pins in the
 right place and keyboard focus scrolls clear of it. A phone keeps the plain
 scrolling page, where the band would crowd out the list; the height guard
 covers a phone turned sideways. Inventory's Transfer panel treats the band's
-foot as the top of the screen: it closes once its button slides under the band,
-and never opens upwards over it.
+foot as the top of the screen: it closes once its button slides under the band.
+With no room below its row it may still open upwards over the band, rather than
+over the row it is about.
 
 The page is not `viewport-fit=cover` and asks for no `env(safe-area-inset-*)`:
 the browser keeps it inside the safe area on its own. Firefox for Android

@@ -96,11 +96,14 @@ export async function hydrate() {
   // Skip is gone (1.0.3).  A recipe someone skipped before then is
   // simply wanted again, which is what no mark at all means, so its
   // row is dropped -- here, and from IndexedDB, so it is gone for good.
+  // Not awaited: the rows are already kept out of SQLite, so a failed
+  // tidy-up (a full disk) is retried next load rather than stopping
+  // this one.
   const targets = stored.filter((t) => t.state !== LEGACY_SKIPPED);
   if (targets.length < stored.length) {
-    await tx([TARGETS], 'readwrite', (s) => {
+    tx([TARGETS], 'readwrite', (s) => {
       for (const t of stored) if (t.state === LEGACY_SKIPPED) s.delete(t.recipe_id);
-    });
+    }).catch((err) => console.warn('Could not clear old Skip marks:', err));
   }
 
   db.transaction(() => {
@@ -128,9 +131,11 @@ export async function hydrate() {
   // with no mode can only be from back when Personalize was the
   // default, so it stays there.  A first visit is written down as
   // General -- otherwise, once it had logged something, the next load
-  // would take it for one of those and switch it over unasked.
+  // would take it for one of those and switch it over unasked.  Old
+  // Skip marks count here: they are just as much a sign of someone who
+  // was using Personalize.
   if (prefs.get(MODE_KEY) === null) {
-    const hasData = ledger.length || targets.some((t) => t.state !== 'wanted');
+    const hasData = ledger.length || stored.some((t) => t.state !== 'wanted');
     prefs.set(MODE_KEY, hasData ? 'personal' : 'general');
   }
 
@@ -341,6 +346,7 @@ export function inspectImport(text) {
     reference_build: data.reference_build ?? null,
     ledger: ledger.length,
     targets: targets.length,
+    made: rowsOf(targets).filter((t) => t.state === 'done').length,
     problems,
   };
 }

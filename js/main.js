@@ -72,24 +72,32 @@ const sizes = new ResizeObserver(() => {
 });
 sizes.observe(chrome);
 
+// Run on every page change as well as on scroll: the page is not
+// scrolled back to the top between pages, so a head can arrive already
+// stuck, and with no scroll to tell it so.
 function watchHead() {
   if (watchedHead) sizes.unobserve(watchedHead);
   watchedHead = view.querySelector('.view-head');
   if (watchedHead) sizes.observe(watchedHead);
+  markPinned();
+}
+
+function markPinned() {
+  const head = watchedHead;
+  if (!head) return;
+  const pinned = window.scrollY > 0
+    && head.getBoundingClientRect().top <= chrome.offsetHeight + 0.5
+    && getComputedStyle(head).position === 'sticky';
+  head.classList.toggle('pinned', pinned);
 }
 
 let pinning = false;
 window.addEventListener('scroll', () => {
-  if (pinning) return;
+  if (pinning || !watchedHead) return;
   pinning = true;
   requestAnimationFrame(() => {
     pinning = false;
-    const head = view.querySelector('.view-head');
-    if (!head) return;
-    const pinned = getComputedStyle(head).position === 'sticky'
-      && head.getBoundingClientRect().top <= chrome.offsetHeight + 0.5
-      && window.scrollY > 0;
-    head.classList.toggle('pinned', pinned);
+    markPinned();
   });
 }, { passive: true });
 

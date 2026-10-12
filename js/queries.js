@@ -314,8 +314,12 @@ const STOCK_AT = `
  * of the animals or plants it comes from, from the start of a word --
  * the same rule Materials uses, so "wolf" finds Big Game Meat on both
  * pages, "red" finds Sage, and "ox" finds the Ox without the Fox.
+ * Every match, not the first few: Inventory filters and sorts them
+ * afterwards, and a cut taken by name first would hide what a
+ * category or a "Most first" was looking for.  There are under 200
+ * materials in all.
  */
-export function searchMaterials(term, locationId, limit = 40) {
+export function searchMaterials(term, locationId) {
   // What you type is taken literally, as Materials takes it: a % or _
   // is a character to find, not a LIKE wildcard matching everything.
   const t = term.replace(/[\\%_]/g, '\\$&');
@@ -331,10 +335,9 @@ export function searchMaterials(term, locationId, limit = 40) {
                       WHERE  ip.ingredient_id = ing.id
                         AND  (p.name LIKE :start ESCAPE '\\'
                               OR p.name LIKE :word ESCAPE '\\'))
-    ORDER BY  ing.name
-    LIMIT     :limit`,
+    ORDER BY  ing.name`,
     { location_id: locationId, anywhere: `%${t}%`, start: `${t}%`,
-      word: `% ${t}%`, limit });
+      word: `% ${t}%` });
 }
 
 /**
@@ -360,14 +363,19 @@ export function ledgerEntries(limit) {
 }
 
 /**
- * Each material's quality and body part, for an Inventory row that is
- * only staged so far and so came from no stock query.
+ * The same rows as stockAt, for the materials named, held here or not:
+ * Inventory's rows for what is staged to arrive and not yet saved.
  */
-export function ingredientFacts() {
-  return db.all('SELECT id, quality, body_part FROM ingredients');
+export function stockOf(locationId, ids) {
+  if (!ids.length) return [];
+  const params = { location_id: locationId };
+  ids.forEach((id, i) => { params[`id${i}`] = id; });
+  return db.all(`${STOCK_AT}
+    WHERE     ing.id IN (${ids.map((_, i) => `:id${i}`).join(', ')})`,
+    params);
 }
 
-/** What you are holding at one location, most of it first. */
+/** What you are holding at one location, by name. */
 export function stockAt(locationId) {
   return db.all(`${STOCK_AT}
     WHERE     COALESCE(inv.qty, 0) > 0

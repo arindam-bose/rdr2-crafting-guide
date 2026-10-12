@@ -94,7 +94,9 @@ const HOW_TO = `
         stock - the Fence draws on your Satchel - and it is marked crafted.
         <strong>Put back</strong> undoes a craft.</p>
       <p>The <strong>Campfire</strong> tab is for looking up: those recipes
-        can be made as often as you like, so they are never ticked off.</p>
+        can be made as often as you like, so they are never ticked off. In
+        Personalize, each one says how many you can make from what is in
+        your Satchel.</p>
     </div>`)}
 
   ${detailSection('5. Keep a backup', `

@@ -393,7 +393,7 @@ export function mount(root) {
       <div class="verdict">
         <p><strong>${esc(source)}</strong> holds
           ${plural(found.ledger, 'entry', 'entries')} and
-          ${plural(found.targets, 'marked recipe')},
+          ${plural(found.made, 'crafted recipe')},
           exported ${esc(when)}${found.device ? ` from ${esc(found.device)}` : ''}.</p>
         <p>This device has ${plural(now.entries, 'entry', 'entries')}
           and ${plural(now.made, 'crafted recipe')}. All of it will be replaced.</p>

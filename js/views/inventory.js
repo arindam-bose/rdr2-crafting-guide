@@ -319,10 +319,12 @@ export function mount(root) {
   // position would only fight that.
   const narrow = window.matchMedia('(max-width: 559px)');
 
-  // The top of the room the panel has: under the masthead, and under
-  // this page's search and tabs where they are pinned (app.css).  A
-  // button scrolled up under those is out of sight as surely as one
-  // scrolled off the screen, and the panel never opens up over them.
+  // The top of what can be seen: under the masthead, and under this
+  // page's search and tabs where they are pinned (app.css).  A button
+  // scrolled up under those is out of sight as surely as one scrolled
+  // off the screen, so its panel closes.  The panel itself may still
+  // open up over them when there is no room below: covering the head
+  // for a moment is better than covering the row it is about.
   const chromeBar = document.querySelector('.chrome');
   const viewHead = root.querySelector('.view-head');
   function ceiling() {
@@ -340,7 +342,7 @@ export function mount(root) {
     const box = movePop.getBoundingClientRect();
     const gap = 6;
     const below = at.bottom + gap + box.height <= window.innerHeight - 8;
-    const top = below ? at.bottom + gap : Math.max(ceiling() + 8, at.top - gap - box.height);
+    const top = below ? at.bottom + gap : Math.max(8, at.top - gap - box.height);
     const left = Math.min(Math.max(8, at.right - box.width), window.innerWidth - box.width - 8);
     movePop.style.top = `${top}px`;
     movePop.style.left = `${left}px`;
@@ -701,10 +703,10 @@ function held(location, personal) {
                                        : e.to_location_id === location;
     if (!arrives || seen.has(e.ingredient_id)) continue;
     seen.add(e.ingredient_id);
-    incoming.push(asRow(e));
+    incoming.push(e.ingredient_id);
   }
 
-  return [...stock, ...incoming];
+  return [...stock, ...queries.stockOf(location, incoming)];
 }
 
 /** Touched lately but not in `holding` (held()'s list) — the quick way back. */
@@ -712,23 +714,6 @@ function recent(location, holding) {
   const ids = new Set(holding.map((m) => m.ingredient_id));
   return queries.recentMaterials(location)
     .filter((m) => !ids.has(m.ingredient_id));
-}
-
-let ingredientFacts = null;
-function asRow(e) {
-  ingredientFacts ??= new Map(queries.ingredientFacts().map((f) => [f.id, f]));
-  const facts = ingredientFacts.get(e.ingredient_id);
-  return {
-    ingredient_id: e.ingredient_id,
-    name: e.name,
-    source_type: e.source_type,
-    quality: facts?.quality ?? null,
-    body_part: facts?.body_part ?? null,
-    qty: 0,
-    gathered: 0,
-    received: 0,
-    used_crafting: 0,
-  };
 }
 
 /**

@@ -260,7 +260,9 @@ function campfireGap(r) {
 function canMake(r) {
   const each = slots(r).map((options) =>
     Math.max(...options.map((o) => Math.floor(o.have / o.qty))));
-  return each.length ? Math.min(...each) : null;
+  // Never under zero: a stock taken below nothing (an old batch undone
+  // after its items were spent) still makes none, not "-3".
+  return each.length ? Math.max(0, Math.min(...each)) : null;
 }
 
 /** "You can make 2", under a rule at the foot of a campfire card. */
@@ -538,7 +540,7 @@ function craftedSwitch(r) {
   const why = `Put it back: refund the ingredients to ${placeName(r.location_id, r.location)} and want it again`;
 
   return `
-    <button type="button" class="want-switch" role="switch" aria-checked="true"
+    <button type="button" class="crafted-switch" role="switch" aria-checked="true"
             data-act="uncraft" data-key="switch" title="${esc(why)}"
             aria-label="Crafted">
       <span class="side off" aria-hidden="true">Put back</span>
