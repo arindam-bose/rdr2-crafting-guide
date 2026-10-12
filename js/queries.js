@@ -298,6 +298,7 @@ const STOCK_AT = `
              ing.name        AS name,
              ing.source_type AS source_type,
              ing.quality     AS quality,
+             ing.body_part   AS body_part,
              COALESCE(inv.qty, 0)            AS qty,
              COALESCE(tot.gathered, 0)       AS gathered,
              COALESCE(tot.received, 0)       AS received,
@@ -356,6 +357,14 @@ export function ledgerEntries(limit) {
     LEFT JOIN  recipes     r   ON r.id   = l.recipe_id
     ORDER BY   l.id DESC
     LIMIT      :limit`, { limit });
+}
+
+/**
+ * Each material's quality and body part, for an Inventory row that is
+ * only staged so far and so came from no stock query.
+ */
+export function ingredientFacts() {
+  return db.all('SELECT id, quality, body_part FROM ingredients');
 }
 
 /** What you are holding at one location, most of it first. */

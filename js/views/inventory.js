@@ -83,6 +83,32 @@ function pendingIndex(location) {
   return index;
 }
 
+// The same category list and sorts as Materials.  Quantity is the
+// saved count, not what a row shows with its staged change: sorting on
+// that would move a row out from under the finger at every tap of its
+// stepper.  It settles into place on Save.
+const byName = (a, b) => a.name.localeCompare(b.name);
+const SORTS = {
+  name: {
+    label: 'Name',
+    fn: byName,
+    ways: { asc: 'A\u2013Z', desc: 'Z\u2013A' },
+    start: 'asc',
+  },
+  quality: {
+    label: 'Quality',
+    fn: (a, b) => toolbar.qualityRank(a) - toolbar.qualityRank(b) || byName(a, b),
+    ways: { asc: 'Legendary first', desc: 'Legendary last' },
+    start: 'asc',
+  },
+  qty: {
+    label: 'Quantity held',
+    fn: (a, b) => a.qty - b.qty || byName(a, b),
+    ways: { asc: 'Least first', desc: 'Most first' },
+    start: 'desc',
+  },
+};
+
 window.addEventListener('beforeunload', (event) => {
   if (staged.size) event.preventDefault();
 });
@@ -92,7 +118,10 @@ export function mount(root) {
   const state = {
     location: prefs.get(LOCATION_KEY) ?? locations[0].id,
     search: '',
+    part: '',
+    ...toolbar.restoreSort('inventory', SORTS, { sort: 'name', dir: 'asc' }),
   };
+  const categories = toolbar.categoryOptions(queries.bodyParts());
   if (!locations.some((l) => l.id === state.location)) {
     state.location = locations[0].id;
   }
@@ -115,6 +144,8 @@ export function mount(root) {
   root.innerHTML = `
     <div class="toolbar">
       ${toolbar.searchBox('i-search', 'Search a material or animal…')}
+      <select class="select" id="i-part" aria-label="Category"></select>
+      ${toolbar.sortControl('i', SORTS, 'Sort inventory by', state.sort)}
     </div>
     ${toolbar.tabRow('i-locations', 'location', tabs,
                      { selected: state.location, counts: false })}
@@ -133,6 +164,8 @@ export function mount(root) {
   const savebar = root.querySelector('#i-savebar');
   const pending = root.querySelector('#i-pending');
   const movePop = root.querySelector('#i-move');
+  const partSelect = root.querySelector('#i-part');
+  const dirButton = root.querySelector('#i-dir');
 
   // A row's name opens the material's own card, here on Inventory --
   // what it goes into, who wants it -- the same dialog Materials
@@ -171,6 +204,12 @@ export function mount(root) {
     update();
   });
   toolbar.wireClear(searchBox);
+
+  toolbar.wireSort(root, 'i', SORTS, state, update, 'inventory');
+  partSelect.addEventListener('change', (event) => {
+    state.part = event.target.value;
+    update();
+  });
 
   // One listener for every stepper: the rows are replaced on each
   // change, so per-row listeners would not survive anyway.
@@ -486,22 +525,39 @@ export function mount(root) {
     pendingIdx = personal ? pendingIndex(state.location) : new Map();
     const offer = personal ? '' : personalizeOffer(staged.size);
 
+    // The category offers what the lists on screen hold, as on
+    // Materials, and narrows them all.  The sort orders the main list;
+    // Recently Touched keeps its own order, newest first, which is the
+    // whole point of it.
+    const inPart = (list) => (state.part
+      ? list.filter((m) => toolbar.categoryOf(m) === state.part) : list);
+    const sorted = (list) => inPart(list).sort(toolbar.comparator(SORTS, state));
+    const offerFrom = (...lists) => toolbar.fillCategories(partSelect, categories,
+      new Set(lists.flat().map(toolbar.categoryOf)), state.part);
+    toolbar.paintDir(dirButton, SORTS, state);
+
     if (searching) {
       const hits = queries.searchMaterials(state.search, state.location);
+      offerFrom(hits);
+      const shown = sorted(hits);
       // The title is already the count here.  Capitalised, unlike every
       // other count on the page ("6 recipes"), because this one stands
       // alone as a heading, in the same sentence case as the rest.
       sections.innerHTML = offer + section(
-        plural(hits.length, 'Match', 'Matches'),
-        hits, 'No material or animal by that name.', false);
+        plural(shown.length, 'Match', 'Matches'),
+        shown, state.part ? 'Nothing in that category by that name.'
+                          : 'No material or animal by that name.', false);
     } else {
       // What you are holding here first, then the quick way back to
       // whatever you were logging lately.
       const holding = held(state.location, personal);
+      const lately = recent(state.location, holding);
+      offerFrom(holding, lately);
       sections.innerHTML = (store.isEmpty() && !staged.size ? restoreOffer() : '')
         + offer
-        + section(at, holding, `Nothing ${lower(at)} yet.`)
-        + section('Recently Touched', recent(state.location, holding), '');
+        + section(at, sorted(holding), state.part
+          ? `Nothing in that category ${lower(at)}.` : `Nothing ${lower(at)} yet.`)
+        + section('Recently Touched', inPart(lately), '');
     }
 
     // Flipped to General with a Transfer panel open: close it, since
@@ -611,8 +667,7 @@ function held(location, personal) {
     incoming.push(asRow(e));
   }
 
-  return [...stock, ...incoming]
-    .sort((a, b) => a.name.localeCompare(b.name));
+  return [...stock, ...incoming];
 }
 
 /** Touched lately but not in `holding` (held()'s list) — the quick way back. */
@@ -622,12 +677,16 @@ function recent(location, holding) {
     .filter((m) => !ids.has(m.ingredient_id));
 }
 
+let ingredientFacts = null;
 function asRow(e) {
+  ingredientFacts ??= new Map(queries.ingredientFacts().map((f) => [f.id, f]));
+  const facts = ingredientFacts.get(e.ingredient_id);
   return {
     ingredient_id: e.ingredient_id,
     name: e.name,
     source_type: e.source_type,
-    quality: null,
+    quality: facts?.quality ?? null,
+    body_part: facts?.body_part ?? null,
     qty: 0,
     gathered: 0,
     received: 0,

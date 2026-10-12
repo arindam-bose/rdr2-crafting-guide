@@ -645,6 +645,14 @@ same ledger as `inventory`, without the balance's habit of dropping rows that
 netted to zero. `qty <= gathered` holds by construction, since one sums every
 delta and the other only the positive ones.
 
+Under the search box sit the same category dropdown Materials has, offering
+only the categories the lists on screen hold, and a sort: name, quality
+(Legendary first or last) or quantity held (most or least first), remembered
+like the others. The category narrows every list; the sort orders the main one
+and the search matches, while *Recently Touched* keeps its newest-first order.
+Quantity sorts on the saved count, not one with a staged change folded in, so a
+row never jumps out from under the stepper being tapped — it settles on Save.
+
 Inventory stages rather than writes. Steppers adjust a pending batch; Save
 commits the lot as one SQLite transaction and one IndexedDB transaction, one
 ledger row per material and location however many taps went into it. Undo works
