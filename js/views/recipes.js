@@ -247,6 +247,31 @@ function campfireGap(r) {
   return Number.isFinite(worst) ? worst : Infinity;
 }
 
+/**
+ * How many of a campfire recipe the Satchel makes as it stands: each
+ * slot's holding divided by what it takes, rounded down, and the
+ * smallest of those.  Minty Pork at 2 Tender Pork Loin and 1 Wild Mint,
+ * with 5 and 3 in hand, is min(2, 3) = 2.  A slot of alternatives counts
+ * the one you hold most of, since it cannot be filled from a mix -- the
+ * same rule as campfireGap().  Null for a recipe with no ingredients.
+ */
+function canMake(r) {
+  const each = slots(r).map((options) =>
+    Math.max(...options.map((o) => Math.floor(o.have / o.qty))));
+  return each.length ? Math.min(...each) : null;
+}
+
+/** "You can make 2", under a rule at the foot of a campfire card. */
+function canMakeLine(r) {
+  const n = canMake(r);
+  if (n === null) return '';
+  return `<p class="can-make${n ? ' ready' : ''}">${canMakeWords(n)}</p>`;
+}
+
+function canMakeWords(n) {
+  return n ? `You can make ${n}` : 'You can make none yet';
+}
+
 function group(rows) {
   const byRecipe = new Map();
   for (const row of rows) {
@@ -318,6 +343,8 @@ function card(r, personal) {
         <ul class="ingredients">
           ${slots(r).map((s) => slotLine(s, tally(r, personal))).join('')}
         </ul>` : ''}
+
+      ${personal && r.repeatable ? canMakeLine(r) : ''}
     </article>`;
 }
 
@@ -480,7 +507,7 @@ function campfireDetail(r, personal) {
     ${detailSection('Comments', `<p class="hint">Made at your own campfire, as
       often as you have the ingredients${personal
         ? `. The counts are what is in ${esc(placeName(r.location_id, r.location))}.`
-        : '.'}</p>`)}`;
+        : '.'}</p>${personal ? canMakeLine(r) : ''}`)}`;
 }
 
 /**

@@ -1497,6 +1497,24 @@ ul.buff li::before {
   font-variant-numeric: tabular-nums;
 }
 
+/* How many of a campfire recipe the Satchel makes as it stands.  On a
+   card it sits at the foot under a rule, pushed down by margin-top:auto
+   so a row of cards keeps the line level; in the dialog it follows the
+   Comments hint.  Green once it is one or more. */
+.can-make {
+  margin: 0;
+  font-size: .85rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-dim);
+}
+.can-make.ready { color: var(--ok); }
+.card .can-make {
+  margin-top: auto;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+.detail-body .can-make { margin-top: 8px; }
+
 /* ---------- recipe detail dialog ---------- */
 
 /* Buffs as a stat and its value, the values in a column of their own. */

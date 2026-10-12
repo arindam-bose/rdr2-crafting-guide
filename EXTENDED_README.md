@@ -569,6 +569,10 @@ what the recipe cost to buy, once. Where it takes any one of several
 ingredients the line reads `2x ANY OF Currant (1) / Prairie Poppy (2)`, with how many of each you hold in the Satchel; the tick
 means one of them alone covers the amount, since a slot cannot be made up from
 a mix.
+In personal mode a campfire card ends, under a rule, with how many you can make
+from the Satchel as it stands -- each slot's holding over what it takes, rounded
+down, and the smallest of those, a slot of alternatives counting the one held
+most -- and the dialog repeats it under Comments.
 
 A vendor recipe card has its name with its vendor's icon, its price, its buff and an
 **Ingredients** list with have/need tallies. A crafted recipe is dimmed,
