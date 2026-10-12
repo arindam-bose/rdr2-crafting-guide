@@ -645,8 +645,9 @@ same ledger as `inventory`, without the balance's habit of dropping rows that
 netted to zero. `qty <= gathered` holds by construction, since one sums every
 delta and the other only the positive ones.
 
-Under the search box sit the same category dropdown Materials has, offering
-only the categories the lists on screen hold, and a sort: name, quality
+Under the search box sit the same category dropdown Materials has, plus
+*Plants* (a tab of its own on Materials), offering only the categories the
+lists on screen hold, and a sort: name, quality
 (Legendary first or last) or quantity held (most or least first), remembered
 like the others. The category narrows every list; the sort orders the main one
 and the search matches, while *Recently Touched* keeps its newest-first order.
@@ -714,7 +715,8 @@ where a backup came from. It is the ledger rather than the balances because the
 balances are derived from it: exporting only those would lose the history
 behind "8 gathered - 1 crafted". The file also carries how each list was
 sorted (`"sorts": {"recipes": "materials:asc"}`), so the same person restoring
-on another device gets Materials and Recipes back in the order they left them;
+on another device gets Materials, Recipes and Inventory back in the order they
+left them;
 the other preferences (theme, location) stay with the device. A
 copy-to-clipboard button sits beside it, because `<a download>` is unreliable on
 iOS, and a paste box sits beside the file picker for the same reason.

@@ -121,7 +121,7 @@ export function mount(root) {
     part: '',
     ...toolbar.restoreSort('inventory', SORTS, { sort: 'name', dir: 'asc' }),
   };
-  const categories = toolbar.categoryOptions(queries.bodyParts());
+  const categories = toolbar.categoryOptions(queries.bodyParts(), { plants: true });
   if (!locations.some((l) => l.id === state.location)) {
     state.location = locations[0].id;
   }

@@ -225,14 +225,20 @@ export const SUPPLY_KINDS = [
   { value: ':misc',    type: 'misc',    label: 'Misc. items' },
 ];
 
-export function categoryOptions(bodyParts) {
-  return [...bodyParts.map((p) => ({ value: p, label: p })), ...SUPPLY_KINDS];
+// Plants as one category too, for Inventory, whose list mixes every
+// kind of material.  Materials leaves it out: Plants is a tab there.
+const PLANT_KIND = { value: ':plant', type: 'plant', label: 'Plants' };
+
+export function categoryOptions(bodyParts, { plants = false } = {}) {
+  return [...bodyParts.map((p) => ({ value: p, label: p })),
+          ...(plants ? [PLANT_KIND] : []), ...SUPPLY_KINDS];
 }
 
-/** The entry a material falls under: its kind of supply, or its body
- *  part -- null for a plant, which has neither. */
+/** The entry a material falls under: its kind of supply, Plants, or
+ *  its body part. */
 export const categoryOf = (m) =>
-  SUPPLY_KINDS.find((k) => k.type === m.source_type)?.value ?? m.body_part;
+  [PLANT_KIND, ...SUPPLY_KINDS].find((k) => k.type === m.source_type)?.value
+    ?? m.body_part;
 
 /** Legendary first: it is the rarest and the most annoying to go get. */
 const QUALITY_RANK = { Legendary: 0, Perfect: 1 };
