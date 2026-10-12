@@ -281,10 +281,12 @@ export function mount(root) {
     for (const b of sections.querySelectorAll('.move-btn[aria-expanded="true"]')) {
       b.setAttribute('aria-expanded', 'false');
     }
-    // Back where the reader was, unless they have already moved on.
+    // Back where the reader was, unless they have already moved on --
+    // without scrolling to it: a panel shut by scrolling its button
+    // away would otherwise drag the page straight back.
     if (opener && (!document.activeElement || document.activeElement === document.body
                    || movePop.contains(document.activeElement))) {
-      opener.focus();
+      opener.focus({ preventScroll: true });
     }
   });
 
@@ -316,6 +318,18 @@ export function mount(root) {
   // makes it a sheet along the bottom instead, and the inline
   // position would only fight that.
   const narrow = window.matchMedia('(max-width: 559px)');
+
+  // The top of the room the panel has: under the masthead, and under
+  // this page's search and tabs where they are pinned (app.css).  A
+  // button scrolled up under those is out of sight as surely as one
+  // scrolled off the screen, and the panel never opens up over them.
+  const chromeBar = document.querySelector('.chrome');
+  const viewHead = root.querySelector('.view-head');
+  function ceiling() {
+    return Math.max(0, chromeBar?.getBoundingClientRect().bottom ?? 0,
+                    viewHead.getBoundingClientRect().bottom);
+  }
+
   function placeMove() {
     const opener = moving && moveButtonFor(moving.ingredient);
     if (narrow.matches || !opener) {
@@ -326,7 +340,7 @@ export function mount(root) {
     const box = movePop.getBoundingClientRect();
     const gap = 6;
     const below = at.bottom + gap + box.height <= window.innerHeight - 8;
-    const top = below ? at.bottom + gap : Math.max(8, at.top - gap - box.height);
+    const top = below ? at.bottom + gap : Math.max(ceiling() + 8, at.top - gap - box.height);
     const left = Math.min(Math.max(8, at.right - box.width), window.innerWidth - box.width - 8);
     movePop.style.top = `${top}px`;
     movePop.style.left = `${left}px`;
@@ -348,7 +362,7 @@ export function mount(root) {
       following = false;
       if (!moving || !movePop.matches(':popover-open')) return;
       const at = moveButtonFor(moving.ingredient)?.getBoundingClientRect();
-      if (!at || at.bottom < 0 || at.top > window.innerHeight) movePop.hidePopover();
+      if (!at || at.bottom < ceiling() || at.top > window.innerHeight) movePop.hidePopover();
       else placeMove();
     });
   }

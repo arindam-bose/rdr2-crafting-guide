@@ -451,14 +451,17 @@ tap does.
 
 The cover art is shown full height on every page. The footer sits at the foot of the window however little a page holds.
 
-On a desktop -- a window at least 1024px wide and 600px tall, with a mouse --
+On anything but a phone -- the wide layout, 720px and up, at least 500px tall --
 the search box, filters, sort and tabs of Materials, Recipes and Inventory (each
 page's `.view-head`) stay pinned under the masthead as the list scrolls, so they
 are in reach at the foot of a long list. The page title scrolls away with the
 cover. The band wears the body's own fixed background, takes a shadow only once
 it has stuck, and `main.js` measures the masthead and the band so it pins in the
-right place and keyboard focus scrolls clear of it. Phones, tablets and short
-windows keep the plain scrolling page, where the band would crowd out the list.
+right place and keyboard focus scrolls clear of it. A phone keeps the plain
+scrolling page, where the band would crowd out the list; the height guard
+covers a phone turned sideways. Inventory's Transfer panel treats the band's
+foot as the top of the screen: it closes once its button slides under the band,
+and never opens upwards over it.
 
 The page is not `viewport-fit=cover` and asks for no `env(safe-area-inset-*)`:
 the browser keeps it inside the safe area on its own. Firefox for Android
