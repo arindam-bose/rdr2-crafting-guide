@@ -31,8 +31,7 @@ const ABOUT = `
       <p>The one thing that can go out is a visit count, and only if you
         accept the cookie banner: Google Analytics then sees which pages
         are opened, never what you log. Change your answer any time under
-        <strong>Cookie settings</strong>, in Settings or at the foot of
-        any page.</p>
+        <strong>Cookie settings</strong> in Settings.</p>
       <p>The flip side is that your data lives only here. Use
         <strong>Back up</strong> at the top now and then, and keep the file
         somewhere safe.</p>
