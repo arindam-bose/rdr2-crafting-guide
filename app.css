@@ -649,15 +649,20 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   flex: 1 1 100%;
   min-width: 0;
 }
+/* A heavier border than the other controls, so the box reads as the
+   way in; the padding gives back the extra pixel, so it keeps its
+   size.  Its focus ring is a pixel heavier again, so a click still
+   shows. */
 .search {
   width: 100%;
-  padding: 9px 44px 9px 12px;
+  padding: 8px 43px 8px 11px;
   font: inherit;
   color: var(--ink);
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 2px solid var(--line);
   border-radius: var(--radius);
 }
+.search:focus-visible { outline-width: 3px; }
 .search::placeholder { color: var(--ink-faint); }
 
 /* The box's own cancel glyph is dropped in favour of `.search-clear`,
