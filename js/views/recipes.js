@@ -84,7 +84,9 @@ export function mount(root) {
     <div class="view-head">
     <div class="toolbar">
       ${toolbar.searchBox('r-search', 'Search a recipe, set or material…')}
-      <select class="select" id="r-category" aria-label="Category"></select>
+      <div class="filter">Filters
+        <select class="select" id="r-category" aria-label="Category"></select>
+      </div>
       ${toolbar.chipRow('r-stations', 'station', [
         { value: '', label: 'All', pressed: true },
         ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),

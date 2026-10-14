@@ -643,11 +643,14 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 
 /* The search box has the first row to itself, full width, as on
-   Inventory; the filters and the sort follow on the rows under it. */
+   Inventory; the filters and the sort follow on the rows under it.
+   A little more room under it than between those rows, which its
+   heavier border would otherwise crowd. */
 .search-wrap {
   position: relative;
   flex: 1 1 100%;
   min-width: 0;
+  margin-bottom: 4px;
 }
 /* A heavier border than the other controls, so the box reads as the
    way in; the padding gives back the extra pixel, so it keeps its
@@ -812,8 +815,10 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border-radius: var(--radius);
 }
 
-/* A sort control sits after the filters, left-aligned with them.
-   Both galleries use this, so the rule serves Materials and Recipes. */
+/* "Filters" heads the filters and "Sort" the sort, each a quiet word
+   before its control, so the toolbar names its two halves.  The sort
+   sits after the filters, left-aligned with them, on all three pages. */
+.filter,
 .sort {
   display: flex;
   align-items: center;

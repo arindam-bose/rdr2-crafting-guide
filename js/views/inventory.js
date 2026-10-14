@@ -148,7 +148,9 @@ export function mount(root) {
     <div class="view-head">
     <div class="toolbar">
       ${toolbar.searchBox('i-search', 'Search a material or animal…')}
-      <select class="select" id="i-part" aria-label="Category"></select>
+      <div class="filter">Filters
+        <select class="select" id="i-part" aria-label="Category"></select>
+      </div>
       ${toolbar.sortControl('i', SORTS, 'Sort inventory by', state.sort)}
     </div>
     ${toolbar.tabRow('i-locations', 'location', tabs,
