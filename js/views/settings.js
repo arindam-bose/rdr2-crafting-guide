@@ -454,12 +454,45 @@ export function mount(root) {
   // The masthead switch repaints itself off the same store change.
   $('#s-mode').addEventListener('click', () => store.setPersonal(!store.isPersonal()));
 
+  // A check asks the server for sw.js, and through it js/version.js:
+  // a new release number is a new worker, which installs straight away
+  // and says so when it is done (main.js offers the reload).  Each
+  // outcome is said out loud, or the button seems to do nothing.
   $('#s-update').addEventListener('click', async () => {
+    const button = $('#s-update');
     const registration = await navigator.serviceWorker?.getRegistration();
     if (!registration) return toast('Offline caching is not running.');
-    await registration.update();
-    toast('Checked. Any update installs on the next reload.');
+
+    button.disabled = true;
+    button.textContent = 'Checking…';
+    try {
+      await registration.update();
+    } catch {
+      return toast('Could not reach the site to check. Try again with a signal.');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Check for updates';
+    }
+
+    const incoming = registration.installing ?? registration.waiting;
+    if (!incoming) {
+      return toast(number
+        ? `You have the latest version (v${number}).`
+        : 'You have the latest version.');
+    }
+    toast('Found a newer version - downloading it now.');
+    incoming.addEventListener('statechange', () => {
+      if (incoming.state === 'redundant') {
+        toast('The update did not finish downloading. Try again later.');
+      }
+    });
   });
+
+  // The status line names the cache, so it follows a new one in.
+  const onWorker = (event) => {
+    if (event.data?.type === 'offline-ready') reportOffline();
+  };
+  navigator.serviceWorker?.addEventListener('message', onWorker);
 
   // Erasing asks twice, in place, rather than through a dialog box.
   $('#s-danger').addEventListener('click', async (event) => {
@@ -582,6 +615,7 @@ export function mount(root) {
     update,
     destroy() {
       window.removeEventListener('rdr2:consent', paintAbout);
+      navigator.serviceWorker?.removeEventListener('message', onWorker);
       unsubscribe();
       unsubscribeInstall();
       ledger.destroy();

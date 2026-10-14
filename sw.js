@@ -124,8 +124,10 @@ self.addEventListener('activate', (event) => {
       .map((n) => caches.delete(n)));
     await self.clients.claim();
 
+    // With the release, so a page still running an older one can say
+    // it has been updated rather than merely cached.
     for (const client of await self.clients.matchAll()) {
-      client.postMessage({ type: 'offline-ready' });
+      client.postMessage({ type: 'offline-ready', version: self.APP_VERSION.number });
     }
   })());
 });

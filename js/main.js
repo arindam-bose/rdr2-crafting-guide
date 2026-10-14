@@ -295,8 +295,16 @@ async function start() {
   setTimeout(backup.remind, 1500);
 
   if ('serviceWorker' in navigator) {
+    // A first install caches the release this page is running; an
+    // update caches a newer one, which this page shows only once it is
+    // reloaded -- so it offers the reload.
     navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data?.type === 'offline-ready') {
+      if (event.data?.type !== 'offline-ready') return;
+      const { version } = event.data;
+      if (version && version !== self.APP_VERSION?.number) {
+        toast(`Updated to v${version}. Reload to start using it.`,
+          { label: 'Reload', run: () => location.reload(), duration: 15000 });
+      } else {
         toast('Cached - this works without a signal now.');
       }
     });
