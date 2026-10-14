@@ -93,7 +93,9 @@ poisonous one, and only the poison recipes take it.
 sql.js connection so the two can be joined without an `ATTACH`. It is an
 append-only `ledger`: current stock is `SUM(delta)`, an undo is a `DELETE`, and
 a mis-entry is fixed with a correcting row. IndexedDB holds those rows between
-visits and replays them on startup.
+visits and replays them on startup. Every write lands in SQLite first and then
+IndexedDB; if IndexedDB refuses it, the write is taken back out of SQLite too,
+so the page never shows a change the next load would not find.
 
 Demand is per **station**, stock is per **location** — the Fence sells from its
 own counter but draws on your Satchel.
@@ -270,8 +272,9 @@ hand.
                           the home-screen install, and the Support tile
       views/ledger.js     the history, as a dialog opened from Settings
       views/guide.js      About and How to use, as dialogs from Settings
-      views/toolbar.js    search, chips, sort and pager, shared by the two
-                          galleries
+      views/toolbar.js    search, filters, chips, sort, the rules between
+                          them and the pager, shared by Materials, Recipes
+                          and Inventory
       toast.js            the undo toast, which follows an open dialog
       theme.js            parchment or leather, remembered per device
       main.js             boot and hash routing
@@ -279,7 +282,8 @@ hand.
       device.js           which browser on which system, for backups' names
                           and the install steps
       install.js          the browser's install prompt, kept for Settings
-      version.js          the release number and date, read by sw.js too
+      version.js          the release number and date, read by sw.js too;
+                          on a page it fills in the masthead's version
       notice.js           a one-time notice to returning visitors after an
                           update (switched off with ACTIVE = false)
       mode-toggle-early.js
@@ -620,8 +624,14 @@ at *that* station: a material two recipes want still shows for the other one.
 ### Filtering and sorting
 
 Both galleries share one toolbar: the search box on a row of its own, then a
-category dropdown, the stations in the order Pearson, Trapper, Fence, the
-personal filters, and the sort, all left-aligned, with the count on the right.
+category dropdown headed **Filters**, the stations in the order Pearson,
+Trapper, Fence, the personal filters, and the sort, all left-aligned, with the
+count on the right. Inventory has the same search box, Filters and sort. A
+single rule separates each group of filters from the one before it, and a
+double rule sets off the sort, which orders the list rather than narrowing it.
+A group that wraps to the start of a line drops its rule there: CSS cannot see
+a wrap, so `toolbar.wireRules` marks it `.line-start`, measuring with every
+rule showing so a group cannot flicker between the two.
 The Materials search matches a material's name, and the animals it comes from
 from the start of a word, so *wolf* finds Big Game Meat as well as the wolf
 pelts and *perch* finds Flaky Fish Meat, while *ox* finds Prime Beef Joint

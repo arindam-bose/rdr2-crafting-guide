@@ -56,12 +56,7 @@ const SORTS = {
     ways: { asc: 'Legendary first', desc: 'Legendary last' },
     start: 'asc',
   },
-  name: {
-    label: 'Name',
-    fn: byName,
-    ways: { asc: 'A\u2013Z', desc: 'Z\u2013A' },
-    start: 'asc',
-  },
+  name: toolbar.nameSort(byName),
 };
 
 export function mount(root) {
@@ -87,9 +82,7 @@ export function mount(root) {
     <div class="view-head">
     <div class="toolbar">
       ${toolbar.searchBox('m-search', 'Search a material or animal…')}
-      <div class="filter">Filters
-        <select class="select" id="m-part" aria-label="Category"></select>
-      </div>
+      ${toolbar.categoryFilter('m-part')}
       ${toolbar.chipRow('m-stations', 'station', [
         { value: '', label: 'All', pressed: true },
         ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),

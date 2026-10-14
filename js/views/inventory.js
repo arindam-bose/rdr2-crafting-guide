@@ -92,12 +92,7 @@ function pendingIndex(location) {
 // stepper.  It settles into place on Save.
 const byName = (a, b) => a.name.localeCompare(b.name);
 const SORTS = {
-  name: {
-    label: 'Name',
-    fn: byName,
-    ways: { asc: 'A\u2013Z', desc: 'Z\u2013A' },
-    start: 'asc',
-  },
+  name: toolbar.nameSort(byName),
   quality: {
     label: 'Quality',
     fn: (a, b) => toolbar.qualityRank(a) - toolbar.qualityRank(b) || byName(a, b),
@@ -148,9 +143,7 @@ export function mount(root) {
     <div class="view-head">
     <div class="toolbar">
       ${toolbar.searchBox('i-search', 'Search a material or animal…')}
-      <div class="filter">Filters
-        <select class="select" id="i-part" aria-label="Category"></select>
-      </div>
+      ${toolbar.categoryFilter('i-part')}
       ${toolbar.sortControl('i', SORTS, 'Sort inventory by', state.sort)}
     </div>
     ${toolbar.tabRow('i-locations', 'location', tabs,
@@ -206,11 +199,9 @@ export function mount(root) {
     update();
   });
 
-  searchBox.addEventListener('input', () => {
-    state.search = searchBox.value.trim();
-    update();
-  });
-  toolbar.wireClear(searchBox);
+  // No page to start over, unlike the galleries: every change just
+  // redraws the lists.
+  toolbar.wireSearch(searchBox, state, update);
 
   toolbar.wireSort(root, 'i', SORTS, state, update, 'inventory');
   toolbar.wireRules(root.querySelector('.toolbar'));
@@ -424,23 +415,7 @@ export function mount(root) {
     if (event.target.id !== 'i-restore') return;
     const file = event.target.files?.[0];
     event.target.value = '';
-    if (!file) return;
-
-    const text = await file.text();
-    const found = store.inspectImport(text);
-    if (found.fatal) {
-      toast(found.fatal);
-      return;
-    }
-    try {
-      await backup.restore(text);
-    } catch (err) {
-      console.error(err);
-      toast(`That backup could not be loaded: ${err?.message ?? err}`);
-      return;
-    }
-    toast(`Restored ${plural(found.ledger, 'entry', 'entries')}.`
-      + (found.problems.length ? ` Note: ${found.problems.join('; ')}.` : ''));
+    if (file) await backup.restoreAndSay(await file.text());
   });
 
   root.querySelector('#i-discard').addEventListener('click', discard);
@@ -601,7 +576,7 @@ export function mount(root) {
     detail.refresh();
 
     savebar.hidden = !personal || staged.size === 0;
-    pending.textContent = `${plural(staged.size, 'unsaved change')}`;
+    pending.textContent = plural(staged.size, 'unsaved change');
 
     // Say so on the tab too, since the bar goes with the screen.
     const tab = document.querySelector('.tabs [data-route="inventory"]');

@@ -7,8 +7,10 @@
 // database is re-fetched (and service-worker cached) instead.
 //
 // Every write goes to SQLite first, then to IndexedDB, then
-// tells the views.  The ledger is append-only, so a write is an
-// INSERT and an undo is a DELETE of that one row.
+// tells the views -- and if IndexedDB refuses it, it is taken back
+// out of SQLite too (see mirror()), or it would show now and be
+// gone on the next load.  The ledger is append-only, so a write is
+// an INSERT and an undo is a DELETE of that one row.
 // ============================================================
 
 import * as db from './db.js';
@@ -61,6 +63,21 @@ function tx(stores, mode, fn) {
   }));
 }
 
+/**
+ * Mirror a change already made in SQLite into IndexedDB.  If IndexedDB
+ * refuses it -- a full disk, storage taken away mid-visit -- `takeBack`
+ * reverses it in SQLite as well and the error is rethrown, so what is
+ * on screen never runs ahead of what the next load will find.
+ */
+async function mirror(stores, write, takeBack) {
+  try {
+    await tx(stores, 'readwrite', write);
+  } catch (err) {
+    db.transaction(takeBack);
+    throw err;
+  }
+}
+
 function readAll(store) {
   return idb().then((conn) => new Promise((resolve, reject) => {
     const req = conn.transaction(store, 'readonly').objectStore(store).getAll();
@@ -68,6 +85,41 @@ function readAll(store) {
     req.onerror = () => reject(req.error);
   }));
 }
+
+// ------------------------------------------------------------
+// rows into SQLite
+//
+// A stored row goes back in exactly as it was, id and stamp and all:
+// on every load, and whenever a write that IndexedDB refused has to
+// be put back the way it was.
+// ------------------------------------------------------------
+
+function putLedger(r) {
+  db.run(
+    `INSERT INTO ledger (id, ts, ingredient_id, location_id, delta, reason,
+                         recipe_id, note)
+     VALUES (:id, :ts, :ingredient_id, :location_id, :delta, :reason,
+             :recipe_id, :note)`,
+    {
+      id: r.id, ts: r.ts, ingredient_id: r.ingredient_id,
+      location_id: r.location_id, delta: r.delta, reason: r.reason,
+      recipe_id: r.recipe_id ?? null, note: r.note ?? null,
+    });
+}
+
+function putTarget(t) {
+  db.run(
+    `INSERT INTO targets (recipe_id, state, updated_at)
+     VALUES (:recipe_id, :state, :updated_at)
+     ON CONFLICT (recipe_id)
+     DO UPDATE SET state = excluded.state, updated_at = excluded.updated_at`,
+    { recipe_id: t.recipe_id, state: t.state, updated_at: t.updated_at });
+}
+
+const ledgerRow = (id) => db.one('SELECT * FROM ledger WHERE id = :id', { id });
+const dropLedger = (id) => db.run('DELETE FROM ledger WHERE id = :id', { id });
+const targetRow = (recipe_id) =>
+  db.one('SELECT * FROM targets WHERE recipe_id = :recipe_id', { recipe_id });
 
 // ------------------------------------------------------------
 // change notification
@@ -107,24 +159,8 @@ export async function hydrate() {
   }
 
   db.transaction(() => {
-    for (const r of ledger) {
-      db.run(
-        `INSERT INTO ledger (id, ts, ingredient_id, location_id, delta, reason,
-                             recipe_id, note)
-         VALUES (:id, :ts, :ingredient_id, :location_id, :delta, :reason,
-                 :recipe_id, :note)`,
-        {
-          id: r.id, ts: r.ts, ingredient_id: r.ingredient_id,
-          location_id: r.location_id, delta: r.delta, reason: r.reason,
-          recipe_id: r.recipe_id ?? null, note: r.note ?? null,
-        });
-    }
-    for (const t of targets) {
-      db.run(
-        `INSERT INTO targets (recipe_id, state, updated_at)
-         VALUES (:recipe_id, :state, :updated_at)`,
-        { recipe_id: t.recipe_id, state: t.state, updated_at: t.updated_at });
-    }
+    for (const r of ledger) putLedger(r);
+    for (const t of targets) putTarget(t);
   });
 
   // Settled once, on the first load that finds no mode stored.  Data
@@ -138,8 +174,6 @@ export async function hydrate() {
     const hasData = ledger.length || stored.some((t) => t.state !== 'wanted');
     prefs.set(MODE_KEY, hasData ? 'personal' : 'general');
   }
-
-  return { ledger: ledger.length, targets: targets.length };
 }
 
 // ------------------------------------------------------------
@@ -175,9 +209,7 @@ export async function record(entry) {
 /**
  * Append a whole batch as one commit: one SQLite transaction and
  * one IndexedDB transaction, however many rows.  Returns the rows,
- * whose ids `undoBatch` takes.  If IndexedDB refuses them, they come
- * back out of SQLite too and the error is rethrown -- otherwise they
- * would show now and vanish on the next load.
+ * whose ids `undoBatch` takes.
  */
 export async function recordBatch(entries) {
   if (!entries.length) return [];
@@ -188,17 +220,11 @@ export async function recordBatch(entries) {
         `INSERT INTO ledger (ingredient_id, location_id, delta, reason, recipe_id, note)
          VALUES (:ingredient_id, :location_id, :delta, :reason, :recipe_id, :note)`,
         { ingredient_id, location_id, delta, reason, recipe_id, note });
-      return db.one('SELECT * FROM ledger WHERE id = :id', { id: db.lastInsertId() });
+      return ledgerRow(db.lastInsertId());
     }));
 
-  try {
-    await tx([LEDGER], 'readwrite', (s) => { for (const r of rows) s.put(r); });
-  } catch (err) {
-    db.transaction(() => {
-      for (const r of rows) db.run('DELETE FROM ledger WHERE id = :id', { id: r.id });
-    });
-    throw err;
-  }
+  await mirror([LEDGER], (s) => { for (const r of rows) s.put(r); },
+    () => { for (const r of rows) dropLedger(r.id); });
   changed();
   return rows;
 }
@@ -207,18 +233,19 @@ export async function recordBatch(entries) {
 export async function undoBatch(ids) {
   if (!ids.length) return;
 
-  db.transaction(() => {
-    for (const id of ids) db.run('DELETE FROM ledger WHERE id = :id', { id });
+  const rows = db.transaction(() => {
+    const gone = ids.map(ledgerRow).filter(Boolean);
+    for (const id of ids) dropLedger(id);
+    return gone;
   });
-  await tx([LEDGER], 'readwrite', (s) => { for (const id of ids) s.delete(id); });
+  await mirror([LEDGER], (s) => { for (const id of ids) s.delete(id); },
+    () => { for (const r of rows) putLedger(r); });
   changed();
 }
 
 /** Remove one ledger row — the undo behind the toast. */
-export async function undo(id) {
-  db.run('DELETE FROM ledger WHERE id = :id', { id });
-  await tx([LEDGER], 'readwrite', (s) => s.delete(id));
-  changed();
+export function undo(id) {
+  return undoBatch([id]);
 }
 
 // ------------------------------------------------------------
@@ -269,11 +296,11 @@ export function inspectImport(text) {
   try {
     data = JSON.parse(text);
   } catch (err) {
-    return { ok: false, fatal: `That is not JSON: ${err.message}` };
+    return { fatal: `That is not JSON: ${err.message}` };
   }
 
   if (data?.format !== 'rdr2-crafting-guide/personal') {
-    return { ok: false, fatal: 'Not a crafting-guide export.' };
+    return { fatal: 'Not a crafting-guide export.' };
   }
 
   const ledger = Array.isArray(data.ledger) ? data.ledger : [];
@@ -339,13 +366,10 @@ export function inspectImport(text) {
   }
 
   return {
-    ok: badReason === 0 && malformed === 0,
     fatal: badReason || malformed ? 'Some entries would be rejected by the database.' : null,
     exported_at: data.exported_at ?? null,
     device: typeof data.device === 'string' ? data.device : null,
-    reference_build: data.reference_build ?? null,
     ledger: ledger.length,
-    targets: targets.length,
     made: rowsOf(targets).filter((t) => t.state === 'done').length,
     problems,
   };
@@ -493,11 +517,17 @@ export function isEmpty() {
 
 /** Throw the personal layer away. */
 export async function reset() {
-  db.transaction(() => {
+  const { ledger, targets } = db.transaction(() => {
+    const kept = { ledger: db.all('SELECT * FROM ledger'),
+                   targets: db.all('SELECT * FROM targets') };
     db.run('DELETE FROM ledger');
     db.run('DELETE FROM targets');
+    return kept;
   });
-  await tx([LEDGER, TARGETS], 'readwrite', (l, t) => { l.clear(); t.clear(); });
+  await mirror([LEDGER, TARGETS], (l, t) => { l.clear(); t.clear(); }, () => {
+    for (const r of ledger) putLedger(r);
+    for (const t of targets) putTarget(t);
+  });
   changed();
 }
 
@@ -542,7 +572,8 @@ export async function craft(recipe_id) {
   const spend = craftSpend(recipe_id);
   if (!spend.length) throw new Error(`Nothing to spend for ${recipe_id}.`);
 
-  const { rows, target } = db.transaction(() => {
+  const { rows, target, before } = db.transaction(() => {
+    const was = targetRow(recipe_id);
     const ids = [];
     for (const s of spend) {
       db.run(
@@ -557,15 +588,16 @@ export async function craft(recipe_id) {
        DO UPDATE SET state = 'done', updated_at = datetime('now')`,
       { recipe_id });
 
-    return {
-      rows: ids.map((id) => db.one('SELECT * FROM ledger WHERE id = :id', { id })),
-      target: db.one('SELECT * FROM targets WHERE recipe_id = :recipe_id', { recipe_id }),
-    };
+    return { rows: ids.map(ledgerRow), target: targetRow(recipe_id), before: was };
   });
 
-  await tx([LEDGER, TARGETS], 'readwrite', (l, t) => {
+  await mirror([LEDGER, TARGETS], (l, t) => {
     for (const r of rows) l.put(r);
     t.put(target);
+  }, () => {
+    for (const r of rows) dropLedger(r.id);
+    if (before) putTarget(before);
+    else db.run('DELETE FROM targets WHERE recipe_id = :recipe_id', { recipe_id });
   });
   changed();
   return rows;
@@ -573,25 +605,26 @@ export async function craft(recipe_id) {
 
 /** Put a crafted recipe back: refund the spend, mark it wanted again. */
 export async function uncraft(recipe_id) {
-  const { ids, target } = db.transaction(() => {
-    const ids = db.all(
-      `SELECT id FROM ledger WHERE recipe_id = :recipe_id AND reason = 'craft'`,
-      { recipe_id }).map((r) => r.id);
+  const { rows, target, before } = db.transaction(() => {
+    const spent = db.all(
+      `SELECT * FROM ledger WHERE recipe_id = :recipe_id AND reason = 'craft'`,
+      { recipe_id });
+    const was = targetRow(recipe_id);
 
     db.run(`DELETE FROM ledger WHERE recipe_id = :recipe_id AND reason = 'craft'`,
            { recipe_id });
     db.run(`UPDATE targets SET state = 'wanted', updated_at = datetime('now')
             WHERE recipe_id = :recipe_id`, { recipe_id });
 
-    return {
-      ids,
-      target: db.one('SELECT * FROM targets WHERE recipe_id = :recipe_id', { recipe_id }),
-    };
+    return { rows: spent, target: targetRow(recipe_id), before: was };
   });
 
-  await tx([LEDGER, TARGETS], 'readwrite', (l, t) => {
-    for (const id of ids) l.delete(id);
+  await mirror([LEDGER, TARGETS], (l, t) => {
+    for (const r of rows) l.delete(r.id);
     if (target) t.put(target);
+  }, () => {
+    for (const r of rows) putLedger(r);
+    if (before) putTarget(before);
   });
   changed();
 }

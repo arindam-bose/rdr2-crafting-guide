@@ -14,7 +14,7 @@ import * as prefs from './prefs.js';
 import * as store from './store.js';
 import * as theme from './theme.js';
 import { errorBox, plural } from './render.js';
-import { toast } from './toast.js';
+import { toast, offerReload } from './toast.js';
 import * as materials from './views/materials.js';
 import * as inventory from './views/inventory.js';
 import * as recipes from './views/recipes.js';
@@ -198,7 +198,6 @@ function show({ name, id }) {
   }
 }
 
-
 // ------------------------------------------------------------
 // boot
 // ------------------------------------------------------------
@@ -301,12 +300,8 @@ async function start() {
     navigator.serviceWorker.addEventListener('message', (event) => {
       if (event.data?.type !== 'offline-ready') return;
       const { version } = event.data;
-      if (version && version !== self.APP_VERSION?.number) {
-        toast(`Updated to v${version}. Reload to start using it.`,
-          { label: 'Reload', run: () => location.reload(), duration: 15000 });
-      } else {
-        toast('Cached - this works without a signal now.');
-      }
+      if (version && version !== self.APP_VERSION?.number) offerReload(version);
+      else toast('Cached - this works without a signal now.');
     });
     // `updateViaCache: 'none'` so a check for updates looks past the
     // HTTP cache at js/version.js too, not just at sw.js itself.

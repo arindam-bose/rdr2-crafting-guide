@@ -37,9 +37,16 @@ export function toast(message, action = null) {
     button.type = 'button';
     button.className = 'action';
     button.textContent = action.label;
-    button.addEventListener('click', () => {
+    // An Undo is a write like any other, and can fail like one: say
+    // so, rather than leave the tap looking as if it had worked.
+    button.addEventListener('click', async () => {
       dismiss();
-      action.run();
+      try {
+        await action.run();
+      } catch (err) {
+        console.error(err);
+        toast('That did not go through - try again.');
+      }
     });
     element.append(button);
   }
@@ -55,6 +62,17 @@ export function toast(message, action = null) {
 
   element.hidden = false;
   timer = setTimeout(dismiss, action?.duration ?? DURATION);
+}
+
+/**
+ * A newer release is cached and waiting: this page still runs the one
+ * it loaded, so offer the reload that starts the new one.  Said when
+ * the download lands (main.js) and when Settings' check finds one
+ * already waiting.
+ */
+export function offerReload(version) {
+  toast(`v${version} is ready. Reload to start using it.`,
+        { label: 'Reload', run: () => location.reload(), duration: 15000 });
 }
 
 /** Whether a toast is up -- an Undo still on offer, say. */

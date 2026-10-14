@@ -55,12 +55,7 @@ const SORTS = {
     ways: { asc: 'Fewest first', desc: 'Most first' },
     start: 'asc',
   },
-  name: {
-    label: 'Name',
-    fn: byName,
-    ways: { asc: 'A\u2013Z', desc: 'Z\u2013A' },
-    start: 'asc',
-  },
+  name: toolbar.nameSort(byName),
 };
 
 export function mount(root) {
@@ -72,10 +67,8 @@ export function mount(root) {
   const categories = queries.categories();
   // Reference data, read once: the plants behind each plant ingredient,
   // so "red sage" still finds what takes Sage, as it does on Materials.
-  const plantNames = new Map();
-  for (const p of queries.materialPlants()) {
-    plantNames.set(p.ingredient_id, [...(plantNames.get(p.ingredient_id) ?? []), p.name]);
-  }
+  const plantNames = new Map([...groupBy(queries.materialPlants(), (p) => p.ingredient_id)]
+    .map(([id, plants]) => [id, plants.map((p) => p.name)]));
   const categoryOptions = Object.fromEntries(KINDS.map((k) => [k.id,
     categories.filter((c) => c.repeatable === k.repeatable)
       .map((c) => ({ value: c.category, label: c.category }))]));
@@ -84,9 +77,7 @@ export function mount(root) {
     <div class="view-head">
     <div class="toolbar">
       ${toolbar.searchBox('r-search', 'Search a recipe, set or material…')}
-      <div class="filter">Filters
-        <select class="select" id="r-category" aria-label="Category"></select>
-      </div>
+      ${toolbar.categoryFilter('r-category')}
       ${toolbar.chipRow('r-stations', 'station', [
         { value: '', label: 'All', pressed: true },
         ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
@@ -164,13 +155,20 @@ export function mount(root) {
     },
   });
 
+  // Said out loud when the write fails, as the material dialog's
+  // steppers do: the store has already put things back as they were.
   async function act(action, recipeId, name) {
-    if (action === 'craft') {
-      await store.craft(recipeId);
-      toast(`Crafted ${name}`, { label: 'Undo', run: () => store.uncraft(recipeId) });
-    } else if (action === 'uncraft') {
-      await store.uncraft(recipeId);
-      toast(`${name} is wanted again`);
+    try {
+      if (action === 'craft') {
+        await store.craft(recipeId);
+        toast(`Crafted ${name}`, { label: 'Undo', run: () => store.uncraft(recipeId) });
+      } else if (action === 'uncraft') {
+        await store.uncraft(recipeId);
+        toast(`${name} is wanted again`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast('Could not save that - try again.');
     }
   }
 
@@ -183,7 +181,7 @@ export function mount(root) {
     showChips.hidden = !personal || !vendor;
     markRules();
 
-    const ingredients = group(queries.recipeIngredients());
+    const ingredients = groupBy(queries.recipeIngredients(), (i) => i.recipe_id);
     const all = queries.recipeList().map((r) => {
       const withIngredients = { ...r, ingredients: ingredients.get(r.id) ?? [] };
       withIngredients.sort_qty = personal && r.repeatable
@@ -280,13 +278,15 @@ function canMakeWords(n) {
   return n ? `You can make ${n}` : 'You can make none yet';
 }
 
-function group(rows) {
-  const byRecipe = new Map();
+/** `rows` gathered into lists by `key(row)`, in the order each key first appears. */
+function groupBy(rows, key) {
+  const groups = new Map();
   for (const row of rows) {
-    if (!byRecipe.has(row.recipe_id)) byRecipe.set(row.recipe_id, []);
-    byRecipe.get(row.recipe_id).push(row);
+    const k = key(row);
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(row);
   }
-  return byRecipe;
+  return groups;
 }
 
 /**
@@ -371,12 +371,7 @@ function priceLabel(r) {
  * the order it is written in, main ingredient first.
  */
 function slots(r) {
-  const bySlot = new Map();
-  for (const i of r.ingredients) {
-    if (!bySlot.has(i.slot)) bySlot.set(i.slot, []);
-    bySlot.get(i.slot).push(i);
-  }
-  const list = [...bySlot.entries()];
+  const list = [...groupBy(r.ingredients, (i) => i.slot).entries()];
   if (r.repeatable) list.sort(([a], [b]) => a - b);
   return list.map(([, options]) => options);
 }
@@ -465,7 +460,6 @@ function ingredient(i, personal) {
  */
 function recipeDetail(r, personal) {
   if (r.repeatable) return campfireDetail(r, personal);
-  const buffs = buffLines(r.description);
 
   return `
     ${detailHead('Recipe', r.name, personal ? craftedSwitch(r) : '')}
@@ -475,10 +469,7 @@ function recipeDetail(r, personal) {
       ['Set', esc(r.set_name)],
       ['Price', r.price_cents && money(r.price_cents)],
     ])}
-    ${detailSection('Description', buffs.length && `
-      <ul class="detail-list detail-buffs">
-        ${buffs.map((b) => `<li>${buffLine(b)}</li>`).join('')}
-      </ul>`)}
+    ${descriptionSection(r)}
     ${detailSection('Ingredients', r.ingredients.length && `
       <ul class="ingredients detail-ingredients">
         ${slots(r).map((s) => slotLine(s, tally(r, personal))).join('')}
@@ -492,7 +483,6 @@ function recipeDetail(r, personal) {
  * keeps no count of it.  What you hold is what is in your Satchel.
  */
 function campfireDetail(r, personal) {
-  const buffs = buffLines(r.description);
   const choice = r.ingredients.length > slots(r).length;
 
   return `
@@ -502,10 +492,7 @@ function campfireDetail(r, personal) {
       ['Made at', stationLabel(r.station_id, r.station)],
       ['Recipe cost', r.price_cents && money(r.price_cents)],
     ])}
-    ${detailSection('Description', buffs.length && `
-      <ul class="detail-list detail-buffs">
-        ${buffs.map((b) => `<li>${buffLine(b)}</li>`).join('')}
-      </ul>`)}
+    ${descriptionSection(r)}
     ${detailSection('Ingredients', r.ingredients.length && `
       <ul class="ingredients detail-ingredients">
         ${slots(r).map((s) => slotLine(s, personal)).join('')}
@@ -516,6 +503,15 @@ function campfireDetail(r, personal) {
       often as you have the ingredients${personal
         ? `. The counts are what is in ${esc(placeName(r.location_id, r.location))}.`
         : '.'}</p>${personal ? canMakeLine(r) : ''}`)}`;
+}
+
+/** A dialog's buff lines, one stat to a line; nothing when it has none. */
+function descriptionSection(r) {
+  const buffs = buffLines(r.description);
+  return detailSection('Description', buffs.length && `
+    <ul class="detail-list detail-buffs">
+      ${buffs.map((b) => `<li>${buffLine(b)}</li>`).join('')}
+    </ul>`);
 }
 
 /**

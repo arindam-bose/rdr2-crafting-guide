@@ -182,14 +182,13 @@ export function recipeList() {
       GROUP BY   ri.recipe_id, ri.slot
     )
     SELECT     r.id, r.name, r.category, r.price_cents, r.description,
-               r.warmth_rank, r.repeatable,
+               r.repeatable,
                st.id   AS station_id,
                st.name AS station,
                st.color,
                loc.id   AS location_id,
                loc.name AS location,
                s.name  AS set_name,
-               s.set_type,
                CASE WHEN r.repeatable THEN 'wanted'
                     ELSE COALESCE(t.state, 'wanted') END AS state,
                COUNT(sl.recipe_id)                 AS needs,

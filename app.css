@@ -78,7 +78,8 @@
   --font-symbol:  "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2",
                   "DejaVu Sans", sans-serif;
 
-  --radius: 10px;
+  --radius: 10px;          /* a card, a panel, a field */
+  --radius-sm: 8px;        /* a button, and the boxes inside a panel */
   --tabs-h: 56px;
 }
 
@@ -370,7 +371,7 @@ body > main { flex: 1 0 auto; }
   color: var(--ink-dim);
   background: none;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .backup-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
@@ -1288,7 +1289,7 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   color: var(--ink-dim);
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .detail-close:hover { color: var(--ink); border-color: var(--ink-faint); }
@@ -1494,7 +1495,7 @@ body:has(dialog.detail[open]) { overflow: hidden; }
 .hint.comment-box {
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 /* The marker is a hyphen rather than a disc: it is the one the typewriter
@@ -1684,7 +1685,7 @@ ul.buff li::before {
   color: var(--on-accent);
   background: var(--accent);
   border: 1px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .craft-btn:hover:not(:disabled) {
@@ -1704,7 +1705,7 @@ ul.buff li::before {
   color: var(--ink-dim);
   background: none;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .ghost-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
@@ -1875,7 +1876,7 @@ ul.buff li::before {
   color: var(--ink);
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .stepper button:hover:not(:disabled) { border-color: var(--ink-faint); }
@@ -2083,7 +2084,7 @@ ul.buff li::before {
   font: inherit;
   font-size: .86rem;
   padding: 9px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .savebar .discard {
@@ -2145,7 +2146,7 @@ ul.buff li::before {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -2251,7 +2252,7 @@ ul.buff li::before {
   text-decoration: none;
   background: var(--accent);
   border: 1px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 .coffee-btn:hover { filter: brightness(1.06); }
 .coffee-btn .icon { margin: 0; width: 1.6em; height: 1.6em; }
@@ -2312,7 +2313,7 @@ ul.buff li::before {
   text-decoration: none;
   background: var(--page-wash);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 .refs a:hover { border-color: var(--accent-text); }
 .refs a:hover strong { text-decoration: underline; }
@@ -2377,7 +2378,7 @@ ul.buff li::before {
   color: var(--ink);
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   resize: vertical;
 }
 
@@ -2388,7 +2389,7 @@ ul.buff li::before {
   line-height: 1.5;
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -2429,7 +2430,7 @@ ul.buff li::before {
   color: var(--ink);
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .more-btn:hover { border-color: var(--ink-faint); }

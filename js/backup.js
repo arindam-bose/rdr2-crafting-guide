@@ -154,6 +154,26 @@ export async function restore(text) {
   }
 }
 
+/**
+ * restore(), saying how it went: how many entries came in and anything
+ * odd in the file, or why it would not load -- in which case nothing on
+ * the device has changed.  Settings and Inventory's restore offer both
+ * come through here, so they say it the same way.  True if it loaded.
+ */
+export async function restoreAndSay(text) {
+  let found;
+  try {
+    found = await restore(text);
+  } catch (err) {
+    console.error(err);
+    toast(`That backup could not be loaded: ${err?.message ?? err}`);
+    return false;
+  }
+  toast(`Restored ${plural(found.ledger, 'entry', 'entries')}.`
+    + (found.problems.length ? ` Note: ${found.problems.join('; ')}.` : ''));
+  return true;
+}
+
 // ------------------------------------------------------------
 // nudges
 // ------------------------------------------------------------
