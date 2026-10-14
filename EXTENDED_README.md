@@ -148,8 +148,8 @@ those strings.
 
 After a rebuild, or any change to the images or fonts, bump the release in
 `js/version.js` — its `number` names the offline cache in `sw.js`, the masthead
-shows it beside the name, and Settings shows it with its `date` as the tool
-version. Versions run x.0.y: x is the GitHub release (tagged `vX.0.0`), y the
+shows it beside the name (on the search pages too), and Settings shows it with
+its `date` as the tool version. Versions run x.0.y: x is the GitHub release (tagged `vX.0.0`), y the
 build within it, bumped with every change that ships and started again at 1
 when x moves on (1.0.7, then 2.0.1). Skipping the bump after a rebuild is not
 harmless: a returning visitor would get the new code with the old cached
@@ -186,8 +186,9 @@ without its prefix, so `ing-perfect-beaver-pelt` is
 and `sitemap.xml`. Like the database, they are generated and committed; never
 edit one by hand. Each carries the facts the app's dialog does, in the app's
 own stylesheet, and an "Open in the crafting guide" link to the same card in
-the app (`#/materials/<id>`). Their only scripts are `js/analytics.js`, with
-its cookie banner, and the theme line, which the generator
+the app (`#/materials/<id>`). Their only scripts are `js/version.js`, for the
+number beside the name, `js/analytics.js`, with its cookie banner, and the
+theme line, which the generator
 copies out of `index.html` along with the Content-Security-Policy that allows
 it by hash, so the two never drift apart. Every link in them is
 relative; the one absolute address, for canonical links and the sitemap, is

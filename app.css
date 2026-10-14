@@ -243,6 +243,7 @@ body > main { flex: 1 0 auto; }
    the whole name is 36 characters and a phone's top bar is not,
    and because it stacks to the logo's height for free. */
 .topbar h1,
+.topbar .brand-line,
 .topbar .brand {
   display: flex;
   align-items: center;
@@ -286,6 +287,7 @@ body > main { flex: 1 0 auto; }
    that moves nothing.  flex-end first, for a browser without it.
    The negative margin takes back most of the masthead's gap. */
 .topbar h1 > .brand,
+.topbar .brand-line > .brand,
 .brand-version {
   align-self: flex-end;
   align-self: last baseline;
