@@ -120,6 +120,7 @@ export function mount(root) {
   toolbar.wirePager(pagerBox, state, update);
   toolbar.wireSearch(root.querySelector('#r-search'), state, refilter);
   toolbar.wireSort(root, 'r', SORTS, state, refilter, 'recipes');
+  const markRules = toolbar.wireRules(root.querySelector('.toolbar'));
   toolbar.wirePicker(root.querySelector('#r-stations'), 'station', state, refilter);
   toolbar.wireToggles(showChips, 'show', state, refilter);
 
@@ -178,6 +179,7 @@ export function mount(root) {
     // Vendors and progress mean nothing at your own fire.
     stationChips.hidden = !vendor;
     showChips.hidden = !personal || !vendor;
+    markRules();
 
     const ingredients = group(queries.recipeIngredients());
     const all = queries.recipeList().map((r) => {

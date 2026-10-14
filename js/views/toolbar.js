@@ -315,6 +315,47 @@ export function wireSort(root, id, sorts, state, onChange, name) {
 }
 
 /**
+ * The rules between the toolbar's groups (app.css) separate a group
+ * from the one before it on the same line.  Once the toolbar wraps, a
+ * group can start a line of its own, where its rule would only stick
+ * out of the margin -- so that group is marked `line-start`, and the
+ * rule goes.  CSS cannot see a wrap, hence this.
+ *
+ * Measured with every rule showing, so a group that only wrapped
+ * because of its rule is still called wrapped rather than flickering
+ * between the two.  Run again whenever the toolbar changes width, and
+ * by the view whenever a group is shown or hidden; the observer lets
+ * go once the page is gone.  Returns that re-run.
+ */
+export function wireRules(bar) {
+  const groups = [...bar.querySelectorAll(':scope > .chips, :scope > .sort')];
+  const mark = () => {
+    for (const g of groups) g.classList.remove('line-start');
+    const visible = [...bar.children].filter((el) => !el.hidden && el.offsetParent);
+    for (const g of groups) {
+      const at = visible.indexOf(g);
+      if (at < 0) continue;
+      // Back at or left of what came before it: it wrapped.
+      const left = g.getBoundingClientRect().left;
+      const before = at > 0 ? visible[at - 1].getBoundingClientRect().left : Infinity;
+      g.classList.toggle('line-start', left <= before);
+    }
+  };
+
+  let width = 0;
+  const watch = new ResizeObserver(([entry]) => {
+    if (!bar.isConnected) return watch.disconnect();
+    if (entry.contentRect.width === width) return;
+    width = entry.contentRect.width;
+    mark();
+  });
+  watch.observe(bar);
+  // The toolbar's faces load late and change every chip's width.
+  document.fonts?.ready.then(mark);
+  return mark;
+}
+
+/**
  * Say what the direction does rather than draw an arrow you have to
  * interpret: "Most first", "Legendary first", "A-Z".
  */

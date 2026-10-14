@@ -211,6 +211,7 @@ export function mount(root) {
   toolbar.wireClear(searchBox);
 
   toolbar.wireSort(root, 'i', SORTS, state, update, 'inventory');
+  toolbar.wireRules(root.querySelector('.toolbar'));
   partSelect.addEventListener('change', (event) => {
     state.part = event.target.value;
     update();

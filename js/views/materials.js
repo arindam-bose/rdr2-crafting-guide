@@ -123,6 +123,7 @@ export function mount(root) {
   toolbar.wirePager(pagerBox, state, update);
   toolbar.wireSearch(root.querySelector('#m-search'), state, refilter);
   toolbar.wireSort(root, 'm', SORTS, state, refilter, 'materials');
+  const markRules = toolbar.wireRules(root.querySelector('.toolbar'));
   toolbar.wirePicker(root.querySelector('#m-stations'), 'station', state, refilter);
   toolbar.wireToggles(showChips, 'show', state, refilter);
 
@@ -172,6 +173,7 @@ export function mount(root) {
   function update() {
     const personal = store.isPersonal();
     showChips.hidden = !personal;
+    markRules();
 
     lastCards = group(queries.materials({ personal }), queries.materialUsage(),
                       animals, plants);

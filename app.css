@@ -823,25 +823,35 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .sort .select { font-size: .82rem; padding: 7px 10px; }
 
-/* A rule between the filter chips and the sort, so the two groups read
-   as two groups rather than one long row of controls.  Drawn rather
-   than typed: a 1px box sits at a fixed height and centres itself on
-   the row, where a glyph would ride the text baseline and change size
-   with the font.
+/* Rules between the toolbar's groups, so the category, the vendors,
+   the progress chips and the sort read as four questions rather than
+   one long row of controls: a single rule before each row of chips,
+   and a double one before the sort, which orders the list rather than
+   filtering it.  A row of chips that is hidden (Still needed and Done
+   in General) takes its rule with it.  Drawn rather than typed: a box
+   sits at a fixed height and centres itself on the row, where a glyph
+   would ride the text baseline and change size with the font.
 
-   Below the wide breakpoint the toolbar wraps and the sort starts its
-   own line, where a leading divider would separate nothing. */
+   Once the toolbar wraps, a group can start its own line, where a
+   leading rule would separate nothing: toolbar.js marks that group
+   .line-start (CSS cannot see a wrap), and the rule goes. */
+.toolbar > .chips::before,
 .sort::before {
   content: "";
   flex: 0 0 auto;
   width: 1px;
   height: 22px;
+  align-self: center;
   background: var(--line);
+  margin-right: 2px;
+}
+.sort::before {
+  width: 4px;
+  background: none;
+  border-inline: 1px solid var(--line);
   margin-right: 4px;
 }
-@media (max-width: 719px) {
-  .sort::before { display: none; }
-}
+.toolbar > .line-start::before { display: none; }
 
 /* The direction says what it does, rather than an arrow you have
    to work out: "Most first", "A-Z", "Legendary first". */
