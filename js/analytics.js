@@ -3,9 +3,8 @@
 //
 // Nothing of Google's loads until the visitor says yes.  Until then
 // a banner asks, on every page; the answer is kept in localStorage,
-// and "Cookie settings" (any [data-consent-open] button: the Settings
-// row in the app, the footer link on the browse pages, which have no
-// Settings) brings the banner back to change it.
+// and "Cookie settings" (any [data-consent-open] button: the row in
+// Settings' About tile) brings the banner back to change it.
 // Declining after accepting switches GA off for the rest of the
 // visit and deletes its cookies.
 //
@@ -83,8 +82,8 @@
         Google Analytics would set cookies to count visits to this site.
         It never sees what you log in the guide, and nothing loads unless
         you say yes. Every feature works either way, and you can change
-        your mind any time under Cookie settings, in the guide's Settings
-        or at the foot of the browse pages.</p>
+        your mind any time under Cookie settings, in the guide's
+        Settings.</p>
       <div class="consent-actions">
         <button type="button" class="ghost-btn" data-choice="denied">Decline</button>
         <button type="button" class="more-btn" data-choice="granted">Accept</button>

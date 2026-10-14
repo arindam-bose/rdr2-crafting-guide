@@ -55,10 +55,10 @@ is kept in localStorage (`rdr2:analytics-consent`, `granted` or `denied`) and
 held in memory for the visit where storage is blocked.
 
 **Cookie settings** brings the banner back to change the answer: a row in
-Settings' About tile that shows the current one, and -- since they have no
-Settings -- a link in the footer of the static browse pages. The app's own
-footer leaves it out, to keep it short. Both are just buttons carrying `data-consent-open`, which the script answers
-with a delegated listener, so the static pages need no code of their own.
+Settings' About tile that shows the current one. No footer carries it, the
+app's or the static browse pages', to keep them short; visitors on the browse
+pages change it from the guide's Settings. The row is just a button carrying
+`data-consent-open`, which the script answers with a delegated listener.
 Declining after accepting sets `ga-disable-<id>` for the rest of the visit and
 deletes the `_ga` cookies on every parent domain of the host. The script fires
 `rdr2:consent` on `window` when the answer changes, which is how Settings
