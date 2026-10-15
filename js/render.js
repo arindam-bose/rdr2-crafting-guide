@@ -137,8 +137,9 @@ export function icon(name) {
   return `<span class="icon icon-${name}" aria-hidden="true"></span>`;
 }
 
-/** What a material is, as a dialog's kicker names it. */
-const KIND_LABEL = {
+/** What a material is, as a dialog's kicker and the category filter
+ *  name it. */
+export const KIND_LABEL = {
   animal: 'Animal material',
   plant: 'Plant',
   ammo: 'Ammo & throwables',

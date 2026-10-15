@@ -557,9 +557,11 @@ The tabs are Animal Materials, Plants and Misc. Items — a hunting trip, a walk
 and a shop or a detour — each carrying the count that matches the current
 filters, so a search that landed on another tab is visible rather than lost.
 Misc. Items holds the supplies: ammunition and throwables, liquor, and the
-collectables, each with a link to its wiki page. The category filter lists the animal parts (Pelt, Hide, Meat, Fat,
-Feather, …) and the three kinds of supply, which have no part; picking a
-category also switches to the tab its materials are on.
+collectables, each with a link to its wiki page. The category filter lists the
+animal parts (Pelt, Hide, Meat, Fat, Feather, …) and the three kinds of supply,
+which have no part, in one alphabetical list, each kind named as its dialog
+names it (Ammo & throwables, Collectable, Liquor); picking a category also
+switches to the tab its materials are on.
 
 A material used in campfire recipes gets a **Campfire** block on its card
 showing how many you hold in the Satchel, and a Campfire row in the dialog —
