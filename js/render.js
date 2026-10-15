@@ -146,6 +146,14 @@ const KIND_LABEL = {
   collectable: 'Collectable',
 };
 
+/** The kinds that link to their own wiki page, and the fact that
+ *  carries it: a name only, since the kicker already says the rest. */
+const LINK_LABEL = {
+  ammo: 'Ammo',
+  alcohol: 'Liquor',
+  collectable: 'Collectable',
+};
+
 /**
  * How many recipes a material card lists before it offers the rest.
  * Only five materials in the reference data go past this.
@@ -158,7 +166,7 @@ const USAGE_SHOWN = 6;
  * the whole card opens.
  *
  *   material = { ingredient_id, material, quality, source_type,
- *                body_part, animals: [...], plants: [...], demands: [...],
+ *                body_part, link, animals: [...], plants: [...], demands: [...],
  *                usage: [...] }
  *
  * `personal` decides whether the card talks about what you have,
@@ -306,7 +314,7 @@ export function heldAt(id, name) {
  * what you just brought in can be logged without leaving the page.
  */
 export function materialDetail(material, { personal }) {
-  const { material: name, quality, source_type, body_part, animals, plants } = material;
+  const { material: name, quality, source_type, body_part, link, animals, plants } = material;
   const isAnimal = source_type === 'animal';
 
   // A pelt comes off one animal, and its weapon or bait sits in the
@@ -320,8 +328,9 @@ export function materialDetail(material, { personal }) {
        ['Type', esc(body_part)],
        ['Weapon', only && esc(only.weapon)],
        ['Bait', only && esc(only.bait)]]
-    : source_type === 'collectable'
-      ? [['Source', 'Found out in the world'], ['Quality', qualityLabel(quality)]]
+    : source_type in LINK_LABEL
+      ? [[LINK_LABEL[source_type], link && webLink(link, name)],
+         ['Quality', qualityLabel(quality)]]
       : source_type === 'plant'
         ? [['Plant', onlyPlantLink(plants)]]
         : [];
