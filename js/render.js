@@ -146,13 +146,9 @@ const KIND_LABEL = {
   collectable: 'Collectable',
 };
 
-/** The kinds that link to their own wiki page, and the fact that
- *  carries it: a name only, since the kicker already says the rest. */
-const LINK_LABEL = {
-  ammo: 'Ammo',
-  alcohol: 'Liquor',
-  collectable: 'Collectable',
-};
+/** The Misc. Items kinds, each linked to its own wiki page under one
+ *  neutral "Item" fact: the kicker already says which kind it is. */
+const LINKED = ['ammo', 'alcohol', 'collectable'];
 
 /**
  * How many recipes a material card lists before it offers the rest.
@@ -328,8 +324,8 @@ export function materialDetail(material, { personal }) {
        ['Type', esc(body_part)],
        ['Weapon', only && esc(only.weapon)],
        ['Bait', only && esc(only.bait)]]
-    : source_type in LINK_LABEL
-      ? [[LINK_LABEL[source_type], link && webLink(link, name)],
+    : LINKED.includes(source_type)
+      ? [['Item', link && webLink(link, name)],
          ['Quality', qualityLabel(quality)]]
       : source_type === 'plant'
         ? [['Plant', onlyPlantLink(plants)]]

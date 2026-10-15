@@ -553,11 +553,11 @@ batch as Inventory does: here you are logging one thing and looking straight
 at the result. In personal mode a station with nothing left to make still
 shows, as *needs no more*, since you may be holding some there to sell.
 
-The tabs are Animal Materials, Plants and Others — a hunting trip, a walk,
+The tabs are Animal Materials, Plants and Misc. Items — a hunting trip, a walk,
 and a shop or a detour — each carrying the count that matches the current
 filters, so a search that landed on another tab is visible rather than lost.
-Others holds the supplies: ammunition and throwables, liquor, and the
-collectables. The category filter lists the animal parts (Pelt, Hide, Meat, Fat,
+Misc. Items holds the supplies: ammunition and throwables, liquor, and the
+collectables, each with a link to its wiki page. The category filter lists the animal parts (Pelt, Hide, Meat, Fat,
 Feather, …) and the three kinds of supply, which have no part; picking a
 category also switches to the tab its materials are on.
 

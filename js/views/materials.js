@@ -30,7 +30,7 @@ import * as toolbar from './toolbar.js';
 const GROUPS = [
   { id: 'animal',   title: 'Animal Materials', types: ['animal'], icon: 'animals' },
   { id: 'plant',    title: 'Plants',           types: ['plant'], icon: 'plants' },
-  { id: 'supplies', title: 'Others',           types: ['ammo', 'alcohol', 'collectable'], icon: 'supplies' },
+  { id: 'supplies', title: 'Misc. Items',      types: ['ammo', 'alcohol', 'collectable'], icon: 'supplies' },
 ];
 const groupOf = (card) =>
   GROUPS.find((g) => g.types.includes(card.source_type))?.id;
