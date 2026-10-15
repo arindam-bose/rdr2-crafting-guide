@@ -78,7 +78,8 @@
   --font-symbol:  "Segoe UI Symbol", "Apple Symbols", "Noto Sans Symbols 2",
                   "DejaVu Sans", sans-serif;
 
-  --radius: 10px;
+  --radius: 10px;          /* a card, a panel, a field */
+  --radius-sm: 8px;        /* a button, and the boxes inside a panel */
   --tabs-h: 56px;
 }
 
@@ -243,6 +244,7 @@ body > main { flex: 1 0 auto; }
    the whole name is 36 characters and a phone's top bar is not,
    and because it stacks to the logo's height for free. */
 .topbar h1,
+.topbar .brand-line,
 .topbar .brand {
   display: flex;
   align-items: center;
@@ -286,6 +288,7 @@ body > main { flex: 1 0 auto; }
    that moves nothing.  flex-end first, for a browser without it.
    The negative margin takes back most of the masthead's gap. */
 .topbar h1 > .brand,
+.topbar .brand-line > .brand,
 .brand-version {
   align-self: flex-end;
   align-self: last baseline;
@@ -368,7 +371,7 @@ body > main { flex: 1 0 auto; }
   color: var(--ink-dim);
   background: none;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .backup-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
@@ -641,21 +644,29 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 
 /* The search box has the first row to itself, full width, as on
-   Inventory; the filters and the sort follow on the rows under it. */
+   Inventory; the filters and the sort follow on the rows under it.
+   A little more room under it than between those rows, which its
+   heavier border would otherwise crowd. */
 .search-wrap {
   position: relative;
   flex: 1 1 100%;
   min-width: 0;
+  margin-bottom: 4px;
 }
+/* A heavier border than the other controls, so the box reads as the
+   way in; the padding gives back the extra pixel, so it keeps its
+   size.  Its focus ring is a pixel heavier again, so a click still
+   shows. */
 .search {
   width: 100%;
-  padding: 9px 44px 9px 12px;
+  padding: 8px 43px 8px 11px;
   font: inherit;
   color: var(--ink);
   background: var(--surface);
-  border: 1px solid var(--line);
+  border: 2px solid var(--line);
   border-radius: var(--radius);
 }
+.search:focus-visible { outline-width: 3px; }
 .search::placeholder { color: var(--ink-faint); }
 
 /* The box's own cancel glyph is dropped in favour of `.search-clear`,
@@ -805,8 +816,10 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   border-radius: var(--radius);
 }
 
-/* A sort control sits after the filters, left-aligned with them.
-   Both galleries use this, so the rule serves Materials and Recipes. */
+/* "Filters" heads the filters and "Sort" the sort, each a quiet word
+   before its control, so the toolbar names its two halves.  The sort
+   sits after the filters, left-aligned with them, on all three pages. */
+.filter,
 .sort {
   display: flex;
   align-items: center;
@@ -816,25 +829,35 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .sort .select { font-size: .82rem; padding: 7px 10px; }
 
-/* A rule between the filter chips and the sort, so the two groups read
-   as two groups rather than one long row of controls.  Drawn rather
-   than typed: a 1px box sits at a fixed height and centres itself on
-   the row, where a glyph would ride the text baseline and change size
-   with the font.
+/* Rules between the toolbar's groups, so the category, the vendors,
+   the progress chips and the sort read as four questions rather than
+   one long row of controls: a single rule before each row of chips,
+   and a double one before the sort, which orders the list rather than
+   filtering it.  A row of chips that is hidden (Still needed and Done
+   in General) takes its rule with it.  Drawn rather than typed: a box
+   sits at a fixed height and centres itself on the row, where a glyph
+   would ride the text baseline and change size with the font.
 
-   Below the wide breakpoint the toolbar wraps and the sort starts its
-   own line, where a leading divider would separate nothing. */
+   Once the toolbar wraps, a group can start its own line, where a
+   leading rule would separate nothing: toolbar.js marks that group
+   .line-start (CSS cannot see a wrap), and the rule goes. */
+.toolbar > .chips::before,
 .sort::before {
   content: "";
   flex: 0 0 auto;
   width: 1px;
   height: 22px;
+  align-self: center;
   background: var(--line);
+  margin-right: 2px;
+}
+.sort::before {
+  width: 4px;
+  background: none;
+  border-inline: 1px solid var(--line);
   margin-right: 4px;
 }
-@media (max-width: 719px) {
-  .sort::before { display: none; }
-}
+.toolbar > .line-start::before { display: none; }
 
 /* The direction says what it does, rather than an arrow you have
    to work out: "Most first", "A-Z", "Legendary first". */
@@ -1266,7 +1289,7 @@ body:has(dialog.detail[open]) { overflow: hidden; }
   color: var(--ink-dim);
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .detail-close:hover { color: var(--ink); border-color: var(--ink-faint); }
@@ -1472,7 +1495,7 @@ body:has(dialog.detail[open]) { overflow: hidden; }
 .hint.comment-box {
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 /* The marker is a hyphen rather than a disc: it is the one the typewriter
@@ -1662,7 +1685,7 @@ ul.buff li::before {
   color: var(--on-accent);
   background: var(--accent);
   border: 1px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .craft-btn:hover:not(:disabled) {
@@ -1682,7 +1705,7 @@ ul.buff li::before {
   color: var(--ink-dim);
   background: none;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .ghost-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
@@ -1853,7 +1876,7 @@ ul.buff li::before {
   color: var(--ink);
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .stepper button:hover:not(:disabled) { border-color: var(--ink-faint); }
@@ -2061,7 +2084,7 @@ ul.buff li::before {
   font: inherit;
   font-size: .86rem;
   padding: 9px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .savebar .discard {
@@ -2123,7 +2146,7 @@ ul.buff li::before {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
 }
 
@@ -2229,7 +2252,7 @@ ul.buff li::before {
   text-decoration: none;
   background: var(--accent);
   border: 1px solid var(--accent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 .coffee-btn:hover { filter: brightness(1.06); }
 .coffee-btn .icon { margin: 0; width: 1.6em; height: 1.6em; }
@@ -2290,7 +2313,7 @@ ul.buff li::before {
   text-decoration: none;
   background: var(--page-wash);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 .refs a:hover { border-color: var(--accent-text); }
 .refs a:hover strong { text-decoration: underline; }
@@ -2355,7 +2378,7 @@ ul.buff li::before {
   color: var(--ink);
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   resize: vertical;
 }
 
@@ -2366,7 +2389,7 @@ ul.buff li::before {
   line-height: 1.5;
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -2407,7 +2430,7 @@ ul.buff li::before {
   color: var(--ink);
   background: var(--surface-2);
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .more-btn:hover { border-color: var(--ink-faint); }

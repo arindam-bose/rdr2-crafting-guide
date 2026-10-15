@@ -20,9 +20,10 @@ still need, crafting.  The slug is the id without its prefix
 (ing-perfect-beaver-pelt -> perfect-beaver-pelt), so an address stays
 put when a name is corrected, and sw.js can turn one back into its id.
 
-No JavaScript runs on these pages beyond the theme line every page
-starts with, and every link in them is relative, so they work wherever
-the site is served.  The one absolute address is SITE_URL, for the
+The content is plain HTML.  The only scripts are the ones every page
+shares -- the theme line, js/version.js for the number beside the
+name, js/analytics.js for the cookie banner -- and every link is
+relative, so the pages work wherever the site is served.  The one absolute address is SITE_URL, for the
 canonical links and the sitemap.
 
 Like rdr2.db, the output is generated and committed: run this after
@@ -61,7 +62,7 @@ KIND_LABEL = {
 GROUPS = [
     ('Animal materials', ('animal',)),
     ('Plants', ('plant',)),
-    ('Supplies', ('ammo', 'alcohol', 'misc')),
+    ('Others', ('ammo', 'alcohol', 'misc')),
 ]
 STATION_ICON = {
     'station-pearson': 'pearson', 'station-trapper': 'trapper',
@@ -314,6 +315,7 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme, wide=
 <link rel="apple-touch-icon" href="{root}images/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="RDR2 Crafting">
 <link rel="stylesheet" href="{root}app.css">
+<script defer src="{root}js/version.js"></script>
 <script defer src="{root}js/analytics.js"></script>
 <script type="application/ld+json">{crumb_ld}</script>
 {theme}
@@ -322,13 +324,16 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme, wide=
 
 <div class="chrome">
   <header class="topbar">
-    <a class="brand" href="{root}">
-      <img class="brand-mark" src="{root}images/logo-128.png" alt="" width="34" height="34">
-      <span class="brand-text">
-        <span class="brand-game">Red Dead Redemption II</span>
-        <span class="brand-app">Crafting Guide</span>
-      </span>
-    </a>
+    <div class="brand-line">
+      <a class="brand" href="{root}">
+        <img class="brand-mark" src="{root}images/logo-128.png" alt="" width="34" height="34">
+        <span class="brand-text">
+          <span class="brand-game">Red Dead Redemption II</span>
+          <span class="brand-app">Crafting Guide</span>
+        </span>
+      </a>
+      <span class="brand-version" id="brand-version"></span>
+    </div>
   </header>
   <nav class="tabs">
     {tabs}
@@ -354,7 +359,6 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme, wide=
      or <a href="{root}recipes/">every recipe</a>.</p>
   <p class="small-print">Not affiliated with or endorsed by Rockstar Games
      or Take-Two Interactive</p>
-  <p class="small-print"><button type="button" class="more-link" data-consent-open>Cookie settings</button></p>
 </footer>
 </body>
 </html>

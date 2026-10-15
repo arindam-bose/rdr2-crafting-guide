@@ -14,7 +14,7 @@ import * as prefs from './prefs.js';
 import * as store from './store.js';
 import * as theme from './theme.js';
 import { errorBox, plural } from './render.js';
-import { toast } from './toast.js';
+import { toast, offerReload } from './toast.js';
 import * as materials from './views/materials.js';
 import * as inventory from './views/inventory.js';
 import * as recipes from './views/recipes.js';
@@ -40,14 +40,6 @@ const tabs = document.querySelector('.tabs');
 const modeToggle = document.getElementById('mode-toggle');
 const backupBtn = document.getElementById('backup-btn');
 const firstNote = document.getElementById('first-note');
-
-// The release, beside the name, so anyone can say which one they have.
-const { number: version } = self.APP_VERSION ?? {};
-if (version) {
-  const label = document.getElementById('brand-version');
-  label.textContent = `v${version}`;
-  label.title = `Tool version ${version}`;
-}
 
 // ------------------------------------------------------------
 // the pinned page head
@@ -206,7 +198,6 @@ function show({ name, id }) {
   }
 }
 
-
 // ------------------------------------------------------------
 // boot
 // ------------------------------------------------------------
@@ -303,10 +294,14 @@ async function start() {
   setTimeout(backup.remind, 1500);
 
   if ('serviceWorker' in navigator) {
+    // A first install caches the release this page is running; an
+    // update caches a newer one, which this page shows only once it is
+    // reloaded -- so it offers the reload.
     navigator.serviceWorker.addEventListener('message', (event) => {
-      if (event.data?.type === 'offline-ready') {
-        toast('Cached - this works without a signal now.');
-      }
+      if (event.data?.type !== 'offline-ready') return;
+      const { version } = event.data;
+      if (version && version !== self.APP_VERSION?.number) offerReload(version);
+      else toast('Cached - this works without a signal now.');
     });
     // `updateViaCache: 'none'` so a check for updates looks past the
     // HTTP cache at js/version.js too, not just at sw.js itself.

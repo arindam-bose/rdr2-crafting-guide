@@ -37,7 +37,7 @@ There is no account and no server behind the guide. The recipes ship with the
 page, and everything you log stays in your browser: nothing you enter is ever
 uploaded. The one thing that can go out is a visit count, and only if you
 accept the cookie banner: Google Analytics then sees which pages are opened,
-never what you log. **Cookie settings**, at the foot of every page, changes
+never what you log. **Cookie settings**, in Settings' About tile, changes
 your answer.
 
 The flip side is that your data lives only in that browser. Use **Back up** now
@@ -49,9 +49,10 @@ and then, and keep the file somewhere safe.
    *General* and *Personalize*. Use General to look things up. Turn on
    Personalize to keep track of what you have; logging only works there.
 2. **Find what you need.** **Materials** lists everything there is to collect,
-   with the recipes each one goes into and the vendors who still want it.
-   Filter by vendor or category, or search by name, animal or plant. Open a card for
-   where it comes from and how to bring it in perfect.
+   in three tabs (Animal Materials, Plants and Others), with the recipes each
+   one goes into and the vendors who still want it. Filter by category, vendor
+   or progress, or search by name, animal or plant. Open a card for where it
+   comes from and how to bring it in perfect.
 3. **Log what you gather.** Either:
    - in a material's card, tap **+ Add** or **-** to log one at a time,
      straight away; or
@@ -73,6 +74,10 @@ and then, and keep the file somewhere safe.
 **Install it:** open **Settings → On your home screen**. Where your browser
 allows it, that tile has an **Install** button; elsewhere it gives your
 browser's own steps.
+
+**Stay up to date:** the version is shown beside the name at the top. A new
+one downloads by itself; **Settings → Offline → Check for updates** looks for
+one now, and offers a reload once it is ready.
 
 ## Run it yourself
 

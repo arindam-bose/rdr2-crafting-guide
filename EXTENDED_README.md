@@ -55,10 +55,10 @@ is kept in localStorage (`rdr2:analytics-consent`, `granted` or `denied`) and
 held in memory for the visit where storage is blocked.
 
 **Cookie settings** brings the banner back to change the answer: a row in
-Settings' About tile that shows the current one, and -- since they have no
-Settings -- a link in the footer of the static browse pages. The app's own
-footer leaves it out, to keep it short. Both are just buttons carrying `data-consent-open`, which the script answers
-with a delegated listener, so the static pages need no code of their own.
+Settings' About tile that shows the current one. No footer carries it, the
+app's or the static browse pages', to keep them short; visitors on the browse
+pages change it from the guide's Settings. The row is just a button carrying
+`data-consent-open`, which the script answers with a delegated listener.
 Declining after accepting sets `ga-disable-<id>` for the rest of the visit and
 deletes the `_ga` cookies on every parent domain of the host. The script fires
 `rdr2:consent` on `window` when the answer changes, which is how Settings
@@ -93,7 +93,9 @@ poisonous one, and only the poison recipes take it.
 sql.js connection so the two can be joined without an `ATTACH`. It is an
 append-only `ledger`: current stock is `SUM(delta)`, an undo is a `DELETE`, and
 a mis-entry is fixed with a correcting row. IndexedDB holds those rows between
-visits and replays them on startup.
+visits and replays them on startup. Every write lands in SQLite first and then
+IndexedDB; if IndexedDB refuses it, the write is taken back out of SQLite too,
+so the page never shows a change the next load would not find.
 
 Demand is per **station**, stock is per **location** — the Fence sells from its
 own counter but draws on your Satchel.
@@ -148,8 +150,8 @@ those strings.
 
 After a rebuild, or any change to the images or fonts, bump the release in
 `js/version.js` — its `number` names the offline cache in `sw.js`, the masthead
-shows it beside the name, and Settings shows it with its `date` as the tool
-version. Versions run x.0.y: x is the GitHub release (tagged `vX.0.0`), y the
+shows it beside the name (on the search pages too), and Settings shows it with
+its `date` as the tool version. Versions run x.0.y: x is the GitHub release (tagged `vX.0.0`), y the
 build within it, bumped with every change that ships and started again at 1
 when x moves on (1.0.7, then 2.0.1). Skipping the bump after a rebuild is not
 harmless: a returning visitor would get the new code with the old cached
@@ -168,8 +170,9 @@ once cached it was served for good. Only clearing the site's data cleared it.
 1.0.2 fixed the service worker, and `js/notice.js` tells each returning visitor
 once what to do if a page still errors: reload, or back up, clear the site's
 data, and restore. It is only shown to someone who had been here before, read
-from storage before this visit writes to it. Set its `ACTIVE` to `false` once
-it has run its course.
+from storage before this visit writes to it. It has run its course, and its
+`ACTIVE` is now `false`; set it back to `true` for a future notice of the same
+kind.
 
 ## Search pages
 
@@ -186,8 +189,9 @@ without its prefix, so `ing-perfect-beaver-pelt` is
 and `sitemap.xml`. Like the database, they are generated and committed; never
 edit one by hand. Each carries the facts the app's dialog does, in the app's
 own stylesheet, and an "Open in the crafting guide" link to the same card in
-the app (`#/materials/<id>`). Their only scripts are `js/analytics.js`, with
-its cookie banner, and the theme line, which the generator
+the app (`#/materials/<id>`). Their only scripts are `js/version.js`, for the
+number beside the name, `js/analytics.js`, with its cookie banner, and the
+theme line, which the generator
 copies out of `index.html` along with the Content-Security-Policy that allows
 it by hash, so the two never drift apart. Every link in them is
 relative; the one absolute address, for canonical links and the sitemap, is
@@ -269,8 +273,9 @@ hand.
                           the home-screen install, and the Support tile
       views/ledger.js     the history, as a dialog opened from Settings
       views/guide.js      About and How to use, as dialogs from Settings
-      views/toolbar.js    search, chips, sort and pager, shared by the two
-                          galleries
+      views/toolbar.js    search, filters, chips, sort, the rules between
+                          them and the pager, shared by Materials, Recipes
+                          and Inventory
       toast.js            the undo toast, which follows an open dialog
       theme.js            parchment or leather, remembered per device
       main.js             boot and hash routing
@@ -278,7 +283,8 @@ hand.
       device.js           which browser on which system, for backups' names
                           and the install steps
       install.js          the browser's install prompt, kept for Settings
-      version.js          the release number and date, read by sw.js too
+      version.js          the release number and date, read by sw.js too;
+                          on a page it fills in the masthead's version
       notice.js           a one-time notice to returning visitors after an
                           update (switched off with ACTIVE = false)
       mode-toggle-early.js
@@ -552,13 +558,13 @@ batch as Inventory does: here you are logging one thing and looking straight
 at the result. In personal mode a station with nothing left to make still
 shows, as *needs no more*, since you may be holding some there to sell.
 
-The tabs are Animal Materials, Plants and Supplies — a hunting trip, a walk,
+The tabs are Animal Materials, Plants and Others — a hunting trip, a walk,
 and a shop or a detour — each carrying the count that matches the current
 filters, so a search that landed on another tab is visible rather than lost.
-Supplies holds ammunition and throwables, liquor, and the misc items. The
-category filter lists the animal parts (Pelt, Hide, Meat, Fat, Feather, …) and
-the three kinds of supply, which have no part; picking a category also
-switches to the tab its materials are on.
+Others holds the supplies: ammunition and throwables, liquor, and the misc
+items. The category filter lists the animal parts (Pelt, Hide, Meat, Fat,
+Feather, …) and the three kinds of supply, which have no part; picking a
+category also switches to the tab its materials are on.
 
 A material used in campfire recipes gets a **Campfire** block on its card
 showing how many you hold in the Satchel, and a Campfire row in the dialog —
@@ -619,8 +625,14 @@ at *that* station: a material two recipes want still shows for the other one.
 ### Filtering and sorting
 
 Both galleries share one toolbar: the search box on a row of its own, then a
-category dropdown, the stations in the order Pearson, Trapper, Fence, the
-personal filters, and the sort, all left-aligned, with the count on the right.
+category dropdown headed **Filters**, the stations in the order Pearson,
+Trapper, Fence, the personal filters, and the sort, all left-aligned, with the
+count on the right. Inventory has the same search box, Filters and sort. A
+single rule separates each group of filters from the one before it, and a
+double rule sets off the sort, which orders the list rather than narrowing it.
+A group that wraps to the start of a line drops its rule there: CSS cannot see
+a wrap, so `toolbar.wireRules` marks it `.line-start`, measuring with every
+rule showing so a group cannot flicker between the two.
 The Materials search matches a material's name, and the animals it comes from
 from the start of a word, so *wolf* finds Big Game Meat as well as the wolf
 pelts and *perch* finds Flaky Fish Meat, while *ox* finds Prime Beef Joint
@@ -745,6 +757,16 @@ the transaction rather than halfway through it, and rows naming materials this
 build does not know are reported rather than swallowed, since the ledger stores
 slugs with no foreign key. The sorts are replaced with the rest, once the data
 has landed; a backup from before they were carried leaves the device's own.
+
+**Offline** says whether the guide is cached for use without a signal, and
+which release that copy is. **Check for updates** asks the server for `sw.js`
+and, through it, `js/version.js`, and always says what it found: the latest
+version already, a newer one downloading now (then *ready, reload to start
+using it*, with a Reload button), one already downloaded and waiting on a
+reload, no connection, or a download that failed. A newer release installs as
+soon as it is found; the open page keeps the code and database it loaded
+until it is reloaded. The same tile says whether the browser has agreed to
+keep this site's data rather than clearing it on its own.
 
 **On your home screen**, a tile of its own just before **About** (which
 holds the two dialogs, the tool version, links to the source and to the

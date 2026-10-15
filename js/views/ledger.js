@@ -12,7 +12,7 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { detailHead, esc, pager, PAGE } from '../render.js';
+import { detailHead, empty, esc, pager, PAGE } from '../render.js';
 import { detailDialog } from '../dialog.js';
 
 // Plainer words than the schema's, which are written for the CHECK
@@ -61,7 +61,7 @@ export function ledgerDialog() {
         ? `<p class="note">Current stock is the sum of this. Newest first.</p>
            <div class="entries">${rows.map(entry).join('')}</div>
            ${pager(shown, total)}`
-        : '<p class="empty">Nothing logged yet.</p>'}`;
+        : empty('Nothing logged yet.')}`;
   }
 
   return {

@@ -17,7 +17,7 @@ import * as theme from '../theme.js';
 import { esc, plural, icon, stationIcon, stationColour, money, tallyRow } from '../render.js';
 import * as backup from '../backup.js';
 import * as install from '../install.js';
-import { toast } from '../toast.js';
+import { toast, offerReload } from '../toast.js';
 import { ledgerDialog } from './ledger.js';
 import { aboutDialog, howToDialog } from './guide.js';
 
@@ -98,6 +98,16 @@ function released(day) {
   if (Number.isNaN(at.getTime())) return day ?? 'unknown';
   return at.toLocaleDateString(undefined,
     { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
+// sw.js names its cache after the release it holds.
+const CACHE_PREFIX = 'rdr2-crafting-v';
+
+/** The release the offline copy holds, from its cache's name, or null. */
+async function cachedRelease() {
+  if (!('caches' in self)) return null;
+  const name = (await caches.keys()).find((n) => n.startsWith(CACHE_PREFIX));
+  return name ? name.slice(CACHE_PREFIX.length) : null;
 }
 
 function pluralCategory(category) {
@@ -413,19 +423,11 @@ export function mount(root) {
       pending = null;
       preview.innerHTML = '';
     } else if (event.target.id === 's-confirm' && pending) {
-      let found;
-      try {
-        found = await backup.restore(pending);
-      } catch (err) {
-        console.error(err);
-        toast(`That backup could not be loaded: ${err?.message ?? err}`);
-        return;
-      }
+      if (!(await backup.restoreAndSay(pending))) return;
       pending = null;
       preview.innerHTML = '';
       $('#s-paste').value = '';
       showPaste(false);
-      toast(`Restored ${plural(found.ledger, 'entry', 'entries')}.`);
     }
   });
 
@@ -454,12 +456,49 @@ export function mount(root) {
   // The masthead switch repaints itself off the same store change.
   $('#s-mode').addEventListener('click', () => store.setPersonal(!store.isPersonal()));
 
+  // A check asks the server for sw.js, and through it js/version.js:
+  // a new release number is a new worker, which installs straight away
+  // and says so when it is done (main.js offers the reload).  Each
+  // outcome is said out loud, or the button seems to do nothing --
+  // including a newer release that already landed while this page
+  // kept running the old one, which is waiting on a reload, not news.
   $('#s-update').addEventListener('click', async () => {
+    const button = $('#s-update');
     const registration = await navigator.serviceWorker?.getRegistration();
     if (!registration) return toast('Offline caching is not running.');
-    await registration.update();
-    toast('Checked. Any update installs on the next reload.');
+
+    button.disabled = true;
+    button.textContent = 'Checking…';
+    try {
+      await registration.update();
+    } catch {
+      return toast('Could not reach the site to check. Try again with a signal.');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Check for updates';
+    }
+
+    const incoming = registration.installing ?? registration.waiting;
+    if (!incoming) {
+      const cached = await cachedRelease();
+      if (cached && number && cached !== number) return offerReload(cached);
+      return toast(number
+        ? `You have the latest version (v${number}).`
+        : 'You have the latest version.');
+    }
+    toast('Found a newer version - downloading it now.');
+    incoming.addEventListener('statechange', () => {
+      if (incoming.state === 'redundant') {
+        toast('The update did not finish downloading. Try again later.');
+      }
+    });
   });
+
+  // The status line names the cache, so it follows a new one in.
+  const onWorker = (event) => {
+    if (event.data?.type === 'offline-ready') reportOffline();
+  };
+  navigator.serviceWorker?.addEventListener('message', onWorker);
 
   // Erasing asks twice, in place, rather than through a dialog box.
   $('#s-danger').addEventListener('click', async (event) => {
@@ -477,9 +516,14 @@ export function mount(root) {
     } else if (event.target.id === 's-reset-no') {
       resetDanger();
     } else if (event.target.id === 's-reset-yes') {
-      await store.reset();
+      try {
+        await store.reset();
+        toast('Erased.');
+      } catch (err) {
+        console.error(err);
+        toast('Could not erase - nothing was changed. Try again.');
+      }
       resetDanger();
-      toast('Erased.');
     }
   });
 
@@ -519,7 +563,6 @@ export function mount(root) {
     $('#s-mode').textContent = store.isPersonal()
       ? 'Switch to General' : 'Switch to Personalize';
 
-
     reportOffline();
     reportKept();
     ledger.refresh();
@@ -531,12 +574,9 @@ export function mount(root) {
       target.textContent = 'This browser cannot cache the app for offline use.';
       return;
     }
-    const names = await caches.keys();
-    const mine = names.filter((n) => n.startsWith('rdr2-'));
-
+    const cached = await cachedRelease();
     target.textContent = navigator.serviceWorker.controller
-      ? `Cached and ready to use without a signal${
-          mine.length ? ` (${mine[0]})` : ''}.`
+      ? `Cached and ready to use without a signal${cached ? ` (v${cached})` : ''}.`
       : 'Not cached yet - reload once while online.';
   }
 
@@ -582,6 +622,7 @@ export function mount(root) {
     update,
     destroy() {
       window.removeEventListener('rdr2:consent', paintAbout);
+      navigator.serviceWorker?.removeEventListener('message', onWorker);
       unsubscribe();
       unsubscribeInstall();
       ledger.destroy();

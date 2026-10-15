@@ -1,12 +1,13 @@
 // ============================================================
-// The gallery toolbar, shared by Materials and Recipes -- and the
-// category filter and sort, by Inventory too.
+// The toolbar, shared by Materials and Recipes -- and its search
+// box, category filter and sort by Inventory too.
 //
-// The two screens list different things, but they list them the
-// same way: a search box, chips that pick one thing, chips that
-// narrow to a subset, a sort field with a direction, and a pager
-// under the cards.  All of that was written twice, which is how
-// the two drifted -- one grew "Show less", the other did not.
+// The screens list different things, but they list them the same
+// way: a search box, a category under "Filters", chips that pick one
+// thing, chips that narrow to a subset, a sort field with a
+// direction, rules between those groups, and a pager under the
+// cards.  All of that was once written twice, which is how the two
+// drifted -- one grew "Show less", the other did not.
 //
 // Each function here is either markup or wiring, never both, so
 // a view still reads as "build this, then listen for that".
@@ -27,6 +28,18 @@ export function searchBox(id, placeholder) {
              autocomplete="off" spellcheck="false">
       <button type="button" class="search-clear detail-close" data-clear
               tabindex="-1" aria-label="Clear search" hidden>&times;</button>
+    </div>`;
+}
+
+/**
+ * The category dropdown, under the word that heads the filters.  Its
+ * options are filled later, by fillCategories, from what the other
+ * filters leave.
+ */
+export function categoryFilter(id) {
+  return `
+    <div class="filter">Filters
+      <select class="select" id="${esc(id)}" aria-label="Category"></select>
     </div>`;
 }
 
@@ -128,11 +141,9 @@ export function wireSearch(input, state, onChange) {
  * rather than calling back into the view directly, so it runs
  * through the exact same listener a keystroke would have -- state
  * and all -- instead of a second path that could clear the box
- * without clearing `state.search` to match.  Exported on its own for
- * Inventory, which wires its search box by hand instead of through
- * `wireSearch`.
+ * without clearing `state.search` to match.
  */
-export function wireClear(input) {
+function wireClear(input) {
   const clear = input.parentElement.querySelector('[data-clear]');
   if (!clear) return;
 
@@ -240,6 +251,17 @@ export const categoryOf = (m) =>
   [PLANT_KIND, ...SUPPLY_KINDS].find((k) => k.type === m.source_type)?.value
     ?? m.body_part;
 
+/**
+ * The Name sort every list offers, given how that list compares two
+ * of its rows by name.
+ */
+export const nameSort = (byName) => ({
+  label: 'Name',
+  fn: byName,
+  ways: { asc: 'A\u2013Z', desc: 'Z\u2013A' },
+  start: 'asc',
+});
+
 /** Legendary first: it is the rarest and the most annoying to go get. */
 const QUALITY_RANK = { Legendary: 0, Perfect: 1 };
 export const qualityRank = (m) => QUALITY_RANK[m.quality] ?? 2;
@@ -312,6 +334,47 @@ export function wireSort(root, id, sorts, state, onChange, name) {
     remember();
     onChange();
   });
+}
+
+/**
+ * The rules between the toolbar's groups (app.css) separate a group
+ * from the one before it on the same line.  Once the toolbar wraps, a
+ * group can start a line of its own, where its rule would only stick
+ * out of the margin -- so that group is marked `line-start`, and the
+ * rule goes.  CSS cannot see a wrap, hence this.
+ *
+ * Measured with every rule showing, so a group that only wrapped
+ * because of its rule is still called wrapped rather than flickering
+ * between the two.  Run again whenever the toolbar changes width, and
+ * by the view whenever a group is shown or hidden; the observer lets
+ * go once the page is gone.  Returns that re-run.
+ */
+export function wireRules(bar) {
+  const groups = [...bar.querySelectorAll(':scope > .chips, :scope > .sort')];
+  const mark = () => {
+    for (const g of groups) g.classList.remove('line-start');
+    const visible = [...bar.children].filter((el) => !el.hidden && el.offsetParent);
+    for (const g of groups) {
+      const at = visible.indexOf(g);
+      if (at < 0) continue;
+      // Back at or left of what came before it: it wrapped.
+      const left = g.getBoundingClientRect().left;
+      const before = at > 0 ? visible[at - 1].getBoundingClientRect().left : Infinity;
+      g.classList.toggle('line-start', left <= before);
+    }
+  };
+
+  let width = 0;
+  const watch = new ResizeObserver(([entry]) => {
+    if (!bar.isConnected) return watch.disconnect();
+    if (entry.contentRect.width === width) return;
+    width = entry.contentRect.width;
+    mark();
+  });
+  watch.observe(bar);
+  // The toolbar's faces load late and change every chip's width.
+  document.fonts?.ready.then(mark);
+  return mark;
 }
 
 /**

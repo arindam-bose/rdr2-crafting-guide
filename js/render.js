@@ -202,10 +202,18 @@ export function materialCard(material, { personal, expanded = false, done = fals
  * row can say is how many you hold where the fire cooks from.
  */
 function campfireRow(d) {
+  return plainDemand(icon('campfire'), heldAt(d.location_id, d.location), d.have, d.color);
+}
+
+/**
+ * A demand row with a bare number and no bar: what a station needs, in
+ * General, or what you hold for the campfire.  `label` is plain text.
+ */
+function plainDemand(mark, label, qty, colour) {
   return `
-    <div class="demand ${stationColour(d.color)}">
-      <span class="station">${icon('campfire')}${esc(heldAt(d.location_id, d.location))}:</span>
-      <span class="qty">${d.have}</span>
+    <div class="demand ${stationColour(colour)}">
+      <span class="station">${mark}${esc(label)}:</span>
+      <span class="qty">${qty}</span>
       <span></span>
     </div>`;
 }
@@ -391,13 +399,21 @@ function forQty(qty) {
   return qty > 1 ? `${qty}x for ` : '';
 }
 
+/**
+ * Where a recipe a material goes into stands, for its line in the card
+ * and the dialog alike: 'made', 'open', or 'plain' -- General, which
+ * tracks nothing, and a campfire recipe, which is never made.
+ */
+function usageState(u, personal) {
+  if (!personal || u.state === 'campfire') return 'plain';
+  return u.state === 'done' ? 'made' : 'open';
+}
+
 /** One recipe in the detail view, with its state spelled out. */
 function recipeLine(u, personal) {
   // Crafted and not crafted are the checkbox, exactly as Recipes
   // stamps a card once it is made.
-  const state = !personal || u.state === 'campfire' ? 'plain'
-    : u.state === 'done' ? 'made'
-    : 'open';
+  const state = usageState(u, personal);
 
   const mark = state === 'made' ? checkbox(true)
     : state === 'open' ? checkbox(false)
@@ -487,7 +503,7 @@ function stockLine(d, personal) {
       <span class="stepper">
         <button type="button" data-delta="-1" data-key="${esc(d.station_id)}-less"
                 ${d.have <= 0 ? 'disabled' : ''}
-                aria-label="One fewer with ${esc(place)}">-</button>
+                aria-label="Take one from ${esc(place)}">-</button>
         <button type="button" class="add" data-delta="1" data-key="${esc(d.station_id)}-more"
                 aria-label="Add one to ${esc(place)}">+ Add to ${esc(d.location)}</button>
       </span>
@@ -565,9 +581,7 @@ function usedIn(usage = [], personal, expanded = false) {
   const over = usage.length > USAGE_SHOWN;
 
   const line = (u) => {
-    const state = !personal || u.state === 'campfire' ? 'plain'
-      : u.state === 'done' ? 'made'
-      : 'open';
+    const state = usageState(u, personal);
     // Made and open are the same checkbox the card corners use, checked
     // or not; plain has no such icon, so it stays type -- alone in a
     // .mark span with its own font stack, so the typewriter face not
@@ -590,7 +604,7 @@ function usedIn(usage = [], personal, expanded = false) {
     <li class="more">
       <button type="button" class="more-link" data-expand
               aria-expanded="${expanded}">${
-        expanded ? 'Show fewer' : `and ${rest} more`}</button>
+        expanded ? 'Show less' : `and ${rest} more`}</button>
     </li>`;
 
   // Captioned: with a single entry -- which is every misc material,
@@ -609,20 +623,12 @@ function usedIn(usage = [], personal, expanded = false) {
  * "Pearson: 0/2", the station's colour down the left edge.
  */
 function demandRow(d, personal) {
-  const colour = stationColour(d.color);
-
-  if (!personal) {
-    return `
-      <div class="demand ${colour}">
-        <span class="station">${icon(stationIcon(d.station_id))}${esc(d.station)}:</span>
-        <span class="qty">${d.needed}</span>
-        <span></span>
-      </div>`;
-  }
+  const mark = icon(stationIcon(d.station_id));
+  if (!personal) return plainDemand(mark, d.station, d.needed, d.color);
 
   const enough = d.have >= d.needed;
   return tallyRow({
-    label: d.station, mark: icon(stationIcon(d.station_id)), colour,
+    label: d.station, mark, colour: stationColour(d.color),
     count: d.have, total: d.needed, countClass: enough ? 'have' : 'short',
     short: !enough, aria: `${d.have} of ${d.needed} for ${d.station}`,
     pct: d.needed ? Math.min(100, Math.round((d.have / d.needed) * 100)) : 100,

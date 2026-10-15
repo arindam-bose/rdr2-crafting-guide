@@ -25,8 +25,8 @@ export function open() {
 async function boot() {
   const [SQL, bytes, schema] = await Promise.all([
     initSqlJs({ locateFile: (file) => `vendor/${file}` }),
-    fetchBuffer(REFERENCE_URL),
-    fetchText(PERSONAL_SCHEMA_URL),
+    fetchOk(REFERENCE_URL).then((res) => res.arrayBuffer()),
+    fetchOk(PERSONAL_SCHEMA_URL).then((res) => res.text()),
   ]);
 
   db = new SQL.Database(new Uint8Array(bytes));
@@ -34,16 +34,11 @@ async function boot() {
   return db;
 }
 
-async function fetchBuffer(url) {
+/** The response, once it is known to be one: a 404 is an error here, not a body. */
+async function fetchOk(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${url}: ${res.status} ${res.statusText}`);
-  return res.arrayBuffer();
-}
-
-async function fetchText(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`${url}: ${res.status} ${res.statusText}`);
-  return res.text();
+  return res;
 }
 
 // ------------------------------------------------------------
