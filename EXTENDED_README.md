@@ -170,8 +170,9 @@ once cached it was served for good. Only clearing the site's data cleared it.
 1.0.2 fixed the service worker, and `js/notice.js` tells each returning visitor
 once what to do if a page still errors: reload, or back up, clear the site's
 data, and restore. It is only shown to someone who had been here before, read
-from storage before this visit writes to it. Set its `ACTIVE` to `false` once
-it has run its course.
+from storage before this visit writes to it. It has run its course, and its
+`ACTIVE` is now `false`; set it back to `true` for a future notice of the same
+kind.
 
 ## Search pages
 
@@ -756,6 +757,16 @@ the transaction rather than halfway through it, and rows naming materials this
 build does not know are reported rather than swallowed, since the ledger stores
 slugs with no foreign key. The sorts are replaced with the rest, once the data
 has landed; a backup from before they were carried leaves the device's own.
+
+**Offline** says whether the guide is cached for use without a signal, and
+which release that copy is. **Check for updates** asks the server for `sw.js`
+and, through it, `js/version.js`, and always says what it found: the latest
+version already, a newer one downloading now (then *ready, reload to start
+using it*, with a Reload button), one already downloaded and waiting on a
+reload, no connection, or a download that failed. A newer release installs as
+soon as it is found; the open page keeps the code and database it loaded
+until it is reloaded. The same tile says whether the browser has agreed to
+keep this site's data rather than clearing it on its own.
 
 **On your home screen**, a tile of its own just before **About** (which
 holds the two dialogs, the tool version, links to the source and to the
