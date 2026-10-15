@@ -9,9 +9,9 @@ Usage:
 The workbook is the database, a sheet to a table: each sheet has the
 table's name and its columns, and every row goes in as it stands, ids
 included.  Corrections are made there, never in rdr2.db, which every
-build replaces.  Two sheets are not tables of their own: 'alcohols' and
-'collectables' are the wiki links for the ingredients of those kinds,
-and fill ingredients.link.
+build replaces.  Three sheets are not tables of their own: 'ammo',
+'alcohols' and 'collectables' are the wiki links for the ingredients of
+those kinds, and fill ingredients.link.
 
 Anything the database would refuse -- an id used twice, a reference to
 a row that is not there, a value outside its column's CHECK -- is an
@@ -106,7 +106,7 @@ CREATE TABLE sets (
     set_type  TEXT NOT NULL CHECK (set_type IN ('merchant','outfit','camp_area'))
 );
 
--- things you collect.  link is the wiki page of a liquor or a
+-- things you collect.  link is the wiki page of ammo, a liquor or a
 -- collectable; an animal material or a plant links through its
 -- animals or plants instead.
 CREATE TABLE ingredients (
@@ -199,6 +199,7 @@ TABLES = {
 
 # sheets of ingredient links: sheet -> the source_type its rows must have
 LINK_SHEETS = {
+    "ammo":         "ammo",
     "alcohols":     "alcohol",
     "collectables": "collectable",
 }

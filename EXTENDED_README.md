@@ -119,8 +119,8 @@ the live site does.
 Its one source is `data/raw/rdr2_crafting.xlsx`, which is the database a sheet
 to a table: each sheet has a table's name and its columns, and every row goes in
 as it stands, ids included. Pass another path to build from a different
-workbook. Two sheets are not tables of their own: `alcohols` and `collectables`
-hold the wiki `link` for the ingredients of those kinds, and fill
+workbook. Three sheets are not tables of their own: `ammo`, `alcohols` and
+`collectables` hold the wiki `link` for the ingredients of those kinds, and fill
 `ingredients.link`.
 
 Corrections go in the workbook, never in `rdr2.db` — every build replaces the
