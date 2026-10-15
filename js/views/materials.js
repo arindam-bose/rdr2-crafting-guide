@@ -6,7 +6,7 @@
 // the rest, where stock can be logged a tap at a time.  Three
 // tabs, because the three are collected in completely different
 // ways: animal materials are a hunting trip, plants a walk, and
-// supplies -- ammunition, liquor, the odd trinket -- a shop or a
+// the others -- ammunition, liquor, the odd trinket -- a shop or a
 // detour.  Each tab carries the count that matches the current
 // filters, so what is on the others is never a surprise.
 //
@@ -30,7 +30,7 @@ import * as toolbar from './toolbar.js';
 const GROUPS = [
   { id: 'animal',   title: 'Animal Materials', types: ['animal'], icon: 'animals' },
   { id: 'plant',    title: 'Plants',           types: ['plant'], icon: 'plants' },
-  { id: 'supplies', title: 'Supplies',         types: ['ammo', 'alcohol', 'misc'], icon: 'supplies' },
+  { id: 'supplies', title: 'Others',           types: ['ammo', 'alcohol', 'misc'], icon: 'supplies' },
 ];
 const groupOf = (card) =>
   GROUPS.find((g) => g.types.includes(card.source_type))?.id;

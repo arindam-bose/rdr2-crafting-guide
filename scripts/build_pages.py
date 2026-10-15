@@ -62,7 +62,7 @@ KIND_LABEL = {
 GROUPS = [
     ('Animal materials', ('animal',)),
     ('Plants', ('plant',)),
-    ('Supplies', ('ammo', 'alcohol', 'misc')),
+    ('Others', ('ammo', 'alcohol', 'misc')),
 ]
 STATION_ICON = {
     'station-pearson': 'pearson', 'station-trapper': 'trapper',
