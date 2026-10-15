@@ -1,33 +1,24 @@
 #!/usr/bin/env python3
 """
-Build rdr2.db from the Notion 'RDR2 Databases' CSV export, the
-campfire-recipe workbook, and a patch workbook of corrections.
+Build rdr2.db from the crafting workbook, data/raw/rdr2_crafting.xlsx.
 
 Usage:
-    python3 build_db.py [export_dir] [-c workbook.xlsx] [-p patch.xlsx]
-                        [-o data/rdr2.db] [--check-ids data/rdr2.db]
+    python3 build_db.py [workbook.xlsx] [-o data/rdr2.db]
+                        [--check-ids data/rdr2.db]
 
-[export_dir] is the folder holding the five exported CSVs, renamed
-without Notion's hash: Animals.csv, Animal Materials.csv, Misc
-Materials.csv, Craftable Items.csv, Recipe Ingredients.csv.  It
-defaults to data/raw, where the workbook lives too.
+The workbook is the database, a sheet to a table: each sheet has the
+table's name and its columns, and every row goes in as it stands, ids
+included.  Corrections are made there, never in rdr2.db, which every
+build replaces.  Two sheets are not tables of their own: 'alcohols' and
+'collectables' are the wiki links for the ingredients of those kinds,
+and fill ingredients.link.
 
-The workbook holds the consumable recipes -- made at your own campfire,
-as often as you have the ingredients -- and four index sheets of the
-ingredients they call for.
-
-The patch workbook is applied last, and is where the reference data is
-corrected rather than in the database itself, which every build
-replaces.  Its 'animals' sheet updates animals by id -- name, weapon,
-bait for the fish, a wiki link -- and adds any it names that are new.
-Its 'ingredient_animals' sheet is the whole of that table: the build
-reports every link it adds or drops against what the other sources
-said.  Its 'recipes' sheet renames recipes by id, the same way
-'animals' does, without touching the id a name change would otherwise
-produce.  Its 'plants' sheet is every plant -- id, name, a wiki
-link -- and 'ingredient_plants' says which plant ingredient each is
-picked for: one plant for most, several for the ones the satchel keeps
-under a general name (Currant, Sage, Ginseng).
+Anything the database would refuse -- an id used twice, a reference to
+a row that is not there, a value outside its column's CHECK -- is an
+error, reported with its sheet and row, and the build fails.  What it
+would take but is probably a slip -- a warmth rank its description does
+not bear out, a fish with no bait, a plant picked for nothing -- is a
+warning, and the build goes ahead.
 
 --check-ids names an earlier build.  Every ingredient, recipe and
 location id in it must still be produced, because the personal layer
@@ -40,7 +31,6 @@ Requires: pandas, openpyxl.  Everything else is the standard library.
 import argparse
 import datetime
 import os
-import re
 import sqlite3
 import sys
 
@@ -51,39 +41,12 @@ import pandas as pd
 # --------------------------------------------------------------------------
 
 # Bumped when the shape of the generated database changes.
-SCHEMA_VERSION = "4"
+SCHEMA_VERSION = "5"
 
-# where materials are stored
-LOCATIONS = ["Satchel", "Trapper", "Pearson"]
-
-# crafting station -> (kind, card colour, stock it draws from)
-STATIONS = {
-    "Trapper":  ("merchant", "blue",   "Trapper"),
-    "Pearson":  ("merchant", "yellow", "Pearson"),
-    "Fence":    ("merchant", "pink",   "Satchel"),
-    "Campfire": ("campfire", "green",  "Satchel"),
-}
-
-# workbook sheet -> ingredients.source_type for the rows it lists
-INGREDIENT_SHEETS = {
-    "animal-ingredients":  "animal",
-    "weapon-ingredients":  "ammo",
-    "plant-ingredients":   "plant",
-    "alcohol-ingredients": "alcohol",
-}
-
-# what part of the animal a workbook material is, from its last word;
-# the Notion materials name theirs in a column of their own
-BODY_PARTS = {
-    "Meat": "Meat", "Mutton": "Meat", "Loin": "Meat", "Joint": "Meat",
-    "Fat": "Fat", "Feather": "Feather", "Glands": "Gland",
-}
-
-# ordinal warmth scale, derived from the description text at build time.
+# ordinal warmth scale, which a clothing description states in words.
 # Keyed on the phrase itself rather than the full sentence around it, so
 # the boilerplate that follows -- "pair with other warm items...", which
-# has changed wording before -- can keep changing without silently
-# dropping warmth_rank to NULL; see warmth_of below.
+# has changed wording before -- can keep changing; see warmth_of below.
 WARMTH = {
     "lightweight":     0,
     "slightly warm":   1,
@@ -92,15 +55,7 @@ WARMTH = {
     "very warm":       4,
 }
 
-# typos in the source data, corrected on import
-TEXT_FIXES = {
-    "Increases Stamina XP bounus by 10%": "Increases Stamina XP bonus by 10%",
-    "Increases Heath XP by 10%":          "Increases Health XP by 10%",
-}
-
 SCHEMA = """
-PRAGMA foreign_keys = ON;
-
 -- Stamped at build time so the app can say which reference data it
 -- is showing, and an export can record which build it came from.
 CREATE TABLE meta (
@@ -108,21 +63,23 @@ CREATE TABLE meta (
     value  TEXT NOT NULL
 );
 
--- Every id is a prefixed slug derived from the row's name: stable across
--- rebuilds, self-describing wherever it turns up loose (URLs, the personal
--- layer's ledger, logs).
+-- Every id is a prefixed slug, stable across rebuilds and
+-- self-describing wherever it turns up loose (URLs, the personal
+-- layer's ledger, logs).  Most are the row's name; one kept when the
+-- name was later corrected is not (animal-bear is the Grizzly Bear).
 
 CREATE TABLE weapons (
     id    TEXT PRIMARY KEY,          -- weapon-sniper-rifle
-    name  TEXT NOT NULL UNIQUE
+    name  TEXT NOT NULL UNIQUE,
+    link  TEXT                       -- the weapon's wiki page
 );
 
 -- An animal is hunted with a weapon, or -- a fish -- caught with a bait
--- or lure; bait is free text ("River lures, Worm, Cricket").  The id
--- stays put when a name is corrected (animal-bear is the Grizzly Bear).
+-- or lure; bait is free text ("River lures, Worm, Cricket").
 CREATE TABLE animals (
     id         TEXT PRIMARY KEY,     -- animal-bear
     name       TEXT NOT NULL UNIQUE,
+    type       TEXT NOT NULL CHECK (type IN ('animal','bird','fish')),
     weapon_id  TEXT REFERENCES weapons(id),
     bait       TEXT,
     link       TEXT                  -- the animal's wiki page
@@ -149,14 +106,17 @@ CREATE TABLE sets (
     set_type  TEXT NOT NULL CHECK (set_type IN ('merchant','outfit','camp_area'))
 );
 
--- things you collect
+-- things you collect.  link is the wiki page of a liquor or a
+-- collectable; an animal material or a plant links through its
+-- animals or plants instead.
 CREATE TABLE ingredients (
     id           TEXT PRIMARY KEY,   -- ing-perfect-beaver-pelt
     name         TEXT NOT NULL UNIQUE,
     source_type  TEXT NOT NULL
-                 CHECK (source_type IN ('animal','misc','plant','ammo','alcohol')),
+                 CHECK (source_type IN ('animal','collectable','plant','ammo','alcohol')),
     quality      TEXT CHECK (quality IN ('Perfect','Legendary')),
-    body_part    TEXT
+    body_part    TEXT,
+    link         TEXT
 );
 
 -- which animals a material comes from: one for a pelt, a dozen for fat
@@ -195,7 +155,7 @@ CREATE TABLE recipes (
     set_id       TEXT REFERENCES sets(id),
     price_cents  INTEGER NOT NULL DEFAULT 0,
     description  TEXT,
-    warmth_rank  INTEGER,            -- derived from description at build time
+    warmth_rank  INTEGER,            -- what the description says, as a number
     repeatable   INTEGER NOT NULL DEFAULT 0 CHECK (repeatable IN (0,1))
 );
 
@@ -220,51 +180,91 @@ CREATE INDEX idx_ri_slot            ON recipe_ingredients(recipe_id, slot);
 CREATE INDEX idx_ri_ingredient      ON recipe_ingredients(ingredient_id);
 """
 
+# The tables the workbook fills, in the order they are loaded: each
+# before any that refers to it.  table -> (id prefix, integer columns).
+# The columns themselves are the table's own, read from SCHEMA.
+TABLES = {
+    "locations":          ("loc-",     ()),
+    "stations":           ("station-", ()),
+    "weapons":            ("weapon-",  ()),
+    "animals":            ("animal-",  ()),
+    "sets":               ("set-",     ()),
+    "ingredients":        ("ing-",     ()),
+    "ingredient_animals": (None,       ()),
+    "plants":             ("plant-",   ()),
+    "ingredient_plants":  (None,       ()),
+    "recipes":            ("recipe-",  ("price_cents", "warmth_rank", "repeatable")),
+    "recipe_ingredients": (None,       ("slot", "qty")),
+}
+
+# sheets of ingredient links: sheet -> the source_type its rows must have
+LINK_SHEETS = {
+    "alcohols":     "alcohol",
+    "collectables": "collectable",
+}
+
 # --------------------------------------------------------------------------
-# parsing helpers
+# reading the workbook
 # --------------------------------------------------------------------------
 
-# Notion exports relations as:  Name (https://app.notion.com/p/Slug-hex?pvs=21)
-RELATION_RE = re.compile(r"([^,][^(]*?)\s*\(https?://[^)]+\)")
 
-
-def parse_relation(cell):
-    """Return the linked page names in a Notion relation cell."""
-    if pd.isna(cell):
-        return []
-    return [m.strip() for m in RELATION_RE.findall(str(cell))]
-
-
-def clean(text):
-    """Normalise curly apostrophes so 'Trapper's' matches everywhere."""
-    if pd.isna(text):
+def cell(value):
+    """
+    A spreadsheet cell as a value: None for empty, trimmed text otherwise.
+    Curly apostrophes are straightened so 'Trapper's' matches everywhere,
+    and a non-breaking space -- which a name pasted from the web brings
+    with it, and which makes two names look alike that do not match --
+    becomes a plain one.
+    """
+    if value is None or pd.isna(value):
         return None
-    return str(text).replace("\u2019", "'").strip()
+    text = str(value).replace("’", "'").replace(" ", " ").strip()
+    return text or None
 
 
-def parse_price(cell):
-    """'$40.00' -> 4000 ; blank or '$0.00' -> 0"""
-    if pd.isna(cell):
-        return 0
-    digits = re.sub(r"[^0-9.]", "", str(cell))
-    return int(round(float(digits) * 100)) if digits else 0
+def whole(value):
+    """Empty, or a whole number however the spreadsheet wrote it."""
+    try:
+        return value is None or float(value).is_integer()
+    except ValueError:
+        return False
 
 
-def unbullet(text):
+def integer(value):
+    """'4000' or '4000.0' -> 4000 ; None stays None.  See whole()."""
+    return None if value is None else int(float(value))
+
+
+def columns_of(db, table):
+    return [c[1] for c in db.execute(f"PRAGMA table_info({table})")]
+
+
+def read_sheet(book, sheet, columns, errors):
     """
-    Notion writes a multi-line buff as a bulleted list, indenting every item
-    after the first: '\u2022 A\n  \u2022 B'.  Keep the list and drop the
-    typography, one item per line with no marker.
-
-    The bullet is a character the app cannot set -- the page is typed in a
-    typewriter face with a typewriter's 152 glyphs -- and it was never
-    content in the first place.  The Recipes page puts markers back as a
-    <ul>, which is what this always was.
+    The sheet's rows as dicts of the given columns, each with the
+    spreadsheet row it came from under '_row'.  A missing sheet or
+    column is an error; a column the table does not have is ignored.
+    Rows with nothing in them are skipped.
     """
-    if "\u2022" not in text:
-        return text
-    return "\n".join(part for part in
-                     (p.strip() for p in text.split("\u2022")) if part)
+    if sheet not in book:
+        errors.append(f"no {sheet!r} sheet")
+        return []
+    df = book[sheet]
+    missing = [c for c in columns if c not in df.columns]
+    if missing:
+        errors.append(f"{sheet}: no column {', '.join(map(repr, missing))}")
+        return []
+    rows = []
+    for i, r in df.iterrows():
+        row = {c: cell(r[c]) for c in columns}
+        if any(v is not None for v in row.values()):
+            row["_row"] = i + 2                   # 1-based, after the header
+            rows.append(row)
+    return rows
+
+
+def where(sheet, row):
+    return f"{sheet} row {row['_row']}"
 
 
 def warmth_of(text):
@@ -278,121 +278,12 @@ def warmth_of(text):
     return None
 
 
-def parse_description(buff):
-    """
-    Keep the Notion 'Buff' text, less its bullet characters, and derive an
-    ordinal warmth rank where one applies.  The text stays the single source
-    of truth; the rank is recomputed on every build.
-    """
-    if pd.isna(buff) or not str(buff).strip():
-        return None, None
-    text = str(buff).strip()
-    text = TEXT_FIXES.get(text, text)
-    text = unbullet(text)
-    return text, warmth_of(text)
-
-
-def mkid(prefix, name):
-    """('ing', 'Perfect Beaver Pelt') -> 'ing-perfect-beaver-pelt'.
-
-    Derived from the name rather than a counter, so ids survive rows being
-    added, removed or reordered in the source CSVs.  The personal layer
-    lives in a different database file and cannot use foreign keys against
-    these rows, so it stores these strings."""
-    slug = re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", name.lower())).strip("-")
-    return f"{prefix}-{slug}"
-
-
-def classify_set(name, categories):
-    """merchant collection / wearable outfit / camp area"""
-    if name.endswith("Collection"):
-        return "merchant"
-    if categories == {"Camp"}:
-        return "camp_area"
-    return "outfit"
-
-
-# one line of a workbook recipe:  '2x (Currant / Prairie Poppy)'
-SLOT_RE = re.compile(r"^(\d+)\s*x\s+(.+)$")
-
-
-def balanced(text):
-    """Every bracket closes, and none closes before it opens."""
-    depth = 0
-    for ch in text:
-        depth += {"(": 1, ")": -1}.get(ch, 0)
-        if depth < 0:
-            return False
-    return depth == 0
-
-
-def closes_at_end(text):
-    """'(A / B)' -> True ; '(A) / (B)' -> False: the first bracket's pair
-    is the last character, so the brackets wrap the whole of it."""
-    depth = 0
-    for i, ch in enumerate(text):
-        depth += {"(": 1, ")": -1}.get(ch, 0)
-        if depth == 0:
-            return i == len(text) - 1
-    return False
-
-
-def parse_slots(cell):
-    """
-    '1x Arrow + 2x (Eagle Feather / Hawk Feather)'
-        -> [(1, ['Arrow']), (2, ['Eagle Feather', 'Hawk Feather'])]
-
-    Returns (slots, problems); a part that does not parse is reported
-    rather than guessed at.
-    """
-    slots, problems = [], []
-    for part in str(cell).split("+"):
-        part = " ".join(part.split())
-        if not part:
-            continue
-        m = SLOT_RE.match(part)
-        if not m:
-            problems.append(part)
-            continue
-        # Brackets around the whole choice go; any inside a name stay.
-        # A bracket left open or closed twice is a typo in the sheet, and
-        # would otherwise end up inside a name, so it is reported too.
-        choice = m.group(2).strip()
-        if not balanced(choice):
-            problems.append(part)
-            continue
-        if choice.startswith("(") and closes_at_end(choice):
-            choice = choice[1:-1]
-        options = [clean(o) for o in choice.split("/")]
-        slots.append((int(m.group(1)), [o for o in options if o]))
-    return slots, problems
-
-
-def split_list(cell):
-    """'a, b, c' -> ['a', 'b', 'c'] ; blank -> []"""
-    if pd.isna(cell):
-        return []
-    return [clean(x) for x in str(cell).split(",") if clean(x)]
-
-
-def load(export_dir, stem):
-    """Load one exported CSV by name: 'Animals' -> Animals.csv."""
-    path = os.path.join(export_dir, stem + ".csv")
-    if not os.path.exists(path):
-        sys.exit(f"error: no {stem}.csv in {export_dir}")
-    return pd.read_csv(path)
-
-
 # --------------------------------------------------------------------------
 # build
 # --------------------------------------------------------------------------
 
-def build(export_dir, consumables, patch, out_path):
-    animals_df  = load(export_dir, "Animals")
-    animal_mat  = load(export_dir, "Animal Materials")
-    misc_mat    = load(export_dir, "Misc Materials")
-    craftable   = load(export_dir, "Craftable Items")
-    ing_rows    = load(export_dir, "Recipe Ingredients")
+def build(workbook, out_path):
+    book = pd.read_excel(workbook, sheet_name=None, dtype=str)
 
     if os.path.dirname(out_path):
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
@@ -401,411 +292,140 @@ def build(export_dir, consumables, patch, out_path):
 
     db = sqlite3.connect(out_path)
     db.executescript(SCHEMA)
-    warnings, added = [], []
+    errors, warnings = [], []
 
-    # ---- meta ---------------------------------------------------------
     db.executemany("INSERT INTO meta(key, value) VALUES (?,?)", [
         ("schema_version", SCHEMA_VERSION),
         ("built_at", datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d")),
-        ("source", "Notion 'RDR2 Databases' export"
-                   + (f" + {os.path.basename(consumables)}" if consumables else "")
-                   + (f" + {os.path.basename(patch)}" if patch else "")),
+        ("source", os.path.basename(workbook)),
     ])
 
-    # ---- weapons ------------------------------------------------------
-    db.executemany("INSERT INTO weapons(id, name) VALUES (?,?)",
-                   [(mkid("weapon", w), w)
-                    for w in sorted({w.strip()
-                                     for w in animals_df["Weapon"].dropna()})])
-    weapon_id = dict(db.execute("SELECT name, id FROM weapons"))
-
-    # ---- animals ------------------------------------------------------
-    db.executemany(
-        "INSERT INTO animals(id, name, weapon_id) VALUES (?,?,?)",
-        [(mkid("animal", clean(r["Animal Name"])), clean(r["Animal Name"]),
-          weapon_id.get(str(r["Weapon"]).strip()))
-         for _, r in animals_df.iterrows()])
-    animal_id = dict(db.execute("SELECT name, id FROM animals"))
-
-    # ---- locations and stations ---------------------------------------
-    db.executemany("INSERT INTO locations(id, name) VALUES (?,?)",
-                   [(mkid("loc", n), n) for n in LOCATIONS])
-    location_id = dict(db.execute("SELECT name, id FROM locations"))
-    db.executemany(
-        "INSERT INTO stations(id, name, kind, color, location_id) "
-        "VALUES (?,?,?,?,?)",
-        [(mkid("station", n), n, k, c, location_id[loc])
-         for n, (k, c, loc) in STATIONS.items()])
-    station_id = dict(db.execute("SELECT name, id FROM stations"))
-
-    # ---- sets ----------------------------------------------------------
-    craftable["_set"] = craftable["Set"].map(clean)
-    for name, cats in craftable.groupby("_set")["Category"].apply(set).items():
-        db.execute("INSERT INTO sets(id, name, set_type) VALUES (?,?,?)",
-                   (mkid("set", name), name, classify_set(name, cats)))
-    set_id = dict(db.execute("SELECT name, id FROM sets"))
-
-    # ---- ingredients: animal materials ---------------------------------
-    for _, r in animal_mat.iterrows():
-        name = clean(r["Material Name"])
-        quality = r.get("Quality")
-        db.execute(
-            "INSERT INTO ingredients(id, name, source_type, quality, "
-            "body_part) VALUES (?,?,'animal',?,?)",
-            (mkid("ing", name), name,
-             quality if quality in ("Perfect", "Legendary") else None,
-             clean(r.get("Body Part"))))
-        for source in parse_relation(r.get("Animals")):
-            aid = animal_id.get(clean(source))
-            if aid is None:
-                warnings.append(f"{name!r}: unknown animal {source!r}")
+    # ---- the tables, a sheet each ---------------------------------------
+    # Loaded with foreign keys off and checked all at once afterwards, so
+    # every dangling reference is reported, with its row, rather than
+    # the first one stopping the build.
+    for table, (prefix, integers) in TABLES.items():
+        columns = columns_of(db, table)
+        if table == "ingredients":
+            columns.remove("link")                  # filled from LINK_SHEETS
+        for row in read_sheet(book, table, columns, errors):
+            here = where(table, row)
+            if prefix and row["id"] and not row["id"].startswith(prefix):
+                errors.append(f"{here}: id {row['id']!r} does not start "
+                              f"with {prefix!r}")
                 continue
-            db.execute("INSERT OR IGNORE INTO ingredient_animals"
-                       "(ingredient_id, animal_id) VALUES (?,?)",
-                       (mkid("ing", name), aid))
+            bad = [c for c in integers if not whole(row[c])]
+            if bad:
+                errors.append(f"{here}: {', '.join(f'{c} {row[c]!r}' for c in bad)}"
+                              " is not a whole number")
+                continue
+            values = [integer(row[c]) if c in integers else row[c]
+                      for c in columns]
+            try:
+                db.execute(f"INSERT INTO {table}({', '.join(columns)}) "
+                           f"VALUES ({', '.join('?' * len(columns))})", values)
+            except sqlite3.IntegrityError as e:
+                errors.append(f"{here}: {e}")
 
-    # ---- ingredients: misc ----------------------------------------------
-    db.executemany(
-        "INSERT INTO ingredients(id, name, source_type) VALUES (?,?,'misc')",
-        [(mkid("ing", clean(r["Item Name"])), clean(r["Item Name"]))
-         for _, r in misc_mat.iterrows()])
-    ingredient_id = dict(db.execute("SELECT name, id FROM ingredients"))
+    for table, rowid, parent, fk in db.execute(
+            "PRAGMA foreign_key_check").fetchall():
+        # The rowid is the order the row went in, not its spreadsheet
+        # row, so name the row by its key instead.
+        column = next(f[3] for f in db.execute(f"PRAGMA foreign_key_list({table})")
+                      if f[0] == fk)
+        row = dict(zip(columns_of(db, table), db.execute(
+            f"SELECT * FROM {table} WHERE rowid = ?", (rowid,)).fetchone()))
+        key = row.get("id") or row.get("recipe_id") or row["ingredient_id"]
+        errors.append(f"{table} {key}: {column} {row[column]!r} is not in "
+                      f"{parent}")
+
+    # ---- ingredient links -----------------------------------------------
+    kinds = dict(db.execute("SELECT id, source_type FROM ingredients"))
+    names = dict(db.execute("SELECT id, name FROM ingredients"))
+    linked = set()
+    for sheet, source_type in LINK_SHEETS.items():
+        for row in read_sheet(book, sheet, ["id", "name", "link"], errors):
+            here, iid = where(sheet, row), row["id"]
+            if iid not in kinds:
+                errors.append(f"{here}: no ingredient {iid!r}")
+                continue
+            if kinds[iid] != source_type:
+                errors.append(f"{here}: {iid} is a {kinds[iid]} ingredient, "
+                              f"not {source_type}")
+                continue
+            if iid in linked:
+                errors.append(f"{here}: {iid} is linked twice")
+                continue
+            if row["name"] != names[iid]:
+                warnings.append(f"{here}: {iid} is {names[iid]!r} in "
+                                f"ingredients, {row['name']!r} here")
+            linked.add(iid)
+            db.execute("UPDATE ingredients SET link = ? WHERE id = ?",
+                       (row["link"], iid))
+    for sheet, source_type in LINK_SHEETS.items():
+        for iid in sorted(i for i, k in kinds.items()
+                          if k == source_type and i not in linked):
+            warnings.append(f"{iid} is not in {sheet}: no link")
+
+    check(db, warnings)
+    db.commit()
+    return db, errors, warnings
+
+
+def check(db, warnings):
+    """What the database takes but is probably a slip in the workbook."""
+    q = lambda sql: db.execute(sql).fetchall()
+
+    # ---- animals ---------------------------------------------------------
+    for name, kind, weapon, bait in q(
+            "SELECT name, type, weapon_id, bait FROM animals ORDER BY id"):
+        if kind == "fish" and not bait:
+            warnings.append(f"{name!r}: a fish with no bait")
+        if kind != "fish" and not weapon:
+            warnings.append(f"{name!r}: a {kind} with no weapon")
+    for (name,) in q("""SELECT name FROM ingredients WHERE source_type = 'animal'
+                        AND id NOT IN (SELECT ingredient_id FROM ingredient_animals)"""):
+        warnings.append(f"{name!r}: an animal material from no animal")
+
+    # ---- plants ----------------------------------------------------------
+    for (pid,) in q("""SELECT id FROM plants
+                       WHERE id NOT IN (SELECT plant_id FROM ingredient_plants)"""):
+        warnings.append(f"plant {pid} is picked for no ingredient")
+    for (iid,) in q("""SELECT id FROM ingredients WHERE source_type = 'plant'
+                       AND id NOT IN (SELECT ingredient_id FROM ingredient_plants)"""):
+        warnings.append(f"plant ingredient {iid} has no plant: no link")
+    for iid, kind in q("""SELECT ip.ingredient_id, i.source_type
+                          FROM ingredient_plants ip JOIN ingredients i
+                          ON i.id = ip.ingredient_id
+                          WHERE i.source_type != 'plant'"""):
+        warnings.append(f"{iid} is picked from a plant, but is {kind}")
 
     # ---- recipes ---------------------------------------------------------
-    price_col = next(c for c in craftable.columns if c.strip() == "Price")
-    for _, r in craftable.iterrows():
-        description, warmth = parse_description(r.get("Buff"))
-        db.execute(
-            "INSERT INTO recipes(id, name, category, station_id, set_id, "
-            "price_cents, description, warmth_rank) VALUES (?,?,?,?,?,?,?,?)",
-            (mkid("recipe", clean(r["Item Name"])),
-             clean(r["Item Name"]), clean(r.get("Category")),
-             station_id.get(clean(r.get("Merchant"))),
-             set_id.get(clean(r.get("Set"))),
-             parse_price(r[price_col]), description, warmth))
-    recipe_id = dict(db.execute("SELECT name, id FROM recipes"))
+    for rid, description, rank in q(
+            "SELECT id, description, warmth_rank FROM recipes ORDER BY id"):
+        said = warmth_of(description) if description else None
+        if rank != said:
+            warnings.append(f"{rid}: warmth_rank {rank}, but its "
+                            f"description says {said}")
+    for (rid,) in q("""SELECT id FROM recipes
+                       WHERE id NOT IN (SELECT recipe_id FROM recipe_ingredients)"""):
+        warnings.append(f"{rid}: no ingredients")
+    for rid, campfire, repeatable in q("""
+            SELECT id, station_id = 'station-campfire', repeatable FROM recipes
+            WHERE (station_id = 'station-campfire') != repeatable"""):
+        warnings.append(f"{rid}: {'made' if campfire else 'not made'} at the "
+                        f"campfire, but {'' if repeatable else 'not '}repeatable")
 
-    # ---- recipe_ingredients ----------------------------------------------
-    # Notion has no alternatives, so each ingredient is a slot of its own,
-    # numbered in the order the export first lists it.
-    pairs = {}
-    for _, r in ing_rows.iterrows():
-        recipe = clean(r["Recipe Name"])
-        rid = recipe_id.get(recipe)
-        if rid is None:
-            warnings.append(f"ingredient row: unknown recipe {recipe!r}")
-            continue
-        names = (parse_relation(r.get("Animal Materials"))
-                 + parse_relation(r.get("Misc. Materials")))
-        if not names:
-            warnings.append(f"{recipe!r}: ingredient row names no material")
-            continue
-        qty = 1 if pd.isna(r["Amount Needed"]) else int(r["Amount Needed"])
-        for n in names:
-            iid = ingredient_id.get(clean(n))
-            if iid is None:
-                warnings.append(f"{recipe!r}: unknown ingredient {n!r}")
-                continue
-            pairs[(rid, iid)] = pairs.get((rid, iid), 0) + qty
-
-    slots = {}
-    rows = []
-    for (rid, iid), q in pairs.items():
-        slots[rid] = slots.get(rid, 0) + 1
-        rows.append((rid, slots[rid], iid, q))
-    db.executemany(
-        "INSERT INTO recipe_ingredients(recipe_id, slot, ingredient_id, qty) "
-        "VALUES (?,?,?,?)", rows)
-
-    # The patch is read before the campfire workbook, though applied
-    # after it, so that the workbook can name an animal by either name
-    # it has had: "Bear" as Notion knows it, or "Grizzly Bear" as the
-    # patch renames it.  Both are the one animal, animal-bear.
-    book = load_patch(patch) if patch else None
-    aliases = {}
-    if book is not None:
-        for _, r in book["animals"].iterrows():
-            if blank(r.get("id")) and blank(r.get("name")):
-                aliases[blank(r.get("name"))] = blank(r.get("id"))
-
-    fresh = set()                 # ids the workbook made that the patch names
-    if consumables:
-        build_consumables(db, consumables, animal_id, aliases,
-                          station_id["Campfire"], warnings, added, fresh)
-
-    notes = []
-    if added:
-        notes.append(f"the campfire workbook added {len(added)} animals: "
-                     + ", ".join(sorted(added)))
-    if book is not None:
-        apply_patch(db, book, warnings, notes, fresh)
-
-    db.commit()
-    return db, warnings, notes
-
-
-def blank(value):
-    """A spreadsheet cell as a value: None for empty, trimmed text otherwise."""
-    if value is None or pd.isna(value):
-        return None
-    return str(value).strip() or None
-
-
-def load_patch(path):
-    """The patch workbook's sheets, or a clean exit if one is missing."""
-    book = pd.read_excel(path, sheet_name=None, dtype=str)
-    for sheet in ("animals", "ingredient_animals", "recipes",
-                  "plants", "ingredient_plants"):
-        if sheet not in book:
-            sys.exit(f"error: no {sheet!r} sheet in {path}")
-    return book
-
-
-def apply_patch(db, book, warnings, notes, fresh=frozenset()):
-    """
-    Apply the patch workbook: corrections made by hand, kept as a source
-    so that a rebuild keeps them.  See the module docstring.
-
-    `fresh` are animals the campfire workbook had to add bare, under the
-    id the patch gives them: they are the patch's new animals, and are
-    reported as that, though their rows already exist.
-    """
-    # ---- animals: update by id, insert what is new -------------------------
-    known = {i: n for i, n in db.execute("SELECT id, name FROM animals")}
-    weapons = {i for (i,) in db.execute("SELECT id FROM weapons")}
-    seen = set()
-    for _, r in book["animals"].iterrows():
-        aid, name = blank(r.get("id")), blank(r.get("name"))
-        if not aid or not name:
-            continue
-        seen.add(aid)
-        weapon, bait, link = (blank(r.get(c)) for c in ("weapon_id", "bait", "link"))
-        if weapon and weapon not in weapons:
-            warnings.append(f"{name!r}: unknown weapon {weapon!r}, left blank")
-            weapon = None
-        if not weapon and not bait:
-            warnings.append(f"{name!r}: neither a weapon nor a bait")
-        if aid in known:
-            if aid in fresh:
-                notes.append(f"new animal {name!r} ({aid})")
-            elif known[aid] != name:
-                notes.append(f"renamed {known[aid]!r} -> {name!r} ({aid})")
-            db.execute("UPDATE animals SET name = ?, weapon_id = ?, bait = ?, "
-                       "link = ? WHERE id = ?", (name, weapon, bait, link, aid))
-        else:
-            notes.append(f"new animal {name!r} ({aid})")
-            db.execute("INSERT INTO animals(id, name, weapon_id, bait, link) "
-                       "VALUES (?,?,?,?,?)", (aid, name, weapon, bait, link))
-    for aid in sorted(set(known) - seen):
-        warnings.append(f"{known[aid]!r} ({aid}) is not in the patch: "
-                        "no bait or link")
-
-    # ---- ingredient_animals: the patch is the whole table -------------------
-    animals = {i for (i,) in db.execute("SELECT id FROM animals")}
-    ingredients = {i for (i,) in db.execute("SELECT id FROM ingredients")}
-    links = set()
-    for _, r in book["ingredient_animals"].iterrows():
-        iid, aid = blank(r.get("ingredient_id")), blank(r.get("animal_id"))
-        if not iid or not aid:
-            continue
-        if iid not in ingredients or aid not in animals:
-            warnings.append(f"link {iid} -> {aid}: unknown "
-                            f"{'ingredient' if iid not in ingredients else 'animal'}")
-            continue
-        links.add((iid, aid))
-
-    before = set(db.execute("SELECT ingredient_id, animal_id FROM ingredient_animals"))
-    for iid, aid in sorted(links - before):
-        notes.append(f"link added: {iid} <- {aid}")
-    for iid, aid in sorted(before - links):
-        warnings.append(f"link dropped: {iid} <- {aid}")
-    db.execute("DELETE FROM ingredient_animals")
-    db.executemany("INSERT INTO ingredient_animals(ingredient_id, animal_id) "
-                   "VALUES (?,?)", sorted(links))
-
-    # ---- recipes: rename by id, id itself untouched -------------------------
-    known_recipes = {i: n for i, n in db.execute("SELECT id, name FROM recipes")}
-    for _, r in book["recipes"].iterrows():
-        rid, name = blank(r.get("id")), blank(r.get("name"))
-        if not rid or not name:
-            continue
-        if rid not in known_recipes:
-            warnings.append(f"recipe patch: unknown id {rid!r}")
-            continue
-        if known_recipes[rid] != name:
-            notes.append(f"renamed {known_recipes[rid]!r} -> {name!r} ({rid})")
-            db.execute("UPDATE recipes SET name = ? WHERE id = ?", (name, rid))
-
-    # ---- plants and ingredient_plants: the patch is the only source ---------
-    for _, r in book["plants"].iterrows():
-        pid, name = blank(r.get("id")), blank(r.get("name"))
-        if not pid or not name:
-            continue
-        if db.execute("SELECT 1 FROM plants WHERE id = ? OR name = ?",
-                      (pid, name)).fetchone():
-            warnings.append(f"plant {name!r} ({pid}) is in the sheet twice, "
-                            "first kept")
-            continue
-        db.execute("INSERT INTO plants(id, name, link) VALUES (?,?,?)",
-                   (pid, name, blank(r.get("link"))))
-
-    plants = {i for (i,) in db.execute("SELECT id FROM plants")}
-    herbs = {i for (i,) in db.execute(
-        "SELECT id FROM ingredients WHERE source_type = 'plant'")}
-    links = set()
-    for _, r in book["ingredient_plants"].iterrows():
-        iid, pid = blank(r.get("ingredient_id")), blank(r.get("plant_id"))
-        if not iid or not pid:
-            continue
-        if iid not in herbs or pid not in plants:
-            warnings.append(f"link {iid} -> {pid}: unknown "
-                            f"{'plant ingredient' if iid not in herbs else 'plant'}")
-            continue
-        links.add((iid, pid))
-    db.executemany("INSERT INTO ingredient_plants(ingredient_id, plant_id) "
-                   "VALUES (?,?)", sorted(links))
-    for pid in sorted(plants - {p for _, p in links}):
-        warnings.append(f"plant {pid} is picked for no ingredient")
-    for iid in sorted(herbs - {i for i, _ in links}):
-        warnings.append(f"plant ingredient {iid} has no plant: no link")
-
-
-def build_consumables(db, path, animal_id, aliases, campfire, warnings, added,
-                      fresh):
-    """
-    Add the workbook's campfire recipes and the ingredients they call for.
-
-    Ingredients are matched by name, so a material both kinds of recipe
-    use -- Eagle Feather -- stays the one row, keeps its id, and only
-    gains any source animals the workbook adds.  Animals the Notion
-    export never listed (fish, crabs, the odd bird) are added bare, with
-    no weapon, and reported, so a misspelling shows up as a new animal
-    rather than going unnoticed.
-    """
-    book = pd.read_excel(path, sheet_name=None, dtype=str)
-    if "consumable-recipes" not in book:
-        sys.exit(f"error: no 'consumable-recipes' sheet in {path}")
-
-    ingredient_id = dict(db.execute("SELECT name, id FROM ingredients"))
-    used_in = {}                  # ingredient name -> recipe names, per index
-    known_as = {aid: name for name, aid in animal_id.items()}   # id -> a name
-
-    # ---- ingredients ----------------------------------------------------
-    for sheet, source_type in INGREDIENT_SHEETS.items():
-        if sheet not in book:
-            sys.exit(f"error: no {sheet!r} sheet in {path}")
-        df = book[sheet]
-        name_col = "animal_produce" if "animal_produce" in df else "name"
-        for _, r in df.iterrows():
-            name = clean(r[name_col])
-            if not name:
-                continue
-            used_in[name] = set(split_list(r.get("recipes_used_in")))
-            iid = ingredient_id.get(name)
-            if iid is None:
-                iid = mkid("ing", name)
-                part = None
-                if source_type == "animal":
-                    part = BODY_PARTS.get(name.split()[-1])
-                    if part is None:
-                        warnings.append(f"{name!r}: no body part for its last word")
-                db.execute(
-                    "INSERT INTO ingredients(id, name, source_type, body_part) "
-                    "VALUES (?,?,?,?)", (iid, name, source_type, part))
-                ingredient_id[name] = iid
-            else:
-                have = db.execute("SELECT source_type FROM ingredients "
-                                  "WHERE id = ?", (iid,)).fetchone()[0]
-                if have != source_type:
-                    warnings.append(f"{name!r}: already a {have} material, "
-                                    f"{sheet} calls it {source_type}")
-            for animal in split_list(r.get("animals_to_source_from")):
-                # Known by this name already; else by the patch, under the
-                # id the patch gives it -- which may already be here under
-                # its old name; else new, with an id made from the name.
-                # An id made from a name can land on an animal already
-                # here under another spelling ("bear", "Bear"): that is
-                # taken to be the one animal, but said, since it may be
-                # a typo that happens to collide.
-                aid = animal_id.get(animal)
-                if aid is None:
-                    alias = aliases.get(animal)
-                    aid = alias or mkid("animal", animal)
-                    if aid not in known_as:
-                        db.execute("INSERT INTO animals(id, name) VALUES (?,?)",
-                                   (aid, animal))
-                        known_as[aid] = animal
-                        # One the patch names is the patch's to report.
-                        if alias:
-                            fresh.add(aid)
-                        else:
-                            added.append(animal)
-                    elif not alias:
-                        warnings.append(f"{animal!r}: taken to be "
-                                        f"{known_as[aid]!r} ({aid})")
-                    animal_id[animal] = aid
-                db.execute("INSERT OR IGNORE INTO ingredient_animals"
-                           "(ingredient_id, animal_id) VALUES (?,?)",
-                           (iid, aid))
-
-    # ---- recipes ----------------------------------------------------------
-    uses = {}                     # ingredient name -> recipe ids, per recipes
-    skipped = set()               # sheet ids of recipes not loaded
-    for _, r in book["consumable-recipes"].iterrows():
-        name = clean(r["name"])
-        if not name:
-            continue
-        rid = mkid("recipe", name)
-        if db.execute("SELECT 1 FROM recipes WHERE id = ?", (rid,)).fetchone():
-            warnings.append(f"{name!r}: already a one-time recipe, skipped")
-            # Its ingredients are never read, so the index rows that list
-            # it must not be held against the recipe text below.
-            skipped.add(clean(r.get("id")))
-            continue
-        description = clean(r.get("description")) or None
-        db.execute(
-            "INSERT INTO recipes(id, name, category, station_id, price_cents, "
-            "description, repeatable) VALUES (?,?,?,?,?,?,1)",
-            (rid, name, clean(r.get("category")), campfire,
-             parse_price(r.get("price")), description))
-
-        # The sheet's own ids are ignored as ids, but the index sheets
-        # name recipes by them, so they are what the cross-check compares.
-        sheet_id = clean(r.get("id"))
-        if not sheet_id:
-            warnings.append(f"{name!r}: no id in the sheet, not cross-checked")
-
-        slots, problems = parse_slots(r["ingredients"])
-        for p in problems:
-            warnings.append(f"{name!r}: cannot read ingredient {p!r}")
-        for slot, (qty, options) in enumerate(slots, start=1):
-            for option in options:
-                iid = ingredient_id.get(option)
-                if iid is None:
-                    warnings.append(f"{name!r}: unknown ingredient {option!r}")
-                    continue
-                if sheet_id:
-                    uses.setdefault(option, set()).add(sheet_id)
-                try:
-                    db.execute(
-                        "INSERT INTO recipe_ingredients"
-                        "(recipe_id, slot, ingredient_id, qty) VALUES (?,?,?,?)",
-                        (rid, slot, iid, qty))
-                except sqlite3.IntegrityError:
-                    warnings.append(f"{name!r}: {option!r} named twice")
-
-    # ---- the index sheets and the recipe text must agree ------------------
-    # The workbook says which recipes use each ingredient twice over: in
-    # the recipe's own text, and in the ingredient's row.  Either can be
-    # the one that is wrong, so say which way round they differ.
-    for name in sorted(set(uses) | set(used_in)):
-        text, index = uses.get(name, set()), used_in.get(name, set()) - skipped
-        if text - index:
-            warnings.append(f"{name!r}: recipes name it, its index row does "
-                            f"not: {', '.join(sorted(text - index))}")
-        if index - text:
-            warnings.append(f"{name!r}: its index row lists recipes that do "
-                            f"not name it: {', '.join(sorted(index - text))}")
+    # Rows sharing a slot are one choice, and must ask for the same qty;
+    # slots run 1, 2, 3 with none skipped.
+    for rid, slot in q("""SELECT recipe_id, slot FROM recipe_ingredients
+                          GROUP BY recipe_id, slot HAVING COUNT(DISTINCT qty) > 1"""):
+        warnings.append(f"{rid}: slot {slot}'s alternatives ask for "
+                        "different quantities")
+    for rid, top, count in q("""SELECT recipe_id, MAX(slot), COUNT(DISTINCT slot)
+                                FROM recipe_ingredients GROUP BY recipe_id"""):
+        if top != count:
+            warnings.append(f"{rid}: its slots skip a number")
 
 
 def baseline_ids(path):
@@ -828,7 +448,7 @@ def lost_ids(db, baseline):
             for i in sorted(ids - {i for (i,) in db.execute(f"SELECT id FROM {t}")})]
 
 
-def report(db, warnings, notes, lost, out_path):
+def report(db, errors, warnings, lost, out_path):
     tables = ("weapons", "animals", "locations", "stations", "sets",
               "ingredients", "ingredient_animals", "plants",
               "ingredient_plants", "recipes",
@@ -836,7 +456,7 @@ def report(db, warnings, notes, lost, out_path):
     counts = [(t, db.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0])
               for t in tables]
     width = max(len(t) for t, _ in counts)
-    print(f"built {out_path}\n")
+    print(f"{'failed to build' if errors else 'built'} {out_path}\n")
     for table, n in counts:
         print(f"  {table:<{width}}  {n:>5}")
     for repeatable, n in db.execute("SELECT repeatable, COUNT(*) FROM recipes "
@@ -852,11 +472,6 @@ def report(db, warnings, notes, lost, out_path):
         for (n,) in unused[:10]:
             print(f"    - {n}")
 
-    if notes:
-        print(f"\n  notes: {len(notes)}")
-        for n in notes:
-            print(f"    - {n}")
-
     if lost is not None:
         print(f"\n  ids lost against the baseline: {len(lost)}")
         for t, i in lost[:20]:
@@ -866,31 +481,32 @@ def report(db, warnings, notes, lost, out_path):
     for w in warnings[:40]:
         print(f"    ! {w}")
 
+    if errors:
+        print(f"\n  errors: {len(errors)}")
+        for e in errors[:40]:
+            print(f"    x {e}")
+
 
 def main():
     ap = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("export_dir", nargs="?", default="data/raw",
-                    help="folder holding the five exported CSVs")
-    ap.add_argument("-c", "--consumables",
-                    default="data/raw/consumable_recipes_rdr2.xlsx",
-                    help="the campfire-recipe workbook ('' to leave it out)")
-    ap.add_argument("-p", "--patch", default="data/raw/rdr2_patch.xlsx",
-                    help="the corrections workbook ('' to leave it out)")
+    ap.add_argument("workbook", nargs="?", default="data/raw/rdr2_crafting.xlsx",
+                    help="the crafting workbook")
     ap.add_argument("-o", "--output", default="data/rdr2.db")
     ap.add_argument("--check-ids", metavar="DB",
                     help="an earlier build whose ids must all survive")
     args = ap.parse_args()
 
-    # pandas only reaches for openpyxl once it opens a workbook, halfway
-    # through a build; say so up front instead.
-    if args.consumables or args.patch:
-        try:
-            import openpyxl  # noqa: F401
-        except ImportError:
-            sys.exit("error: reading the workbooks needs openpyxl "
-                     "(pip install openpyxl)")
+    if not os.path.exists(args.workbook):
+        sys.exit(f"error: no workbook at {args.workbook}")
+    # pandas only reaches for openpyxl once it opens the workbook; say so
+    # up front instead.
+    try:
+        import openpyxl  # noqa: F401
+    except ImportError:
+        sys.exit("error: reading the workbook needs openpyxl "
+                 "(pip install openpyxl)")
 
     # Built beside the output and swapped in only once it has succeeded
     # and kept every id, so a failed build leaves the old database as it
@@ -898,20 +514,20 @@ def main():
     baseline = baseline_ids(args.check_ids)
     staging = args.output + ".building"
     try:
-        db, warnings, notes = build(args.export_dir, args.consumables,
-                                    args.patch, staging)
+        db, errors, warnings = build(args.workbook, staging)
         lost = lost_ids(db, baseline) if baseline else None
-        report(db, warnings, notes, lost, args.output)
+        report(db, errors, warnings, lost, args.output)
         db.close()
     except BaseException:
         if os.path.exists(staging):
             os.remove(staging)
         raise
 
-    if lost:
+    if errors or lost:
         os.remove(staging)
-        sys.exit(f"error: {len(lost)} ids from {args.check_ids} are gone; "
-                 f"{args.output} left as it was")
+        why = (f"{len(errors)} errors in {args.workbook}" if errors
+               else f"{len(lost)} ids from {args.check_ids} are gone")
+        sys.exit(f"error: {why}; {args.output} left as it was")
     os.replace(staging, args.output)
 
 

@@ -143,7 +143,7 @@ const KIND_LABEL = {
   plant: 'Plant',
   ammo: 'Ammo & throwables',
   alcohol: 'Liquor',
-  misc: 'Misc. item',
+  collectable: 'Collectable',
 };
 
 /**
@@ -320,7 +320,7 @@ export function materialDetail(material, { personal }) {
        ['Type', esc(body_part)],
        ['Weapon', only && esc(only.weapon)],
        ['Bait', only && esc(only.bait)]]
-    : source_type === 'misc'
+    : source_type === 'collectable'
       ? [['Source', 'Found out in the world'], ['Quality', qualityLabel(quality)]]
       : source_type === 'plant'
         ? [['Plant', onlyPlantLink(plants)]]
@@ -525,7 +525,7 @@ function stockLine(d, personal) {
  * location -- the Fence on your Satchel, the Trapper on the Trapper --
  * so nothing is counted twice.
  *
- * Animal materials and misc items had separate formulas in Notion and
+ * Animal materials and collectables had separate formulas in Notion and
  * keep them here: only animals get the "done with this item" case, and
  * the two word a surplus differently.
  */
@@ -607,7 +607,7 @@ function usedIn(usage = [], personal, expanded = false) {
         expanded ? 'Show less' : `and ${rest} more`}</button>
     </li>`;
 
-  // Captioned: with a single entry -- which is every misc material,
+  // Captioned: with a single entry -- which is every collectable,
   // each feeding exactly one talisman -- an unlabelled line under the
   // demand rows reads as another demand row, not as a list.
   return `

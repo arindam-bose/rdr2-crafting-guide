@@ -231,9 +231,9 @@ function flash(badge) {
  * body part can collide with, since the rest come from the data.
  */
 export const SUPPLY_KINDS = [
-  { value: ':ammo',    type: 'ammo',    label: 'Ammo & throwables' },
-  { value: ':alcohol', type: 'alcohol', label: 'Liquor' },
-  { value: ':misc',    type: 'misc',    label: 'Misc. items' },
+  { value: ':ammo',        type: 'ammo',        label: 'Ammo & throwables' },
+  { value: ':alcohol',     type: 'alcohol',     label: 'Liquor' },
+  { value: ':collectable', type: 'collectable', label: 'Collectables' },
 ];
 
 // Plants as one category too, for Inventory, whose list mixes every

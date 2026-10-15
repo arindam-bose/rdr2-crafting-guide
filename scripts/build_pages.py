@@ -57,12 +57,12 @@ PREFIX = {'materials': 'ing-', 'recipes': 'recipe-'}
 # The app's own words for each, from render.js and views/materials.js.
 KIND_LABEL = {
     'animal': 'Animal material', 'plant': 'Plant', 'ammo': 'Ammo & throwables',
-    'alcohol': 'Liquor', 'misc': 'Misc. item',
+    'alcohol': 'Liquor', 'collectable': 'Collectable',
 }
 GROUPS = [
     ('Animal materials', ('animal',)),
     ('Plants', ('plant',)),
-    ('Others', ('ammo', 'alcohol', 'misc')),
+    ('Others', ('ammo', 'alcohol', 'collectable')),
 ]
 STATION_ICON = {
     'station-pearson': 'pearson', 'station-trapper': 'trapper',
@@ -431,7 +431,7 @@ def material_page(m, data, parts):
                  ('Type', esc(m['body_part'])),
                  ('Weapon', only and esc(only['weapon'])),
                  ('Bait', only and esc(only['bait']))]
-    elif m['source_type'] == 'misc':
+    elif m['source_type'] == 'collectable':
         facts = [('Source', 'Found out in the world'), ('Quality', quality_label(m['quality']))]
     elif m['source_type'] == 'plant':
         # As in the app: a lone plant only repeats the title until it has a link.
