@@ -23,7 +23,7 @@ export function crossLink(route, id, text) {
  * tab, drawn like a cross-link.  Only a web address becomes a link: the
  * value comes from a spreadsheet, and a `javascript:` one would run.
  */
-export function webLink(url, text) {
+function webLink(url, text) {
   if (!/^https?:\/\//i.test(url ?? '')) return esc(text);
   return `<a class="xlink" href="${esc(url)}" target="_blank" rel="noopener noreferrer"
             title="${esc(text)} on the Red Dead wiki">${esc(text)}</a>`;
@@ -53,7 +53,7 @@ export function qualityStars(quality) {
 }
 
 /** The stars with the quality written out after them, for a dialog's facts. */
-export function qualityLabel(quality) {
+function qualityLabel(quality) {
   return quality ? `${stars(quality, false)}${esc(quality)}` : '';
 }
 
@@ -147,9 +147,10 @@ export const KIND_LABEL = {
   collectable: 'Collectable',
 };
 
-/** The Misc. Items kinds, each linked to its own wiki page under one
- *  neutral "Item" fact: the kicker already says which kind it is. */
-const LINKED = ['ammo', 'alcohol', 'collectable'];
+/** The kinds Materials files under Misc. Items: neither an animal's
+ *  part nor a plant.  Each links to its own wiki page under one neutral
+ *  "Item" fact, since the kicker already says which kind it is. */
+export const MISC_KINDS = ['ammo', 'alcohol', 'collectable'];
 
 /**
  * How many recipes a material card lists before it offers the rest.
@@ -325,7 +326,7 @@ export function materialDetail(material, { personal }) {
        ['Type', esc(body_part)],
        ['Weapon', only && esc(only.weapon)],
        ['Bait', only && esc(only.bait)]]
-    : LINKED.includes(source_type)
+    : MISC_KINDS.includes(source_type)
       ? [['Item', link && webLink(link, name)],
          ['Quality', qualityLabel(quality)]]
       : source_type === 'plant'
@@ -531,9 +532,9 @@ function stockLine(d, personal) {
  * location -- the Fence on your Satchel, the Trapper on the Trapper --
  * so nothing is counted twice.
  *
- * Animal materials and collectables had separate formulas in Notion and
- * keep them here: only animals get the "done with this item" case, and
- * the two word a surplus differently.
+ * Animal materials have a formula of their own: only they get the
+ * "done with this item" case, and they word a shortfall and a surplus
+ * differently from plants and the Misc. Items.
  */
 function verdict(material, personal) {
   // Without a personal layer there is no "have", so there is nothing

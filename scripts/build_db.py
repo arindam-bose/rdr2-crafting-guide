@@ -240,12 +240,13 @@ def columns_of(db, table):
     return [c[1] for c in db.execute(f"PRAGMA table_info({table})")]
 
 
-def read_sheet(book, sheet, columns, errors):
+def read_sheet(book, sheet, columns, errors, warnings):
     """
     The sheet's rows as dicts of the given columns, each with the
     spreadsheet row it came from under '_row'.  A missing sheet or
-    column is an error; a column the table does not have is ignored.
-    Rows with nothing in them are skipped.
+    column is an error; a column the table does not have is a warning,
+    since what is in it goes nowhere.  Rows with nothing in them are
+    skipped.
     """
     if sheet not in book:
         errors.append(f"no {sheet!r} sheet")
@@ -255,6 +256,10 @@ def read_sheet(book, sheet, columns, errors):
     if missing:
         errors.append(f"{sheet}: no column {', '.join(map(repr, missing))}")
         return []
+    extra = [c for c in df.columns if c not in columns and df[c].notna().any()]
+    if extra:
+        warnings.append(f"{sheet}: column {', '.join(map(repr, extra))} "
+                        "is not in the database, left out")
     rows = []
     for i, r in df.iterrows():
         row = {c: cell(r[c]) for c in columns}
@@ -309,9 +314,14 @@ def build(workbook, out_path):
         columns = columns_of(db, table)
         if table == "ingredients":
             columns.remove("link")                  # filled from LINK_SHEETS
-        for row in read_sheet(book, table, columns, errors):
+        for row in read_sheet(book, table, columns, errors, warnings):
             here = where(table, row)
-            if prefix and row["id"] and not row["id"].startswith(prefix):
+            # SQLite lets a TEXT primary key be NULL, so a blank id
+            # would go in, and nothing could ever refer to the row.
+            if prefix and not row["id"]:
+                errors.append(f"{here}: no id")
+                continue
+            if prefix and not row["id"].startswith(prefix):
                 errors.append(f"{here}: id {row['id']!r} does not start "
                               f"with {prefix!r}")
                 continue
@@ -345,7 +355,8 @@ def build(workbook, out_path):
     names = dict(db.execute("SELECT id, name FROM ingredients"))
     linked = set()
     for sheet, source_type in LINK_SHEETS.items():
-        for row in read_sheet(book, sheet, ["id", "name", "link"], errors):
+        for row in read_sheet(book, sheet, ["id", "name", "link"], errors,
+                              warnings):
             here, iid = where(sheet, row), row["id"]
             if iid not in kinds:
                 errors.append(f"{here}: no ingredient {iid!r}")
@@ -367,6 +378,10 @@ def build(workbook, out_path):
         for iid in sorted(i for i, k in kinds.items()
                           if k == source_type and i not in linked):
             warnings.append(f"{iid} is not in {sheet}: no link")
+
+    for sheet in sorted(set(book) - set(TABLES) - set(LINK_SHEETS)):
+        warnings.append(f"sheet {sheet!r} is not part of the database, "
+                        "left out")
 
     check(db, warnings)
     db.commit()

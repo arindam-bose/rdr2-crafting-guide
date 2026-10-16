@@ -134,10 +134,11 @@ slugged. `--check-ids` names the build being replaced: every ingredient, recipe
 and location id in it must survive, and the build fails if one is gone.
 
 Anything the database would refuse is an error, reported with its sheet and
-row, and fails the build, leaving the old database as it was: an id used twice,
-an id without its table's prefix, a reference to a row that is not there, a
-value outside a `CHECK`, a count that is not a whole number. What it would take
-but is probably a slip is a warning, and the build goes ahead: a `warmth_rank`
+row, and fails the build, leaving the old database as it was: a blank id, an id
+used twice, an id without its table's prefix, a reference to a row that is not
+there, a value outside a `CHECK`, a count that is not a whole number. What it
+would take but is probably a slip is a warning, and the build goes ahead: a sheet
+or column the database has no place for, a `warmth_rank`
 the description does not bear out, a fish with no bait or another animal with
 no weapon, a plant picked for nothing, a slot whose alternatives ask for
 different quantities.

@@ -13,7 +13,7 @@
 // a view still reads as "build this, then listen for that".
 // ============================================================
 
-import { esc, icon, KIND_LABEL, PAGE } from '../render.js';
+import { esc, icon, KIND_LABEL, MISC_KINDS, PAGE } from '../render.js';
 import * as prefs from '../prefs.js';
 
 // ------------------------------------------------------------
@@ -233,7 +233,7 @@ function flash(badge) {
  * the data.
  */
 const kind = (type) => ({ value: `:${type}`, type, label: KIND_LABEL[type] });
-export const SUPPLY_KINDS = ['ammo', 'alcohol', 'collectable'].map(kind);
+export const MISC_CATEGORIES = MISC_KINDS.map(kind);
 
 // Plant as one category too, for Inventory, whose list mixes every
 // kind of material.  Materials leaves it out: Plants is a tab there.
@@ -241,14 +241,14 @@ const PLANT_KIND = kind('plant');
 
 export function categoryOptions(bodyParts, { plants = false } = {}) {
   return [...bodyParts.map((p) => ({ value: p, label: p })),
-          ...(plants ? [PLANT_KIND] : []), ...SUPPLY_KINDS]
+          ...(plants ? [PLANT_KIND] : []), ...MISC_CATEGORIES]
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-/** The entry a material falls under: its kind of supply, Plants, or
+/** The entry a material falls under: its Misc. Items kind, Plant, or
  *  its body part. */
 export const categoryOf = (m) =>
-  [PLANT_KIND, ...SUPPLY_KINDS].find((k) => k.type === m.source_type)?.value
+  [PLANT_KIND, ...MISC_CATEGORIES].find((k) => k.type === m.source_type)?.value
     ?? m.body_part;
 
 /**

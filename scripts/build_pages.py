@@ -59,12 +59,13 @@ KIND_LABEL = {
     'animal': 'Animal material', 'plant': 'Plant', 'ammo': 'Ammo & throwables',
     'alcohol': 'Liquor', 'collectable': 'Collectable',
 }
-# The kinds linked to their own wiki page under "Item", as render.js's LINKED.
-LINKED = ('ammo', 'alcohol', 'collectable')
+# The Misc. Items kinds, each linked to its own wiki page under "Item",
+# as render.js's MISC_KINDS.
+MISC_KINDS = ('ammo', 'alcohol', 'collectable')
 GROUPS = [
-    ('Animal materials', ('animal',)),
+    ('Animal Materials', ('animal',)),
     ('Plants', ('plant',)),
-    ('Misc. Items', ('ammo', 'alcohol', 'collectable')),
+    ('Misc. Items', MISC_KINDS),
 ]
 STATION_ICON = {
     'station-pearson': 'pearson', 'station-trapper': 'trapper',
@@ -433,7 +434,7 @@ def material_page(m, data, parts):
                  ('Type', esc(m['body_part'])),
                  ('Weapon', only and esc(only['weapon'])),
                  ('Bait', only and esc(only['bait']))]
-    elif m['source_type'] in LINKED:
+    elif m['source_type'] in MISC_KINDS:
         facts = [('Item', m['link'] and web_link(m['link'], m['name'])),
                  ('Quality', quality_label(m['quality']))]
     elif m['source_type'] == 'plant':
