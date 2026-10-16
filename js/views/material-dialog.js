@@ -31,6 +31,7 @@ export function group(rows, usage, animals, plants = []) {
         quality: row.quality,
         source_type: row.source_type,
         body_part: row.body_part,
+        link: row.link,
         animals: [],
         plants: [],
         demands: [],

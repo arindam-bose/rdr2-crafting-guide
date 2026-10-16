@@ -69,8 +69,8 @@ second hash.
 
 ## Two layers
 
-**Reference** — `data/rdr2.db`, built from a Notion export and the
-campfire-recipe workbook by `scripts/build_db.py`. Recipes, ingredients, the
+**Reference** — `data/rdr2.db`, built from the crafting workbook by
+`scripts/build_db.py`. Recipes, ingredients, the
 animals or plants each one comes from, the weapon that leaves each pelt unspoiled, and
 which station crafts what. Read-only, rebuilt from source rather than edited.
 
@@ -116,37 +116,35 @@ the live site does.
     pip install pandas openpyxl
     python3 scripts/build_db.py --check-ids data/rdr2.db
 
-Its sources live in `data/raw/`: the five Notion CSVs, the campfire-recipe
-workbook, `consumable_recipes_rdr2.xlsx`, and the patch workbook,
-`rdr2_patch.xlsx`. Pass a folder to read the CSVs from elsewhere, `-c` for
-another campfire workbook and `-p` for another patch.
+Its one source is `data/raw/rdr2_crafting.xlsx`, which is the database a sheet
+to a table: each sheet has a table's name and its columns, and every row goes in
+as it stands, ids included. Pass another path to build from a different
+workbook. Three sheets are not tables of their own: `ammo`, `alcohols` and
+`collectables` hold the wiki `link` for the ingredients of those kinds, and fill
+`ingredients.link`.
 
-Corrections go in the patch, never in `rdr2.db` — every build replaces the
-database, so an edit made there is lost on the next one. The patch is applied
-last. Its `animals` sheet updates animals by id: name, the weapon that leaves
-the pelt unspoiled, the `bait` or lure that catches a fish, and a wiki `link`.
-An animal's id stays put when its name changes (`animal-bear` is the Grizzly
-Bear). Its `ingredient_animals` sheet is the whole of that table, and the build
-lists every link it adds or drops against the other sources. Its `recipes`
-sheet does the same for a recipe's name alone, by id — `recipe-explosive-slug`
-keeps its id when the sheet renames it to Explosive Shotgun Slug, since the id
-is derived from the name only at the CSV import a step earlier, and a patch
-applied after that must not shift what the personal layer already has pinned
-to it. Its `plants` sheet is every plant, each with its own wiki `link`, and its
-`ingredient_plants` sheet is the whole of that table: one plant for most
-ingredients, two or three for Currant, Sage and Ginseng. `--check-ids` names the build being replaced: every ingredient,
-recipe and location id in it must survive, because the personal layer stores
-those strings, and the build fails if one is gone.
+Corrections go in the workbook, never in `rdr2.db` — every build replaces the
+database, so an edit made there is lost on the next one.
+
+Ids are prefixed slugs (`ing-perfect-beaver-pelt`), and they are the
+workbook's to keep: the personal layer stores those strings, so an id stays put
+when its row's name is corrected — `animal-bear` is the Grizzly Bear, and
+`recipe-explosive-slug` the Explosive Shotgun Slug. A new row's id is its name,
+slugged. `--check-ids` names the build being replaced: every ingredient, recipe
+and location id in it must survive, and the build fails if one is gone.
+
+Anything the database would refuse is an error, reported with its sheet and
+row, and fails the build, leaving the old database as it was: a blank id, an id
+used twice, an id without its table's prefix, a reference to a row that is not
+there, a value outside a `CHECK`, a count that is not a whole number. What it
+would take but is probably a slip is a warning, and the build goes ahead: a sheet
+or column the database has no place for, a `warmth_rank`
+the description does not bear out, a fish with no bait or another animal with
+no weapon, a plant picked for nothing, a slot whose alternatives ask for
+different quantities.
 
 The build stamps a `meta` table with the date and schema version, which every
 export records.
-
-The CSVs are the Notion export with the hash taken off each name:
-`Animals.csv`, `Animal Materials.csv`, `Misc Materials.csv`,
-`Craftable Items.csv`, `Recipe Ingredients.csv`. Ids are slugs
-derived from names (`ing-perfect-beaver-pelt`), so they survive rows being
-added, removed or reordered — which matters, because the personal layer stores
-those strings.
 
 After a rebuild, or any change to the images or fonts, bump the release in
 `js/version.js` — its `number` names the offline cache in `sw.js`, the masthead
@@ -237,8 +235,7 @@ hand.
     sitemap.xml           every one of them, generated
     app.css               one layout for phone and desktop, and the theme
     data/rdr2.db          reference data, read-only, built from data/raw/
-    data/raw/             its sources: the Notion CSVs, the campfire
-                          workbook and the patch workbook
+    data/raw/             its source, the crafting workbook
     scripts/build_db.py   the build
     scripts/build_pages.py  the search pages, from the build
     fonts/
@@ -407,13 +404,12 @@ icon with an `aria-label`, and takes the same stack.
 
 The last `•` was not the app's to type: seven saddles carried their five stat
 lines as a Notion bulleted list, bullet characters and all, inside a single
-`description`. That was a list pretending to be a paragraph. `build_db.py` now
-strips the markers and stores one item per line, and the Recipes card renders a
+`description`. That was a list pretending to be a paragraph. The markers are
+gone and each item is a line of its own, and the Recipes card renders a
 multi-line description as a real `<ul>` whose marker is a CSS hyphen. The recipe
 dialog goes one step further and splits each line at its colon, so the stat and
 its value sit in two columns: `Stamina Drain Rate … -50%`. The
-reference data is ASCII throughout apart from two non-breaking spaces, which
-the font has.
+reference data is ASCII throughout.
 
 The rule that assigns the two faces is the last thing in `app.css` on purpose:
 every control in the file sets `font: inherit` to match the page rather than
@@ -558,13 +554,15 @@ batch as Inventory does: here you are logging one thing and looking straight
 at the result. In personal mode a station with nothing left to make still
 shows, as *needs no more*, since you may be holding some there to sell.
 
-The tabs are Animal Materials, Plants and Others — a hunting trip, a walk,
+The tabs are Animal Materials, Plants and Misc. Items — a hunting trip, a walk,
 and a shop or a detour — each carrying the count that matches the current
 filters, so a search that landed on another tab is visible rather than lost.
-Others holds the supplies: ammunition and throwables, liquor, and the misc
-items. The category filter lists the animal parts (Pelt, Hide, Meat, Fat,
-Feather, …) and the three kinds of supply, which have no part; picking a
-category also switches to the tab its materials are on.
+Misc. Items holds the supplies: ammunition and throwables, liquor, and the
+collectables, each with a link to its wiki page. The category filter lists the
+animal parts (Pelt, Hide, Meat, Fat, Feather, …) and the three kinds of supply,
+which have no part, in one alphabetical list, each kind named as its dialog
+names it (Ammo & throwables, Collectable, Liquor); picking a category also
+switches to the tab its materials are on.
 
 A material used in campfire recipes gets a **Campfire** block on its card
 showing how many you hold in the Satchel, and a Campfire row in the dialog —

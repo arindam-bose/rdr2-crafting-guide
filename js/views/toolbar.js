@@ -13,7 +13,7 @@
 // a view still reads as "build this, then listen for that".
 // ============================================================
 
-import { esc, icon, PAGE } from '../render.js';
+import { esc, icon, KIND_LABEL, MISC_KINDS, PAGE } from '../render.js';
 import * as prefs from '../prefs.js';
 
 // ------------------------------------------------------------
@@ -227,28 +227,28 @@ function flash(badge) {
 
 /**
  * The category filter Materials and Inventory share: every body part,
- * then the kinds of supply, which have none.  Their values are ones no
- * body part can collide with, since the rest come from the data.
+ * and the kinds of material that have none -- the Misc. Items -- named
+ * as their dialogs name them, all in one alphabetical list.  A kind's
+ * value is one no body part can collide with, since those come from
+ * the data.
  */
-export const SUPPLY_KINDS = [
-  { value: ':ammo',    type: 'ammo',    label: 'Ammo & throwables' },
-  { value: ':alcohol', type: 'alcohol', label: 'Liquor' },
-  { value: ':misc',    type: 'misc',    label: 'Misc. items' },
-];
+const kind = (type) => ({ value: `:${type}`, type, label: KIND_LABEL[type] });
+export const MISC_CATEGORIES = MISC_KINDS.map(kind);
 
-// Plants as one category too, for Inventory, whose list mixes every
+// Plant as one category too, for Inventory, whose list mixes every
 // kind of material.  Materials leaves it out: Plants is a tab there.
-const PLANT_KIND = { value: ':plant', type: 'plant', label: 'Plants' };
+const PLANT_KIND = kind('plant');
 
 export function categoryOptions(bodyParts, { plants = false } = {}) {
   return [...bodyParts.map((p) => ({ value: p, label: p })),
-          ...(plants ? [PLANT_KIND] : []), ...SUPPLY_KINDS];
+          ...(plants ? [PLANT_KIND] : []), ...MISC_CATEGORIES]
+    .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-/** The entry a material falls under: its kind of supply, Plants, or
+/** The entry a material falls under: its Misc. Items kind, Plant, or
  *  its body part. */
 export const categoryOf = (m) =>
-  [PLANT_KIND, ...SUPPLY_KINDS].find((k) => k.type === m.source_type)?.value
+  [PLANT_KIND, ...MISC_CATEGORIES].find((k) => k.type === m.source_type)?.value
     ?? m.body_part;
 
 /**

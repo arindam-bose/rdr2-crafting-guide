@@ -21,7 +21,7 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { materialCard, empty, plural, pager, stationIcon, PAGE } from '../render.js';
+import { materialCard, empty, plural, pager, stationIcon, MISC_KINDS, PAGE } from '../render.js';
 import { opensCard } from '../dialog.js';
 import { group, materialDialog } from './material-dialog.js';
 import * as nav from '../nav.js';
@@ -30,7 +30,7 @@ import * as toolbar from './toolbar.js';
 const GROUPS = [
   { id: 'animal',   title: 'Animal Materials', types: ['animal'], icon: 'animals' },
   { id: 'plant',    title: 'Plants',           types: ['plant'], icon: 'plants' },
-  { id: 'supplies', title: 'Others',           types: ['ammo', 'alcohol', 'misc'], icon: 'supplies' },
+  { id: 'supplies', title: 'Misc. Items',      types: MISC_KINDS, icon: 'supplies' },
 ];
 const groupOf = (card) =>
   GROUPS.find((g) => g.types.includes(card.source_type))?.id;
@@ -128,7 +128,7 @@ export function mount(root) {
     state.part = event.target.value;
     if (state.part) {
       toolbar.selectTab(groupTabs, 'group', state,
-        toolbar.SUPPLY_KINDS.some((k) => k.value === state.part) ? 'supplies' : 'animal');
+        toolbar.MISC_CATEGORIES.some((k) => k.value === state.part) ? 'supplies' : 'animal');
     }
     refilter();
   });

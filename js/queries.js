@@ -50,6 +50,7 @@ export function materials({ personal = true } = {}) {
                ing.source_type      AS source_type,
                ing.quality          AS quality,
                ing.body_part        AS body_part,
+               ing.link             AS link,
                st.id                AS station_id,
                st.name              AS station,
                st.color             AS color,

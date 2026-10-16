@@ -4,6 +4,8 @@ What to craft in Red Dead Redemption 2, what it needs, and what you already have
 
 **Open it: <https://arindambose.com/rdr2-crafting-guide/>**
 
+Current version: 1.0.5
+
 ![A pixel-art cowboy by a campfire at dusk](images/pixel-cowboy-campfire-at-dusk-960.jpg)
 
 Free, with no ads and no sign-up. It works offline, and you can install it on
@@ -49,7 +51,7 @@ and then, and keep the file somewhere safe.
    *General* and *Personalize*. Use General to look things up. Turn on
    Personalize to keep track of what you have; logging only works there.
 2. **Find what you need.** **Materials** lists everything there is to collect,
-   in three tabs (Animal Materials, Plants and Others), with the recipes each
+   in three tabs (Animal Materials, Plants and Misc. Items), with the recipes each
    one goes into and the vendors who still want it. Filter by category, vendor
    or progress, or search by name, animal or plant. Open a card for where it
    comes from and how to bring it in perfect.

@@ -23,7 +23,7 @@ export function crossLink(route, id, text) {
  * tab, drawn like a cross-link.  Only a web address becomes a link: the
  * value comes from a spreadsheet, and a `javascript:` one would run.
  */
-export function webLink(url, text) {
+function webLink(url, text) {
   if (!/^https?:\/\//i.test(url ?? '')) return esc(text);
   return `<a class="xlink" href="${esc(url)}" target="_blank" rel="noopener noreferrer"
             title="${esc(text)} on the Red Dead wiki">${esc(text)}</a>`;
@@ -53,7 +53,7 @@ export function qualityStars(quality) {
 }
 
 /** The stars with the quality written out after them, for a dialog's facts. */
-export function qualityLabel(quality) {
+function qualityLabel(quality) {
   return quality ? `${stars(quality, false)}${esc(quality)}` : '';
 }
 
@@ -137,14 +137,20 @@ export function icon(name) {
   return `<span class="icon icon-${name}" aria-hidden="true"></span>`;
 }
 
-/** What a material is, as a dialog's kicker names it. */
-const KIND_LABEL = {
+/** What a material is, as a dialog's kicker and the category filter
+ *  name it. */
+export const KIND_LABEL = {
   animal: 'Animal material',
   plant: 'Plant',
   ammo: 'Ammo & throwables',
   alcohol: 'Liquor',
-  misc: 'Misc. item',
+  collectable: 'Collectable',
 };
+
+/** The kinds Materials files under Misc. Items: neither an animal's
+ *  part nor a plant.  Each links to its own wiki page under one neutral
+ *  "Item" fact, since the kicker already says which kind it is. */
+export const MISC_KINDS = ['ammo', 'alcohol', 'collectable'];
 
 /**
  * How many recipes a material card lists before it offers the rest.
@@ -158,7 +164,7 @@ const USAGE_SHOWN = 6;
  * the whole card opens.
  *
  *   material = { ingredient_id, material, quality, source_type,
- *                body_part, animals: [...], plants: [...], demands: [...],
+ *                body_part, link, animals: [...], plants: [...], demands: [...],
  *                usage: [...] }
  *
  * `personal` decides whether the card talks about what you have,
@@ -306,7 +312,7 @@ export function heldAt(id, name) {
  * what you just brought in can be logged without leaving the page.
  */
 export function materialDetail(material, { personal }) {
-  const { material: name, quality, source_type, body_part, animals, plants } = material;
+  const { material: name, quality, source_type, body_part, link, animals, plants } = material;
   const isAnimal = source_type === 'animal';
 
   // A pelt comes off one animal, and its weapon or bait sits in the
@@ -320,8 +326,9 @@ export function materialDetail(material, { personal }) {
        ['Type', esc(body_part)],
        ['Weapon', only && esc(only.weapon)],
        ['Bait', only && esc(only.bait)]]
-    : source_type === 'misc'
-      ? [['Source', 'Found out in the world'], ['Quality', qualityLabel(quality)]]
+    : MISC_KINDS.includes(source_type)
+      ? [['Item', link && webLink(link, name)],
+         ['Quality', qualityLabel(quality)]]
       : source_type === 'plant'
         ? [['Plant', onlyPlantLink(plants)]]
         : [];
@@ -525,9 +532,9 @@ function stockLine(d, personal) {
  * location -- the Fence on your Satchel, the Trapper on the Trapper --
  * so nothing is counted twice.
  *
- * Animal materials and misc items had separate formulas in Notion and
- * keep them here: only animals get the "done with this item" case, and
- * the two word a surplus differently.
+ * Animal materials have a formula of their own: only they get the
+ * "done with this item" case, and they word a shortfall and a surplus
+ * differently from plants and the Misc. Items.
  */
 function verdict(material, personal) {
   // Without a personal layer there is no "have", so there is nothing
@@ -607,7 +614,7 @@ function usedIn(usage = [], personal, expanded = false) {
         expanded ? 'Show less' : `and ${rest} more`}</button>
     </li>`;
 
-  // Captioned: with a single entry -- which is every misc material,
+  // Captioned: with a single entry -- which is every collectable,
   // each feeding exactly one talisman -- an unlabelled line under the
   // demand rows reads as another demand row, not as a list.
   return `
