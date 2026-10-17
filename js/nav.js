@@ -36,7 +36,9 @@ export function href(route, id) {
 export function open(route, id) {
   const from = location.hash;
   location.hash = href(route, id);
-  history.replaceState({ card: true, from }, '');
+  // `at` is kept for the address that did not change -- the card
+  // already open -- where no new entry was made to write it on.
+  history.replaceState({ card: true, from, at: history.state?.at }, '');
 }
 
 /**
@@ -65,5 +67,6 @@ export function closed(route) {
   const below = parse(from ?? '');
 
   if (card && below.name === route && !below.id) history.back();
-  else history.replaceState(null, '', `#/${route}`);
+  else history.replaceState({ at: history.state?.at }, '', `#/${route}`);
 }
+

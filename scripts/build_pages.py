@@ -320,6 +320,7 @@ def page(*, root, path, title, description, crumbs, tab, body, csp, theme, wide=
 <link rel="stylesheet" href="{root}app.css">
 <script defer src="{root}js/version.js"></script>
 <script defer src="{root}js/analytics.js"></script>
+<script defer src="{root}js/history-nav.js"></script>
 <script type="application/ld+json">{crumb_ld}</script>
 {theme}
 </head>

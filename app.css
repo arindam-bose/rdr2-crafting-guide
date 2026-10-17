@@ -81,6 +81,7 @@
   --radius: 10px;          /* a card, a panel, a field */
   --radius-sm: 8px;        /* a button, and the boxes inside a panel */
   --tabs-h: 56px;
+  --tabs-inset: 0px;       /* room under the bar; iOS sets it, below */
 }
 
 /* ---- parchment ---------------------------------------------
@@ -185,7 +186,7 @@ body {
     var(--bg);
   color: var(--ink);
   font: 15px/1.5 var(--font-body);
-  padding-bottom: var(--tabs-h);
+  padding-bottom: calc(var(--tabs-h) + var(--tabs-inset));
 }
 
 /* The footer at the foot of the window, however little the page holds:
@@ -472,7 +473,17 @@ body > main { flex: 1 0 auto; }
    The page is not viewport-fit=cover, so the insets should be 0 -- but
    Firefox for Android reports the system navigation bar's height as the
    bottom inset until the first scroll, and the bar grew a blank band
-   that tall under itself. */
+   that tall under itself.
+
+   iOS is the exception, and only iOS: an iPhone's screen corners are
+   rounded enough to clip the outer two tabs, and the home indicator
+   sits over the names.  -webkit-touch-callout is a WebKit-on-iOS
+   property, so Firefox and Chrome on Android never take this branch.
+   The inset may read 0 in Safari (the page is not viewport-fit=cover),
+   hence the floor: enough to lift the names clear of the curve. */
+@supports (-webkit-touch-callout: none) {
+  :root { --tabs-inset: max(env(safe-area-inset-bottom, 0px), 16px); }
+}
 
 .tabs {
   position: fixed;
@@ -481,6 +492,7 @@ body > main { flex: 1 0 auto; }
   display: flex;
   background: var(--surface);
   border-top: 1px solid var(--line);
+  padding-bottom: var(--tabs-inset);
 }
 
 .tabs a {
@@ -529,6 +541,7 @@ body > main { flex: 1 0 auto; }
 
 @media (min-width: 720px) {
   body { padding-bottom: 0; }
+  .tabs { padding-bottom: 0; }
 
   /* Now that the tabs are in normal flow, the whole bar can blur. */
   .chrome {
@@ -828,6 +841,16 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   color: var(--ink-faint);
 }
 .sort .select { font-size: .82rem; padding: 7px 10px; }
+
+/* iOS zooms the page in on any field set smaller than 16px when it takes
+   focus, and leaves it zoomed after.  So on iOS alone (the same test as
+   the tab bar's inset) every field the keyboard or picker opens on is
+   16px; elsewhere they keep their sizes.  Not maximum-scale=1 on the
+   viewport: that stops Android's pinch zoom too.  :root, so it outranks
+   the sizes set further down the file without minding where it sits. */
+@supports (-webkit-touch-callout: none) {
+  :root :is(.search, .select, .paste textarea) { font-size: 16px; }
+}
 
 /* Rules between the toolbar's groups, so the category, the vendors,
    the progress chips and the sort read as four questions rather than
@@ -1992,7 +2015,7 @@ ul.buff li::before {
     bottom: 0;
     width: 100%;
     max-width: none;
-    padding: 18px 16px 16px;
+    padding: 18px 16px calc(16px + var(--tabs-inset));
     border-width: 1px 0 0;
     border-radius: var(--radius) var(--radius) 0 0;
   }
@@ -2062,7 +2085,7 @@ ul.buff li::before {
 .savebar {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--tabs-h) + 12px);
+  bottom: calc(var(--tabs-h) + var(--tabs-inset) + 12px);
   transform: translateX(-50%);
   z-index: 15;
   display: flex;
@@ -2077,6 +2100,59 @@ ul.buff li::before {
   box-shadow: var(--shadow);
 }
 @media (min-width: 720px) { .savebar { bottom: 20px; } }
+
+/* Back and Forward, for the installed app (js/history-nav.js draws
+   them, on the app and the search pages alike): a pill
+   at the left, above the tabs, where the thumb already is.  Under the
+   save bar's and the toast's layers, and lifted over either while it
+   shows, since on a phone both run nearly edge to edge.  The page
+   takes the pill's height again at its foot, so the footer can be
+   scrolled clear of it. */
+.history-nav {
+  position: fixed;
+  left: 12px;
+  bottom: calc(var(--tabs-h) + var(--tabs-inset) + 12px);
+  z-index: 14;
+  display: flex;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+body:has(.savebar:not([hidden]), > .toast:not([hidden])) .history-nav {
+  bottom: calc(var(--tabs-h) + var(--tabs-inset) + 12px + 72px);
+}
+body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset) + 64px); }
+@media (min-width: 720px) {
+  .history-nav { left: 20px; bottom: 20px; }
+  body:has(.savebar:not([hidden]), > .toast:not([hidden])) .history-nav { bottom: calc(20px + 72px); }
+  body:has(> .history-nav) { padding-bottom: 64px; }
+}
+
+.history-nav button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+  padding: 0;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.history-nav button + button { border-left: 1px solid var(--line); border-radius: 0 999px 999px 0; }
+.history-nav button:first-child { border-radius: 999px 0 0 999px; }
+.history-nav button:disabled { color: var(--ink-faint); opacity: .45; cursor: default; }
+.history-nav svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 
 .savebar .pending-count { flex: 1; font-size: .86rem; }
 
@@ -2580,17 +2656,28 @@ ul.buff li::before {
   padding: 14px;
   color: var(--ink);
 }
+/* What went wrong, under the way out: for a bug report, not for
+   reading first. */
+.error .error-detail {
+  margin: 14px 0 0;
+  font-size: .8rem;
+  color: var(--ink-faint);
+  overflow-wrap: anywhere;
+}
 
 
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--tabs-h) + 16px);
+  bottom: calc(var(--tabs-h) + var(--tabs-inset) + 16px);
   transform: translateX(-50%);
   z-index: 20;
   display: flex;
   align-items: center;
   gap: 14px;
+  /* Its own width, not the half of the screen that left: 50% leaves
+     it -- which wrapped a one-line message onto five. */
+  width: max-content;
   max-width: calc(100vw - 32px);
   padding: 10px 14px;
   background: var(--surface-2);
@@ -2617,7 +2704,7 @@ ul.buff li::before {
 .consent {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--tabs-h, 0px) + 12px);
+  bottom: calc(var(--tabs-h, 0px) + var(--tabs-inset, 0px) + 12px);
   transform: translateX(-50%);
   z-index: 30;
   display: flex;
