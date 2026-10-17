@@ -8,8 +8,10 @@
 // search pages (materials/, recipes/, written by build_pages.py)
 // can both load it -- one pill, carried from page to page.
 //
-// The browser's history is already the stack; what a page cannot ask
-// it is whether there is anywhere to go.  So every entry is numbered
+// The browser's history is already the stack.  Where the Navigation
+// API is there (navigation.canGoBack), the browser says itself whether
+// there is anywhere to go, and that is all this asks.  Elsewhere the
+// page has to work it out: every entry is numbered
 // as it is first arrived at, in its state's `at`, and the furthest
 // number reached is kept: Back has somewhere to go above 0, Forward
 // below the furthest.  A new entry cuts off everything ahead of it,
@@ -20,7 +22,9 @@
 // Anything that writes over an entry's state carries `at` across
 // (see js/nav.js), or the entry would be taken for a new one on the
 // way back.  The app calls historyNav.arrived() after a pushState,
-// which no event announces.
+// which no event announces.  And a tap on a link to the address
+// already showing is stopped: it changes nothing on screen, but a
+// browser may still write over the entry -- and its `at` with it.
 // ============================================================
 
 (() => {
@@ -38,6 +42,10 @@
   const write = (key, n) => {
     try { sessionStorage.setItem(key, String(n)); } catch {}
   };
+
+  // Only the parts this uses, so a partial version falls back too.
+  const api = self.navigation && 'canGoBack' in self.navigation
+    && 'oncurrententrychange' in self.navigation ? self.navigation : null;
 
   let here = -1;
   let furthest = -1;
@@ -69,8 +77,8 @@
 
   function paint() {
     if (!back) return;
-    back.disabled = here <= 0;
-    forward.disabled = here >= furthest;
+    back.disabled = api ? !api.canGoBack : here <= 0;
+    forward.disabled = api ? !api.canGoForward : here >= furthest;
   }
 
   function button(label, path) {
@@ -103,8 +111,14 @@
   if (installed) {
     if (document.readyState === 'loading') addEventListener('DOMContentLoaded', draw);
     else draw();
+
+    addEventListener('click', (event) => {
+      const link = event.target.closest?.('a[href]');
+      if (link && !link.target && link.href === location.href) event.preventDefault();
+    });
   }
 
+  api?.addEventListener('currententrychange', paint);
   addEventListener('hashchange', arrived);
   addEventListener('popstate', arrived);
   // A page brought back from the back-forward cache runs no script

@@ -258,6 +258,8 @@ hand.
       dialog.js           the detail dialog every card opens: close
                           button, Esc, backdrop, repaint on a store change
       nav.js              the address: which page, and which card is open
+      history-nav.js      Back and Forward for the installed app, on every
+                          page; a plain script, not a module
       prefs.js            localStorage, guarded: theme, location, sorts, last export
       views/materials.js  "Where to go if you have these items"
       views/material-dialog.js
@@ -467,10 +469,34 @@ foot as the top of the screen: it closes once its button slides under the band.
 With no room below its row it may still open upwards over the band, rather than
 over the row it is about.
 
-The page is not `viewport-fit=cover` and asks for no `env(safe-area-inset-*)`:
-the browser keeps it inside the safe area on its own. Firefox for Android
-reports the system navigation bar as a bottom inset until the first scroll,
-so a fixed tab bar padded by it grew a blank band of that height under it.
+The page is not `viewport-fit=cover`, and asks for `env(safe-area-inset-bottom)`
+on iOS alone. Firefox for Android reports the system navigation bar as a bottom
+inset until the first scroll, so a fixed tab bar padded by it grew a blank band
+of that height under it. On an iPhone, though, the screen's rounded corners
+clipped the outer two tabs and the home indicator sat over their names. So
+under `@supports (-webkit-touch-callout: none)` -- a test only WebKit on iOS
+passes -- the tab bar takes the inset, or 16px if that is more, as
+`--tabs-inset`. Everything docked above the bar (the save bar, the toast, the
+cookie question, the Transfer sheet) adds the same.
+
+iOS zooms the page in on any field set smaller than 16px when it takes focus,
+and leaves it zoomed. So on iOS, by the same test, the search box, the
+dropdowns and the restore paste box are 16px. Not `maximum-scale=1`, which
+would take pinch zoom away on Android too.
+
+Opened from the home screen the guide has no browser toolbar, so no Back.
+`js/history-nav.js` draws its own: a Back and Forward pill at the left above the
+tabs, on the app and the search pages alike, shown only when installed. It
+steps through the browser's own history. To grey out a button with nowhere to
+go it asks the Navigation API (`navigation.canGoBack`) where there is one;
+elsewhere it numbers each entry in its state's `at` as it is first reached and
+keeps the furthest in sessionStorage, so anything that writes over an entry's
+state carries `at` across. The pill lifts over the save bar and the toast while
+they show, and the page takes its height again at the foot.
+
+A page that fails to load says so in its place -- *That didn't load.* -- with
+a Reload button, since a reload is what usually fixes it, and the error itself
+underneath, small, for a bug report.
 
 ### Cards and dialogs
 

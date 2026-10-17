@@ -2104,8 +2104,10 @@ ul.buff li::before {
 /* Back and Forward, for the installed app (js/history-nav.js draws
    them, on the app and the search pages alike): a pill
    at the left, above the tabs, where the thumb already is.  Under the
-   save bar's layer, and lifted over it while it shows, since on a
-   phone the bar runs nearly edge to edge. */
+   save bar's and the toast's layers, and lifted over either while it
+   shows, since on a phone both run nearly edge to edge.  The page
+   takes the pill's height again at its foot, so the footer can be
+   scrolled clear of it. */
 .history-nav {
   position: fixed;
   left: 12px;
@@ -2117,12 +2119,14 @@ ul.buff li::before {
   border-radius: 999px;
   box-shadow: var(--shadow);
 }
-body:has(.savebar:not([hidden])) .history-nav {
-  bottom: calc(var(--tabs-h) + var(--tabs-inset) + 12px + 64px);
+body:has(.savebar:not([hidden]), > .toast:not([hidden])) .history-nav {
+  bottom: calc(var(--tabs-h) + var(--tabs-inset) + 12px + 72px);
 }
+body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset) + 64px); }
 @media (min-width: 720px) {
   .history-nav { left: 20px; bottom: 20px; }
-  body:has(.savebar:not([hidden])) .history-nav { bottom: calc(20px + 64px); }
+  body:has(.savebar:not([hidden]), > .toast:not([hidden])) .history-nav { bottom: calc(20px + 72px); }
+  body:has(> .history-nav) { padding-bottom: 64px; }
 }
 
 .history-nav button {
@@ -2671,6 +2675,9 @@ body:has(.savebar:not([hidden])) .history-nav {
   display: flex;
   align-items: center;
   gap: 14px;
+  /* Its own width, not the half of the screen that left: 50% leaves
+     it -- which wrapped a one-line message onto five. */
+  width: max-content;
   max-width: calc(100vw - 32px);
   padding: 10px 14px;
   background: var(--surface-2);
