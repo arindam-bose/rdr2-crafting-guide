@@ -260,7 +260,8 @@ hand.
       nav.js              the address: which page, and which card is open
       history-nav.js      Back and Forward for the installed app, on every
                           page; a plain script, not a module
-      prefs.js            localStorage, guarded: theme, location, sorts, last export
+      prefs.js            localStorage, guarded: theme, location, sorts, last export;
+                          and sessionStorage for the session's filters
       views/materials.js  "Where to go if you have these items"
       views/material-dialog.js
                           a material, opened -- the one dialog Materials
@@ -268,9 +269,10 @@ hand.
       views/inventory.js  entry: pick a location, search, tap +/-, and
                           the Transfer panel
       views/recipes.js    the catalogue, and the recipe dialog you craft in
-      views/settings.js   stats, backup and restore, reset, About with
+      views/settings.js   backup and restore, reset, About with
                           the home-screen install, and the Support tile
-      views/ledger.js     the history, as a dialog opened from Settings
+      views/ledger.js     the history, as a dialog opened from Your stats
+      views/stats.js      Your stats, as a dialog opened from the About tile
       views/guide.js      About and How to use, as dialogs from Settings
       views/toolbar.js    search, filters, chips, sort, the rules between
                           them and the pager, shared by Materials, Recipes
@@ -679,6 +681,15 @@ made). Both open on name, A–Z. The direction button says what it does — "Mos
 first", "Legendary first", "A-Z" — each field starts in the direction you
 nearly always want, and the choice is remembered per screen.
 
+The filters are remembered too, but only for the session: the search text,
+the tab, the vendor and progress chips and the category on Materials and
+Recipes, and the search and category on Inventory, are kept in
+`sessionStorage`, so going to another page and coming back finds each list as
+it was left. They last as long as the browser tab does, and no backup carries
+them: a sort is how you like a list, a filter is what you were looking for just
+now. A kept value that no longer fits (a station or category that is gone) is
+dropped on the way back in rather than trusted.
+
 Both galleries show 20 cards at a time, with Show more adding another 20 and
 Show less returning to the first 20. Changing a filter, a tab or the sort starts
 the list over at 20; a store change — crafting something — does not, so you keep
@@ -734,18 +745,19 @@ Satchel*, *with Pearson*.
 
 ### Settings and the ledger
 
-**Your stats** is a scoreboard over the same ledger and targets: materials
+**Your stats** is a scoreboard over the same ledger and targets, opened as a
+dialog from the About tile in Settings: materials
 held, recipes crafted against the 165 that can be, money
 spent crafting, and how many of the sixteen wearable outfits are complete —
 every piece in a set crafted, not just started. Below that, two breakdowns
 with a bar each, by vendor and by category. All of it, the outfit count
 included, only ever counts the one-time vendor recipes: a campfire recipe has
 no crafted/not-crafted state to tally (see Two layers, above), so it sits
-outside every number on this panel. Categories are stored singular (`Boot`,
-not `Boots`) so the Recipes filter reads as one kind of thing; this panel
+outside every number in this dialog. Categories are stored singular (`Boot`,
+not `Boots`) so the Recipes filter reads as one kind of thing; this dialog
 pluralises them back on the way out, since a tally is a count of several.
 
-The ledger opens as a dialog from the *Ledger entries* count in Settings — it is
+The ledger opens as a dialog from the *Ledger entries* count in Your stats — it is
 the one thing here that grows without limit, and a page that is mostly history
 buries the controls underneath it. It lists what changed, where, when and why,
 newest first and paged, with the recipe named on a crafting row. An entry naming
@@ -758,9 +770,10 @@ Settings is also where the personal layer can be moved. **Take it with you**
 says when this device was last backed up and how many changes have been made
 since. Export writes the whole ledger as a JSON file, named for the moment it
 was taken on the reader's own clock and the device it came from —
-`rdr2_inventory_firefox-android_2026-10-05_18-36-09.json`, the time hyphenated
-since Windows refuses a colon, and to the second so two backups on one day never
-overwrite each other. The device is the browser and system read from the
+`rdr2_inventory_2026-10-05_18-36-09_firefox-android.json`. The date comes
+first, so a folder of backups from several devices lists in the order they were
+taken; the time is hyphenated since Windows refuses a colon, and to the second
+so two backups on one day never overwrite each other. The device is the browser and system read from the
 user-agent string, since a page is never told a device's own name, and the file
 carries it too ("device": "Firefox on Android") so the import preview can say
 where a backup came from. It is the ledger rather than the balances because the

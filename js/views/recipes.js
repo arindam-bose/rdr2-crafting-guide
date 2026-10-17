@@ -59,12 +59,26 @@ const SORTS = {
 };
 
 export function mount(root) {
-  const state = { search: '', station: null, category: '', show: 'all',
-                  kind: KINDS[0].id, shown: PAGE,
-                  ...toolbar.restoreSort('recipes', SORTS,
-                                         { sort: 'name', dir: 'asc' }) };
   const stations = queries.stations();
   const categories = queries.categories();
+
+  // What this list was narrowed to earlier in the session, if anything.
+  // A category has to belong to the kept tab: the two share none.
+  const { query, ...kept } = toolbar.recallFilters('recipes', {
+    station: (v) => v === null || stations.some((s) => s.id === v),
+    category: (v) => typeof v === 'string',
+    show: (v) => ['all', 'ready', 'done'].includes(v),
+    kind: (v) => KINDS.some((k) => k.id === v),
+  });
+  const state = { search: '', station: null, category: '', show: 'all',
+                  kind: KINDS[0].id, shown: PAGE,
+                  ...kept,
+                  ...toolbar.restoreSort('recipes', SORTS,
+                                         { sort: 'name', dir: 'asc' }) };
+  const repeatable = KINDS.find((k) => k.id === state.kind).repeatable;
+  if (!categories.some((c) => c.category === state.category && c.repeatable === repeatable)) {
+    state.category = '';
+  }
   // Reference data, read once: the plants behind each plant ingredient,
   // so "red sage" still finds what takes Sage, as it does on Materials.
   const plantNames = new Map([...groupBy(queries.materialPlants(), (p) => p.ingredient_id)]
@@ -79,17 +93,17 @@ export function mount(root) {
       ${toolbar.searchBox('r-search', 'Search a recipe, set or material…')}
       ${toolbar.categoryFilter('r-category')}
       ${toolbar.chipRow('r-stations', 'station', [
-        { value: '', label: 'All', pressed: true },
+        { value: '', label: 'All' },
         ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
-      ])}
+      ], state.station)}
       ${toolbar.chipRow('r-show', 'show', [
         { value: 'ready', label: 'Ready to craft' },
         { value: 'done', label: 'Crafted' },
-      ])}
+      ], state.show)}
       ${toolbar.sortControl('r', SORTS, 'Sort recipes by', state.sort)}
       <span class="count" id="r-count"></span>
     </div>
-    ${toolbar.tabRow('r-kinds', 'kind', KINDS)}
+    ${toolbar.tabRow('r-kinds', 'kind', KINDS, { selected: state.kind })}
     </div>
     <div class="gallery" id="r-gallery"></div>
     <div id="r-pager"></div>`;
@@ -110,8 +124,9 @@ export function mount(root) {
     update();
   }
 
+  const searchInput = root.querySelector('#r-search');
   toolbar.wirePager(pagerBox, state, update);
-  toolbar.wireSearch(root.querySelector('#r-search'), state, refilter);
+  toolbar.wireSearch(searchInput, state, refilter, query);
   toolbar.wireSort(root, 'r', SORTS, state, refilter, 'recipes');
   const markRules = toolbar.wireRules(root.querySelector('.toolbar'));
   toolbar.wirePicker(root.querySelector('#r-stations'), 'station', state, refilter);
@@ -173,6 +188,9 @@ export function mount(root) {
   }
 
   function update() {
+    toolbar.keepFilters('recipes', { query: searchInput.value, station: state.station,
+                                     category: state.category, show: state.show,
+                                     kind: state.kind });
     const personal = store.isPersonal();
     const vendor = state.kind === 'vendor';
 

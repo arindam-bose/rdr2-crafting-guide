@@ -1,7 +1,7 @@
 // ============================================================
 // The detail dialog a card opens.
 //
-// Materials, Recipes, the ledger, About and How to use all open
+// Materials, Recipes, the ledger, Your stats, About and How to use all open
 // one, and the plumbing is the same: a native modal <dialog>, a close button,
 // Esc and a backdrop click to leave, and a body that repaints
 // when its view calls refresh() after the store changes.  What goes in the
@@ -28,12 +28,18 @@
 
 import * as nav from './nav.js';
 
+// Each dialog's title gets an id of its own: two can be open at once
+// -- the ledger over Your stats -- and a shared id would name both
+// after whichever came first in the page.
+let dialogs = 0;
+
 export function detailDialog({ render, onClick = () => {}, route = null }) {
   // On <body>, not inside the view: the view is an aria-live region,
   // and every refresh of an open dialog would be read out again.
   const dialog = document.createElement('dialog');
+  const titleId = `detail-title-${++dialogs}`;
   dialog.className = 'detail';
-  dialog.setAttribute('aria-labelledby', 'detail-title');
+  dialog.setAttribute('aria-labelledby', titleId);
 
   // Only the body is repainted: the undo toast moves into the dialog
   // while it is open, and must not be wiped along with the content.
@@ -65,6 +71,8 @@ export function detailDialog({ render, onClick = () => {}, route = null }) {
     const key = dialog.contains(focused) ? focused.dataset.key : null;
 
     body.innerHTML = html;
+    const title = body.querySelector('#detail-title');
+    if (title) title.id = titleId;
 
     if (key) {
       const again = body.querySelector(`[data-key="${CSS.escape(key)}"]`);

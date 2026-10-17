@@ -65,13 +65,22 @@ export function mount(root) {
   // crafting something, saving inventory -- rerenders the gallery, and
   // a list that closed itself when you ticked something off would be
   // worse than not opening at all.
-  const state = { search: '', station: null, part: '', show: 'all',
-                  group: GROUPS[0].id, shown: PAGE, expanded: new Set(),
-                  ...toolbar.restoreSort('materials', SORTS,
-                                         { sort: 'name', dir: 'asc' }) };
-
   const stations = queries.stations();
   const categories = toolbar.categoryOptions(queries.bodyParts());
+
+  // What this list was narrowed to earlier in the session, if anything.
+  const { query, ...kept } = toolbar.recallFilters('materials', {
+    station: (v) => v === null || stations.some((s) => s.id === v),
+    part: (v) => v === '' || categories.some((c) => c.value === v),
+    show: (v) => ['all', 'short', 'done'].includes(v),
+    group: (v) => GROUPS.some((g) => g.id === v),
+  });
+
+  const state = { search: '', station: null, part: '', show: 'all',
+                  group: GROUPS[0].id, shown: PAGE, expanded: new Set(),
+                  ...kept,
+                  ...toolbar.restoreSort('materials', SORTS,
+                                         { sort: 'name', dir: 'asc' }) };
 
   // Reference data, fixed for the life of the page: read once, not on
   // every tap of a stepper.
@@ -84,17 +93,17 @@ export function mount(root) {
       ${toolbar.searchBox('m-search', 'Search a material or animal…')}
       ${toolbar.categoryFilter('m-part')}
       ${toolbar.chipRow('m-stations', 'station', [
-        { value: '', label: 'All', pressed: true },
+        { value: '', label: 'All' },
         ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
-      ])}
+      ], state.station)}
       ${toolbar.chipRow('m-show', 'show', [
         { value: 'short', label: 'Still needed' },
         { value: 'done', label: 'Done' },
-      ])}
+      ], state.show)}
       ${toolbar.sortControl('m', SORTS, 'Sort materials by', state.sort)}
       <span class="count" id="m-count"></span>
     </div>
-    ${toolbar.tabRow('m-groups', 'group', GROUPS)}
+    ${toolbar.tabRow('m-groups', 'group', GROUPS, { selected: state.group })}
     </div>
     <div class="gallery" id="m-gallery"></div>
     <div id="m-pager"></div>`;
@@ -115,8 +124,9 @@ export function mount(root) {
     update();
   }
 
+  const searchInput = root.querySelector('#m-search');
   toolbar.wirePager(pagerBox, state, update);
-  toolbar.wireSearch(root.querySelector('#m-search'), state, refilter);
+  toolbar.wireSearch(searchInput, state, refilter, query);
   toolbar.wireSort(root, 'm', SORTS, state, refilter, 'materials');
   const markRules = toolbar.wireRules(root.querySelector('.toolbar'));
   toolbar.wirePicker(root.querySelector('#m-stations'), 'station', state, refilter);
@@ -166,6 +176,8 @@ export function mount(root) {
   toolbar.wireTabs(groupTabs, 'group', state, refilter);
 
   function update() {
+    toolbar.keepFilters('materials', { query: searchInput.value, station: state.station,
+                                       part: state.part, show: state.show, group: state.group });
     const personal = store.isPersonal();
     showChips.hidden = !personal;
     markRules();

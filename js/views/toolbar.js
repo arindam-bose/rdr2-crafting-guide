@@ -47,17 +47,19 @@ export function categoryFilter(id) {
  * A row of chips.  `attr` is the data attribute they carry, which
  * is also the key the wiring writes on the view's state.  A chip
  * with an `icon` -- one of the merchant stations -- draws it before
- * the label; the rest, "All" included, draw none.
+ * the label; the rest, "All" included, draw none.  The chip whose
+ * value is `current` starts pressed; an empty value stands for none
+ * chosen (null), as wirePicker writes it.
  *
  *   chipRow('m-stations', 'station',
- *           [{ value: '', label: 'All', pressed: true }, …])
+ *           [{ value: '', label: 'All' }, …], state.station)
  */
-export function chipRow(id, attr, chips) {
+export function chipRow(id, attr, chips, current = null) {
   return `
     <div class="chips" id="${esc(id)}">
       ${chips.map((c) => `
         <button class="chip" data-${esc(attr)}="${esc(c.value)}"
-                aria-pressed="${c.pressed ? 'true' : 'false'}"
+                aria-pressed="${(c.value || null) === current}"
           >${icon(c.icon)}${esc(c.label)}</button>`).join('')}
     </div>`;
 }
@@ -105,7 +107,8 @@ export function sortControl(id, sorts, label, current) {
 //
 // How you like a list ordered is a preference, not a filter: it
 // says nothing about what you are looking for, so unlike the search
-// box and the chips it is worth carrying between visits.
+// box and the chips -- kept for the session alone, below -- it is
+// worth carrying between visits, and in a backup.
 // ------------------------------------------------------------
 
 /**
@@ -120,6 +123,37 @@ export function restoreSort(name, sorts, fallback) {
 }
 
 // ------------------------------------------------------------
+// remembering the filters, for the session
+//
+// The search box, the tab, the chips and the category, kept while
+// the tab is open (prefs.sessionFilters), so a trip to another page
+// and back does not throw away what you had narrowed the list to.
+// Each value is checked on the way back in: a station or category
+// that is not there any more is dropped, not trusted.
+// ------------------------------------------------------------
+
+/**
+ * The filters `name` kept this session that still pass their check.
+ * `checks` maps each field to a test of a kept value; a field that
+ * fails it, or was never kept, is left out, so the view's default
+ * stands.  A kept search is always offered, as `query`: the text as
+ * typed, for the box, rather than the lowercased `state.search`.
+ */
+export function recallFilters(name, checks) {
+  const kept = prefs.sessionFilters(name);
+  const found = {};
+  for (const [field, ok] of Object.entries({ query: isText, ...checks })) {
+    if (Object.hasOwn(kept, field) && ok(kept[field])) found[field] = kept[field];
+  }
+  return found;
+}
+
+const isText = (value) => typeof value === 'string';
+
+/** Keep `filters` for `name` until the tab is closed. */
+export const keepFilters = (name, filters) => prefs.keepSessionFilters(name, filters);
+
+// ------------------------------------------------------------
 // wiring
 //
 // Each takes the view's `state` and the callback that reruns the
@@ -127,7 +161,14 @@ export function restoreSort(name, sorts, fallback) {
 // over.  None of them render.
 // ------------------------------------------------------------
 
-export function wireSearch(input, state, onChange) {
+/**
+ * `query` is a search kept from earlier in the session (recallFilters),
+ * put back in the box and the state before the clear button is wired,
+ * so it starts out showing.
+ */
+export function wireSearch(input, state, onChange, query = '') {
+  input.value = query;
+  state.search = query.trim().toLowerCase();
   input.addEventListener('input', () => {
     state.search = input.value.trim().toLowerCase();
     onChange();

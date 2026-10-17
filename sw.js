@@ -95,6 +95,7 @@ const SHELL = [
   'js/views/recipes.js',
   'js/views/settings.js',
   'js/views/ledger.js',
+  'js/views/stats.js',
   'js/views/guide.js',
   'js/views/toolbar.js',
   'js/notice.js',

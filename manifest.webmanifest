@@ -1,7 +1,7 @@
 {
   "name": "Red Dead Redemption II Crafting Guide",
   "short_name": "RDR2 Crafting",
-  "description": "What to craft, what it needs, and what you already have.",
+  "description": "What to craft in story mode, what it needs, and what you already have.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

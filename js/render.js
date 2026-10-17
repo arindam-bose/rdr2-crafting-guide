@@ -276,6 +276,26 @@ export function detailDock(body) {
   return `<div class="detail-dock">${body}</div>`;
 }
 
+/**
+ * The rows of a <dl class="facts">, from [term, value, opens, href].
+ * A term with an `opens` becomes the button that opens its dialog
+ * (data-<opens>, for the owner's click handler to answer); a value
+ * with an `href` becomes a link out, in a new tab.
+ */
+export function facts(pairs) {
+  return pairs.map(([term, value, opens, href]) => `
+    <div>
+      <dt>${opens
+        ? `<button type="button" class="fact-open" data-${esc(opens)}
+                   aria-haspopup="dialog">${esc(term)}</button>`
+        : esc(term)}</dt>
+      <dd>${href
+        ? `<a href="${esc(href)}" target="_blank"
+              rel="noopener noreferrer">${esc(value)}</a>`
+        : esc(value)}</dd>
+    </div>`).join('');
+}
+
 /** A captioned block of a dialog; nothing at all when it has no body. */
 export function detailSection(title, body) {
   if (!body) return '';

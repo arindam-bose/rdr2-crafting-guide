@@ -113,13 +113,20 @@ window.addEventListener('beforeunload', (event) => {
 
 export function mount(root) {
   const locations = queries.locations();
+  const categories = toolbar.categoryOptions(queries.bodyParts(), { plants: true });
+
+  // The search and category from earlier in the session; the place is
+  // remembered for good, under LOCATION_KEY, as it always was.
+  const { query, ...kept } = toolbar.recallFilters('inventory', {
+    part: (v) => v === '' || categories.some((c) => c.value === v),
+  });
   const state = {
     location: prefs.get(LOCATION_KEY) ?? locations[0].id,
     search: '',
     part: '',
+    ...kept,
     ...toolbar.restoreSort('inventory', SORTS, { sort: 'name', dir: 'asc' }),
   };
-  const categories = toolbar.categoryOptions(queries.bodyParts(), { plants: true });
   if (!locations.some((l) => l.id === state.location)) {
     state.location = locations[0].id;
   }
@@ -201,7 +208,7 @@ export function mount(root) {
 
   // No page to start over, unlike the galleries: every change just
   // redraws the lists.
-  toolbar.wireSearch(searchBox, state, update);
+  toolbar.wireSearch(searchBox, state, update, query);
 
   toolbar.wireSort(root, 'i', SORTS, state, update, 'inventory');
   toolbar.wireRules(root.querySelector('.toolbar'));
@@ -523,6 +530,7 @@ export function mount(root) {
   }
 
   function update() {
+    toolbar.keepFilters('inventory', { query: searchBox.value, part: state.part });
     const searching = state.search.length > 0;
     const place = locations.find((l) => l.id === state.location).name;
     const at = heldAt(state.location, place);
