@@ -2101,7 +2101,8 @@ ul.buff li::before {
 }
 @media (min-width: 720px) { .savebar { bottom: 20px; } }
 
-/* Back and Forward, for the installed app (main.js shows them): a pill
+/* Back and Forward, for the installed app (js/history-nav.js draws
+   them, on the app and the search pages alike): a pill
    at the left, above the tabs, where the thumb already is.  Under the
    save bar's layer, and lifted over it while it shows, since on a
    phone the bar runs nearly edge to edge. */
@@ -2116,7 +2117,6 @@ ul.buff li::before {
   border-radius: 999px;
   box-shadow: var(--shadow);
 }
-.history-nav[hidden] { display: none; }
 body:has(.savebar:not([hidden])) .history-nav {
   bottom: calc(var(--tabs-h) + var(--tabs-inset) + 12px + 64px);
 }

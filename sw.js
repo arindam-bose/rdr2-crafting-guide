@@ -85,6 +85,7 @@ const SHELL = [
   'js/render.js',
   'js/dialog.js',
   'js/nav.js',
+  'js/history-nav.js',
   'js/toast.js',
   'js/theme.js',
   'js/prefs.js',
