@@ -81,6 +81,7 @@
   --radius: 10px;          /* a card, a panel, a field */
   --radius-sm: 8px;        /* a button, and the boxes inside a panel */
   --tabs-h: 56px;
+  --tabs-inset: 0px;       /* room under the bar; iOS sets it, below */
 }
 
 /* ---- parchment ---------------------------------------------
@@ -185,7 +186,7 @@ body {
     var(--bg);
   color: var(--ink);
   font: 15px/1.5 var(--font-body);
-  padding-bottom: var(--tabs-h);
+  padding-bottom: calc(var(--tabs-h) + var(--tabs-inset));
 }
 
 /* The footer at the foot of the window, however little the page holds:
@@ -472,7 +473,17 @@ body > main { flex: 1 0 auto; }
    The page is not viewport-fit=cover, so the insets should be 0 -- but
    Firefox for Android reports the system navigation bar's height as the
    bottom inset until the first scroll, and the bar grew a blank band
-   that tall under itself. */
+   that tall under itself.
+
+   iOS is the exception, and only iOS: an iPhone's screen corners are
+   rounded enough to clip the outer two tabs, and the home indicator
+   sits over the names.  -webkit-touch-callout is a WebKit-on-iOS
+   property, so Firefox and Chrome on Android never take this branch.
+   The inset may read 0 in Safari (the page is not viewport-fit=cover),
+   hence the floor: enough to lift the names clear of the curve. */
+@supports (-webkit-touch-callout: none) {
+  :root { --tabs-inset: max(env(safe-area-inset-bottom, 0px), 16px); }
+}
 
 .tabs {
   position: fixed;
@@ -481,6 +492,7 @@ body > main { flex: 1 0 auto; }
   display: flex;
   background: var(--surface);
   border-top: 1px solid var(--line);
+  padding-bottom: var(--tabs-inset);
 }
 
 .tabs a {
@@ -529,6 +541,7 @@ body > main { flex: 1 0 auto; }
 
 @media (min-width: 720px) {
   body { padding-bottom: 0; }
+  .tabs { padding-bottom: 0; }
 
   /* Now that the tabs are in normal flow, the whole bar can blur. */
   .chrome {
@@ -1992,7 +2005,7 @@ ul.buff li::before {
     bottom: 0;
     width: 100%;
     max-width: none;
-    padding: 18px 16px 16px;
+    padding: 18px 16px calc(16px + var(--tabs-inset));
     border-width: 1px 0 0;
     border-radius: var(--radius) var(--radius) 0 0;
   }
@@ -2062,7 +2075,7 @@ ul.buff li::before {
 .savebar {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--tabs-h) + 12px);
+  bottom: calc(var(--tabs-h) + var(--tabs-inset) + 12px);
   transform: translateX(-50%);
   z-index: 15;
   display: flex;
@@ -2585,7 +2598,7 @@ ul.buff li::before {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--tabs-h) + 16px);
+  bottom: calc(var(--tabs-h) + var(--tabs-inset) + 16px);
   transform: translateX(-50%);
   z-index: 20;
   display: flex;
@@ -2617,7 +2630,7 @@ ul.buff li::before {
 .consent {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--tabs-h, 0px) + 12px);
+  bottom: calc(var(--tabs-h, 0px) + var(--tabs-inset, 0px) + 12px);
   transform: translateX(-50%);
   z-index: 30;
   display: flex;
