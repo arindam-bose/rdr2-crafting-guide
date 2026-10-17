@@ -100,10 +100,14 @@ function fileStamp(d) {
        + `_${two(d.getHours())}-${two(d.getMinutes())}-${two(d.getSeconds())}`;
 }
 
-/** Save everything as a file named for the device and the moment it was taken. */
+/**
+ * Save everything as a file named for the moment it was taken, then
+ * the device: date first, so a folder of backups from several devices
+ * lists in the order they were made.
+ */
 export function download() {
   const from = deviceSlug();
-  const name = `rdr2_inventory_${from ? `${from}_` : ''}${fileStamp(new Date())}.json`;
+  const name = `rdr2_inventory_${fileStamp(new Date())}${from ? `_${from}` : ''}.json`;
   const blob = new Blob([store.exportJSON(device())], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
 

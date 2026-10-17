@@ -770,9 +770,10 @@ Settings is also where the personal layer can be moved. **Take it with you**
 says when this device was last backed up and how many changes have been made
 since. Export writes the whole ledger as a JSON file, named for the moment it
 was taken on the reader's own clock and the device it came from —
-`rdr2_inventory_firefox-android_2026-10-05_18-36-09.json`, the time hyphenated
-since Windows refuses a colon, and to the second so two backups on one day never
-overwrite each other. The device is the browser and system read from the
+`rdr2_inventory_2026-10-05_18-36-09_firefox-android.json`. The date comes
+first, so a folder of backups from several devices lists in the order they were
+taken; the time is hyphenated since Windows refuses a colon, and to the second
+so two backups on one day never overwrite each other. The device is the browser and system read from the
 user-agent string, since a page is never told a device's own name, and the file
 carries it too ("device": "Firefox on Android") so the import preview can say
 where a backup came from. It is the ledger rather than the balances because the
