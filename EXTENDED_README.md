@@ -268,9 +268,10 @@ hand.
       views/inventory.js  entry: pick a location, search, tap +/-, and
                           the Transfer panel
       views/recipes.js    the catalogue, and the recipe dialog you craft in
-      views/settings.js   stats, backup and restore, reset, About with
+      views/settings.js   backup and restore, reset, About with
                           the home-screen install, and the Support tile
-      views/ledger.js     the history, as a dialog opened from Settings
+      views/ledger.js     the history, as a dialog opened from Your stats
+      views/stats.js      Your stats, as a dialog opened from the About tile
       views/guide.js      About and How to use, as dialogs from Settings
       views/toolbar.js    search, filters, chips, sort, the rules between
                           them and the pager, shared by Materials, Recipes
@@ -734,18 +735,19 @@ Satchel*, *with Pearson*.
 
 ### Settings and the ledger
 
-**Your stats** is a scoreboard over the same ledger and targets: materials
+**Your stats** is a scoreboard over the same ledger and targets, opened as a
+dialog from the About tile in Settings: materials
 held, recipes crafted against the 165 that can be, money
 spent crafting, and how many of the sixteen wearable outfits are complete —
 every piece in a set crafted, not just started. Below that, two breakdowns
 with a bar each, by vendor and by category. All of it, the outfit count
 included, only ever counts the one-time vendor recipes: a campfire recipe has
 no crafted/not-crafted state to tally (see Two layers, above), so it sits
-outside every number on this panel. Categories are stored singular (`Boot`,
-not `Boots`) so the Recipes filter reads as one kind of thing; this panel
+outside every number in this dialog. Categories are stored singular (`Boot`,
+not `Boots`) so the Recipes filter reads as one kind of thing; this dialog
 pluralises them back on the way out, since a tally is a count of several.
 
-The ledger opens as a dialog from the *Ledger entries* count in Settings — it is
+The ledger opens as a dialog from the *Ledger entries* count in Your stats — it is
 the one thing here that grows without limit, and a page that is mostly history
 buries the controls underneath it. It lists what changed, where, when and why,
 newest first and paged, with the recipe named on a crafting row. An entry naming

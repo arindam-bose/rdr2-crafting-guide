@@ -14,11 +14,12 @@
 
 import * as store from '../store.js';
 import * as theme from '../theme.js';
-import { esc, plural, icon, stationIcon, stationColour, money, tallyRow } from '../render.js';
+import { esc, plural, facts } from '../render.js';
 import * as backup from '../backup.js';
 import * as install from '../install.js';
 import { toast, offerReload } from '../toast.js';
 import { ledgerDialog } from './ledger.js';
+import { statsDialog } from './stats.js';
 import { aboutDialog, howToDialog } from './guide.js';
 
 // What Share the guide hands on: the canonical address, and a line to
@@ -77,17 +78,6 @@ const FONT_CREDITS = [
     html: 'From <a href="https://www.dafont.com/fb_remington.font" target="_blank" rel="noopener noreferrer">DaFont</a>, free for professional use' },
 ];
 
-// recipes.category is stored singular -- "Boot", not "Boots" -- so the
-// Recipes page filter reads as one kind of thing.  A tally here is a
-// count of several, so this page pluralises on the way out instead;
-// irregular ones (a word ending in a consonant then "y") are listed,
-// everything else just takes an "s".  A category already plural (a
-// campfire one, such as "Hunting Accessories", though byCategory does
-// not show those today) is left alone rather than doubled up.
-const CATEGORY_PLURAL = {
-  Accessory: 'Accessories',
-};
-
 /**
  * A release date as "5 Oct 2026".  The version file writes a bare day,
  * which a browser reads as midnight UTC, so it is shown in UTC too --
@@ -108,14 +98,6 @@ async function cachedRelease() {
   if (!('caches' in self)) return null;
   const name = (await caches.keys()).find((n) => n.startsWith(CACHE_PREFIX));
   return name ? name.slice(CACHE_PREFIX.length) : null;
-}
-
-function pluralCategory(category) {
-  if (!category) return category;
-  const words = category.split(' ');
-  const last = words.pop();
-  const plural = last.endsWith('s') ? last : CATEGORY_PLURAL[last] ?? `${last}s`;
-  return [...words, plural].join(' ');
 }
 
 export function mount(root) {
@@ -234,17 +216,6 @@ export function mount(root) {
       </section>
 
       <section class="panel panel-wide">
-        <h3>Your stats</h3>
-        <dl class="facts" id="s-facts"></dl>
-
-        <p class="list-label card-label">By vendor</p>
-        <div class="demands" id="s-by-vendor"></div>
-
-        <p class="list-label card-label">By category</p>
-        <div class="stat-grid" id="s-by-category"></div>
-      </section>
-
-      <section class="panel panel-wide">
         <h3>Acknowledgements</h3>
         <p class="note">Where the reference data came from. None of this is
           mine; the guide is only the table they add up to.</p>
@@ -274,12 +245,9 @@ export function mount(root) {
   const ledger = ledgerDialog();
   const about = aboutDialog();
   const howTo = howToDialog();
+  const stats = statsDialog(ledger);
 
-  $('#s-facts').addEventListener('click', (event) => {
-    if (event.target.closest('[data-ledger]')) ledger.open();
-  });
-
-  // The About tile: the two pages of words, the release this is, and
+  // The About tile: the two pages of words, your stats, the release this is, and
   // the cookie choice.  Nothing here moves with the store, so it is not
   // repainted on every update -- only when the cookie answer changes.
   // "Cookie settings" carries data-consent-open, which js/analytics.js
@@ -290,6 +258,7 @@ export function mount(root) {
     $('#s-about').innerHTML = facts([
       ['About this tool', '', 'about'],
       ['How to use this tool', '', 'howto'],
+      ['Your stats', '', 'stats'],
       ['Tool version', number ? `v${number}, updated ${released(date)}` : 'unknown'],
       ['Source code', 'On GitHub', '', 'https://github.com/arindam-bose/rdr2-crafting-guide'],
       ['Log Issues and request features', 'On GitHub', '', 'https://github.com/arindam-bose/rdr2-crafting-guide/issues'],
@@ -301,6 +270,7 @@ export function mount(root) {
   $('#s-about').addEventListener('click', (event) => {
     if (event.target.closest('[data-about]')) about.open();
     else if (event.target.closest('[data-howto]')) howTo.open();
+    else if (event.target.closest('[data-stats]')) stats.open();
   });
   let pending = null;          // text waiting for a confirmed import
 
@@ -535,24 +505,6 @@ export function mount(root) {
   // ---- what the page reports -------------------------------------------
 
   function update() {
-    const s = store.stats();
-
-    $('#s-facts').innerHTML = facts([
-      ['Ledger entries', s.entries, 'ledger'],
-      ['Materials held', s.materials
-        ? `${plural(s.materials, 'kind')} in ${plural(s.places, 'place')}`
-        : 'nothing yet'],
-      ['Recipes crafted', `${s.made}/${s.vendorRecipes}`],
-      ['Spent crafting', money(s.spentCents)],
-      ['Outfits completed', `${s.outfitsDone} of ${s.outfits}`],
-    ]);
-
-    $('#s-by-vendor').innerHTML = s.byVendor.map((v) => progressRow(v.station, v.made, v.total,
-      { colour: stationColour(v.color), mark: icon(stationIcon(v.station_id)) })).join('');
-
-    $('#s-by-category').innerHTML = s.byCategory.map((c) =>
-      progressRow(pluralCategory(c.category), c.made, c.total)).join('');
-
     const last = backup.lastSaved();
     const { count } = backup.status();
     $('#s-last').textContent = (last
@@ -566,6 +518,7 @@ export function mount(root) {
     reportOffline();
     reportKept();
     ledger.refresh();
+    stats.refresh();
   }
 
   async function reportOffline() {
@@ -590,31 +543,6 @@ export function mount(root) {
         + 'unvisited for a while, or space runs low - so keep a backup.';
   }
 
-  // A term with an `opens` becomes the button that opens its dialog;
-  // a value with an `href` becomes a link out, in a new tab.
-  function facts(pairs) {
-    return pairs.map(([term, value, opens, href]) => `
-      <div>
-        <dt>${opens
-          ? `<button type="button" class="fact-open" data-${esc(opens)}
-                     aria-haspopup="dialog">${esc(term)}</button>`
-          : esc(term)}</dt>
-        <dd>${href
-          ? `<a href="${esc(href)}" target="_blank"
-                rel="noopener noreferrer">${esc(value)}</a>`
-          : esc(value)}</dd>
-      </div>`).join('');
-  }
-
-  /** A made/total tally, with its bar -- `mark` the vendor's icon, where there is one. */
-  function progressRow(label, made, total, { colour = '', mark = '' } = {}) {
-    return tallyRow({
-      label, mark, colour, count: made, total, countClass: made ? 'have' : '',
-      aria: `${made} of ${total} crafted for ${label}`,
-      pct: total ? Math.round((made / total) * 100) : 0,
-    });
-  }
-
   const unsubscribe = backup.subscribe(update);
 
   update();
@@ -626,6 +554,7 @@ export function mount(root) {
       unsubscribe();
       unsubscribeInstall();
       ledger.destroy();
+      stats.destroy();
       about.destroy();
       howTo.destroy();
     },
