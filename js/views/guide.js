@@ -83,6 +83,13 @@ const HOW_TO = `
           pages, back again.</li>
       </ul>
       <p>Every change offers <strong>Undo</strong> for a few seconds.</p>
+      <p><strong>Already well into the game?</strong> You can still bring the
+        guide up to date with what you have crafted. For each item: on
+        <strong>Inventory</strong>, pick the vendor who made it (the
+        Satchel, for the Fence) and add the ingredients its recipe took.
+        Then on <strong>Recipes</strong>, open that recipe and press
+        <strong>Craft</strong>. It is marked crafted and the ingredients
+        come back out, so your counts stay right.</p>
     </div>`)}
 
   ${detailSection('4. Craft', `

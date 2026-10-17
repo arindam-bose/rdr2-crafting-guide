@@ -65,6 +65,13 @@ and then, and keep the file somewhere safe.
      row hands items from your Satchel to Pearson or the Trapper, and back.
 
    Every change offers **Undo** for a few seconds.
+
+   **Already well into the game?** You can still bring the guide up to date
+   with what you have crafted. For each item: on **Inventory**, pick the vendor
+   who made it (the Satchel, for the Fence) and add the ingredients its recipe
+   took. Then on **Recipes**, open that recipe and press **Craft**. It is
+   marked crafted and the ingredients come back out, so your counts stay
+   right.
 4. **Craft.** On **Recipes**, *Ready to craft* shows what you can make now.
    Open a recipe and press **Craft**: its ingredients come out of that vendor's
    stock (the Fence draws on your Satchel), and it is marked crafted.
