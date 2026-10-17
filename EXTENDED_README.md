@@ -260,7 +260,8 @@ hand.
       nav.js              the address: which page, and which card is open
       history-nav.js      Back and Forward for the installed app, on every
                           page; a plain script, not a module
-      prefs.js            localStorage, guarded: theme, location, sorts, last export
+      prefs.js            localStorage, guarded: theme, location, sorts, last export;
+                          and sessionStorage for the session's filters
       views/materials.js  "Where to go if you have these items"
       views/material-dialog.js
                           a material, opened -- the one dialog Materials
@@ -679,6 +680,15 @@ cook from the Satchel right now sorts first (nothing marks a campfire recipe
 made). Both open on name, A–Z. The direction button says what it does — "Most
 first", "Legendary first", "A-Z" — each field starts in the direction you
 nearly always want, and the choice is remembered per screen.
+
+The filters are remembered too, but only for the session: the search text,
+the tab, the vendor and progress chips and the category on Materials and
+Recipes, and the search and category on Inventory, are kept in
+`sessionStorage`, so going to another page and coming back finds each list as
+it was left. They last as long as the browser tab does, and no backup carries
+them: a sort is how you like a list, a filter is what you were looking for just
+now. A kept value that no longer fits (a station or category that is gone) is
+dropped on the way back in rather than trusted.
 
 Both galleries show 20 cards at a time, with Show more adding another 20 and
 Show less returning to the first 20. Changing a filter, a tab or the sort starts

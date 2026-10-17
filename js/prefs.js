@@ -86,3 +86,33 @@ export function replaceSorts(given) {
   for (const list of Object.keys(sorts())) remove(sortKey(list));
   for (const [list, value] of Object.entries(given)) set(sortKey(list), value);
 }
+
+// ------------------------------------------------------------
+// the session's filters
+//
+// What a list is narrowed to -- the search, the tab, the chips, the
+// category -- kept in sessionStorage, so going to another page and
+// back finds it as you left it.  Unlike the sort it is about what you
+// are looking for right now, so it lasts as long as the tab does and
+// no longer, and no backup carries it.  Guarded like everything else:
+// with no storage the page just starts fresh, as it always did.
+// ------------------------------------------------------------
+
+const FILTER_PREFIX = 'rdr2:filters:';
+
+/** `list`'s kept filters, as stored, or {} if there are none we can read. */
+export function sessionFilters(list) {
+  try {
+    const kept = JSON.parse(sessionStorage.getItem(FILTER_PREFIX + list));
+    return kept && typeof kept === 'object' && !Array.isArray(kept) ? kept : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Keep `list`'s filters for the rest of the session. */
+export function keepSessionFilters(list, filters) {
+  try {
+    sessionStorage.setItem(FILTER_PREFIX + list, JSON.stringify(filters));
+  } catch { /* no storage: the next visit starts fresh */ }
+}

@@ -105,7 +105,8 @@ export function sortControl(id, sorts, label, current) {
 //
 // How you like a list ordered is a preference, not a filter: it
 // says nothing about what you are looking for, so unlike the search
-// box and the chips it is worth carrying between visits.
+// box and the chips -- kept for the session alone, below -- it is
+// worth carrying between visits, and in a backup.
 // ------------------------------------------------------------
 
 /**
@@ -117,6 +118,46 @@ export function restoreSort(name, sorts, fallback) {
   const [sort, dir] = (prefs.get(prefs.sortKey(name)) ?? '').split(':');
   if (!Object.hasOwn(sorts, sort)) return fallback;
   return { sort, dir: dir === 'asc' || dir === 'desc' ? dir : sorts[sort].start };
+}
+
+// ------------------------------------------------------------
+// remembering the filters, for the session
+//
+// The search box, the tab, the chips and the category, kept while
+// the tab is open (prefs.sessionFilters), so a trip to another page
+// and back does not throw away what you had narrowed the list to.
+// Each value is checked on the way back in: a station or category
+// that is not there any more is dropped, not trusted.
+// ------------------------------------------------------------
+
+/**
+ * The filters `name` kept this session that still pass their check.
+ * `checks` maps each field to a test of a kept value; a field that
+ * fails it, or was never kept, is left out, so the view's default
+ * stands.  A kept search is always offered, as `query`: the text as
+ * typed, for the box, rather than the lowercased `state.search`.
+ */
+export function recallFilters(name, checks) {
+  const kept = prefs.sessionFilters(name);
+  const found = {};
+  for (const [field, ok] of Object.entries({ query: isText, ...checks })) {
+    if (Object.hasOwn(kept, field) && ok(kept[field])) found[field] = kept[field];
+  }
+  return found;
+}
+
+const isText = (value) => typeof value === 'string';
+
+/** Keep `filters` for `name` until the tab is closed. */
+export const keepFilters = (name, filters) => prefs.keepSessionFilters(name, filters);
+
+/**
+ * A kept search back into the box and the state, before the box is
+ * wired, so its clear button starts out showing.
+ */
+export function restoreSearch(input, state, query = '') {
+  input.value = query;
+  state.search = query.trim().toLowerCase();
 }
 
 // ------------------------------------------------------------
