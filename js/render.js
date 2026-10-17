@@ -692,6 +692,8 @@ export function errorBox(err) {
   return `
     <div class="error">
       <h2>That didn't load.</h2>
-      <p>${esc(err.message || err)}</p>
+      <p>Reloading the page usually fixes this.</p>
+      <button type="button" class="more-btn" data-reload>Reload</button>
+      <p class="error-detail">${esc(err.message || err)}</p>
     </div>`;
 }

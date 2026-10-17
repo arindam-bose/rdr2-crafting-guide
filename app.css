@@ -2652,6 +2652,14 @@ body:has(.savebar:not([hidden])) .history-nav {
   padding: 14px;
   color: var(--ink);
 }
+/* What went wrong, under the way out: for a bug report, not for
+   reading first. */
+.error .error-detail {
+  margin: 14px 0 0;
+  font-size: .8rem;
+  color: var(--ink-faint);
+  overflow-wrap: anywhere;
+}
 
 
 .toast {

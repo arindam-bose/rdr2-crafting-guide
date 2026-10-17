@@ -312,6 +312,13 @@ async function start() {
   }
 }
 
+// The error box's Reload (render.js): a listener rather than an
+// onclick, which the page's policy would refuse.  Set before start(),
+// since its failure is the one most likely to need it.
+document.addEventListener('click', (event) => {
+  if (event.target.closest('.error [data-reload]')) location.reload();
+});
+
 start().catch((err) => {
   console.error(err);
   view.innerHTML = errorBox(err);
