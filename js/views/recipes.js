@@ -93,14 +93,13 @@ export function mount(root) {
       ${toolbar.searchBox('r-search', 'Search a recipe, set or material…')}
       ${toolbar.categoryFilter('r-category')}
       ${toolbar.chipRow('r-stations', 'station', [
-        { value: '', label: 'All', pressed: !state.station },
-        ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id),
-                                  pressed: s.id === state.station })),
-      ])}
+        { value: '', label: 'All' },
+        ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
+      ], state.station)}
       ${toolbar.chipRow('r-show', 'show', [
-        { value: 'ready', label: 'Ready to craft', pressed: state.show === 'ready' },
-        { value: 'done', label: 'Crafted', pressed: state.show === 'done' },
-      ])}
+        { value: 'ready', label: 'Ready to craft' },
+        { value: 'done', label: 'Crafted' },
+      ], state.show)}
       ${toolbar.sortControl('r', SORTS, 'Sort recipes by', state.sort)}
       <span class="count" id="r-count"></span>
     </div>
@@ -126,10 +125,8 @@ export function mount(root) {
   }
 
   const searchInput = root.querySelector('#r-search');
-  toolbar.restoreSearch(searchInput, state, query);
-
   toolbar.wirePager(pagerBox, state, update);
-  toolbar.wireSearch(searchInput, state, refilter);
+  toolbar.wireSearch(searchInput, state, refilter, query);
   toolbar.wireSort(root, 'r', SORTS, state, refilter, 'recipes');
   const markRules = toolbar.wireRules(root.querySelector('.toolbar'));
   toolbar.wirePicker(root.querySelector('#r-stations'), 'station', state, refilter);

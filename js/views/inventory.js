@@ -208,8 +208,7 @@ export function mount(root) {
 
   // No page to start over, unlike the galleries: every change just
   // redraws the lists.
-  toolbar.restoreSearch(searchBox, state, query);
-  toolbar.wireSearch(searchBox, state, update);
+  toolbar.wireSearch(searchBox, state, update, query);
 
   toolbar.wireSort(root, 'i', SORTS, state, update, 'inventory');
   toolbar.wireRules(root.querySelector('.toolbar'));

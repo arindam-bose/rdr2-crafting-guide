@@ -15,7 +15,7 @@
 // which the offline copy otherwise keeps serving.
 // ============================================================
 
-self.APP_VERSION = { number: '1.0.17', date: '2026-10-17' };
+self.APP_VERSION = { number: '1.0.18', date: '2026-10-17' };
 
 // The release, beside the name, so anyone can say which one they
 // have.  No document in the service worker; the app loads this at the

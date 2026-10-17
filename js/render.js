@@ -276,7 +276,6 @@ export function detailDock(body) {
   return `<div class="detail-dock">${body}</div>`;
 }
 
-/** A captioned block of a dialog; nothing at all when it has no body. */
 /**
  * The rows of a <dl class="facts">, from [term, value, opens, href].
  * A term with an `opens` becomes the button that opens its dialog
@@ -297,6 +296,7 @@ export function facts(pairs) {
     </div>`).join('');
 }
 
+/** A captioned block of a dialog; nothing at all when it has no body. */
 export function detailSection(title, body) {
   if (!body) return '';
   return `

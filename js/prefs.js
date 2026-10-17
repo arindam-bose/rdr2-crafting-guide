@@ -4,7 +4,9 @@
 // Which theme, which inventory location, when you last exported:
 // choices, not data.  They live in localStorage rather than the
 // ledger, and they are never worth an exception.  The sort orders
-// are the one kind a backup carries -- see sorts() below.
+// are the one kind a backup carries -- see sorts() below.  The
+// filters a list was narrowed to are kept for the session alone, in
+// sessionStorage -- see sessionFilters() at the end.
 //
 // Reading localStorage throws outright in a browser with site
 // data blocked, and in Safari's private mode it has historically

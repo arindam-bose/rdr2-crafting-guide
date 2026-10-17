@@ -47,17 +47,19 @@ export function categoryFilter(id) {
  * A row of chips.  `attr` is the data attribute they carry, which
  * is also the key the wiring writes on the view's state.  A chip
  * with an `icon` -- one of the merchant stations -- draws it before
- * the label; the rest, "All" included, draw none.
+ * the label; the rest, "All" included, draw none.  The chip whose
+ * value is `current` starts pressed; an empty value stands for none
+ * chosen (null), as wirePicker writes it.
  *
  *   chipRow('m-stations', 'station',
- *           [{ value: '', label: 'All', pressed: true }, …])
+ *           [{ value: '', label: 'All' }, …], state.station)
  */
-export function chipRow(id, attr, chips) {
+export function chipRow(id, attr, chips, current = null) {
   return `
     <div class="chips" id="${esc(id)}">
       ${chips.map((c) => `
         <button class="chip" data-${esc(attr)}="${esc(c.value)}"
-                aria-pressed="${c.pressed ? 'true' : 'false'}"
+                aria-pressed="${(c.value || null) === current}"
           >${icon(c.icon)}${esc(c.label)}</button>`).join('')}
     </div>`;
 }
@@ -151,15 +153,6 @@ const isText = (value) => typeof value === 'string';
 /** Keep `filters` for `name` until the tab is closed. */
 export const keepFilters = (name, filters) => prefs.keepSessionFilters(name, filters);
 
-/**
- * A kept search back into the box and the state, before the box is
- * wired, so its clear button starts out showing.
- */
-export function restoreSearch(input, state, query = '') {
-  input.value = query;
-  state.search = query.trim().toLowerCase();
-}
-
 // ------------------------------------------------------------
 // wiring
 //
@@ -168,7 +161,14 @@ export function restoreSearch(input, state, query = '') {
 // over.  None of them render.
 // ------------------------------------------------------------
 
-export function wireSearch(input, state, onChange) {
+/**
+ * `query` is a search kept from earlier in the session (recallFilters),
+ * put back in the box and the state before the clear button is wired,
+ * so it starts out showing.
+ */
+export function wireSearch(input, state, onChange, query = '') {
+  input.value = query;
+  state.search = query.trim().toLowerCase();
   input.addEventListener('input', () => {
     state.search = input.value.trim().toLowerCase();
     onChange();

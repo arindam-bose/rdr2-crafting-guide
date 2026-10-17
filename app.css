@@ -1043,9 +1043,9 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 .demands { display: flex; flex-direction: column; gap: 6px; }
 
-/* Settings' crafted-by-category tally: the same demand row, but two
-   to a line once there is room, since two dozen categories in one
-   narrow column would make the panel the tallest thing on the page. */
+/* Your stats' crafted-by-category tally: the same demand row, but two
+   to a line once there is room, since a dozen and more categories in
+   one narrow column would make the dialog a long scroll. */
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -2777,7 +2777,7 @@ h1, h2,
    everywhere else something reads as a header or a control rather
    than prose. */
 h3,
-#detail-title, .detail-head h1,
+.detail-head h2, .detail-head h1,
 .chip,
 .segmented button,
 .craft-btn, .ghost-btn, .more-btn, .danger-btn, .sort-dir, .savebar button,

@@ -93,14 +93,13 @@ export function mount(root) {
       ${toolbar.searchBox('m-search', 'Search a material or animal…')}
       ${toolbar.categoryFilter('m-part')}
       ${toolbar.chipRow('m-stations', 'station', [
-        { value: '', label: 'All', pressed: !state.station },
-        ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id),
-                                  pressed: s.id === state.station })),
-      ])}
+        { value: '', label: 'All' },
+        ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
+      ], state.station)}
       ${toolbar.chipRow('m-show', 'show', [
-        { value: 'short', label: 'Still needed', pressed: state.show === 'short' },
-        { value: 'done', label: 'Done', pressed: state.show === 'done' },
-      ])}
+        { value: 'short', label: 'Still needed' },
+        { value: 'done', label: 'Done' },
+      ], state.show)}
       ${toolbar.sortControl('m', SORTS, 'Sort materials by', state.sort)}
       <span class="count" id="m-count"></span>
     </div>
@@ -126,10 +125,8 @@ export function mount(root) {
   }
 
   const searchInput = root.querySelector('#m-search');
-  toolbar.restoreSearch(searchInput, state, query);
-
   toolbar.wirePager(pagerBox, state, update);
-  toolbar.wireSearch(searchInput, state, refilter);
+  toolbar.wireSearch(searchInput, state, refilter, query);
   toolbar.wireSort(root, 'm', SORTS, state, refilter, 'materials');
   const markRules = toolbar.wireRules(root.querySelector('.toolbar'));
   toolbar.wirePicker(root.querySelector('#m-stations'), 'station', state, refilter);
