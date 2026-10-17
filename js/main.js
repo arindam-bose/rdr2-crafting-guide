@@ -8,6 +8,7 @@
 
 import * as backup from './backup.js';
 import * as db from './db.js';
+import * as install from './install.js';
 import * as nav from './nav.js';
 import * as notice from './notice.js';
 import * as prefs from './prefs.js';
@@ -40,6 +41,17 @@ const tabs = document.querySelector('.tabs');
 const modeToggle = document.getElementById('mode-toggle');
 const backupBtn = document.getElementById('backup-btn');
 const firstNote = document.getElementById('first-note');
+const historyNav = document.getElementById('history-nav');
+const historyBack = document.getElementById('history-back');
+const historyForward = document.getElementById('history-forward');
+
+/** A new address: number its entry, and say which way there is to go. */
+function arrived() {
+  nav.stamp();
+  const { back, forward } = nav.can();
+  historyBack.disabled = !back;
+  historyForward.disabled = !forward;
+}
 
 // ------------------------------------------------------------
 // the pinned page head
@@ -273,16 +285,27 @@ async function start() {
     const home = location.pathname + location.search;
     if (name !== DEFAULT_ROUTE || id) {
       history.pushState(null, '', home);
+      arrived();
       show(route());
     } else if (location.hash) {
-      history.replaceState(null, '', home);
+      history.replaceState({ at: history.state?.at }, '', home);
     }
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
-  window.addEventListener('hashchange', () => show(route()));
+  window.addEventListener('hashchange', () => { arrived(); show(route()); });
+  window.addEventListener('popstate', arrived);
+  arrived();
   show(route());
+
+  // Back and Forward for the installed app, which has no toolbar to
+  // carry them; in a browser tab the browser's own are right there.
+  if (install.state() === 'running') {
+    historyNav.hidden = false;
+    historyBack.addEventListener('click', () => history.back());
+    historyForward.addEventListener('click', () => history.forward());
+  }
 
   // After the page, so it sits over it -- and over its error, if the
   // page could not load, which is who it is for.

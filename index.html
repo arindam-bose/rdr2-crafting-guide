@@ -172,6 +172,17 @@ try {
 
 <div id="toast" class="toast" hidden></div>
 
+<!-- Back and Forward, for the installed app only: main.js shows them
+     when the guide is opened from the home screen. -->
+<nav class="history-nav" id="history-nav" aria-label="History" hidden>
+  <button type="button" id="history-back" aria-label="Back" disabled>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+  </button>
+  <button type="button" id="history-forward" aria-label="Forward" disabled>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+  </button>
+</nav>
+
 <script src="js/file-protocol.js"></script>
 
 <!-- sql.js ships as a classic script that defines window.initSqlJs -->

@@ -2101,6 +2101,55 @@ ul.buff li::before {
 }
 @media (min-width: 720px) { .savebar { bottom: 20px; } }
 
+/* Back and Forward, for the installed app (main.js shows them): a pill
+   at the left, above the tabs, where the thumb already is.  Under the
+   save bar's layer, and lifted over it while it shows, since on a
+   phone the bar runs nearly edge to edge. */
+.history-nav {
+  position: fixed;
+  left: 12px;
+  bottom: calc(var(--tabs-h) + var(--tabs-inset) + 12px);
+  z-index: 14;
+  display: flex;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+}
+.history-nav[hidden] { display: none; }
+body:has(.savebar:not([hidden])) .history-nav {
+  bottom: calc(var(--tabs-h) + var(--tabs-inset) + 12px + 64px);
+}
+@media (min-width: 720px) {
+  .history-nav { left: 20px; bottom: 20px; }
+  body:has(.savebar:not([hidden])) .history-nav { bottom: calc(20px + 64px); }
+}
+
+.history-nav button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 40px;
+  padding: 0;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.history-nav button + button { border-left: 1px solid var(--line); border-radius: 0 999px 999px 0; }
+.history-nav button:first-child { border-radius: 999px 0 0 999px; }
+.history-nav button:disabled { color: var(--ink-faint); opacity: .45; cursor: default; }
+.history-nav svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .savebar .pending-count { flex: 1; font-size: .86rem; }
 
 .savebar button {
