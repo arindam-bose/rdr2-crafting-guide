@@ -594,7 +594,7 @@ def materials_index(data, parts):
     body = ['''
   <article class="static-detail">
     <header class="detail-head"><div>
-      <p class="detail-kicker">Red Dead Redemption 2</p>
+      <p class="detail-kicker">Red Dead Redemption 2 · Story mode</p>
       <h1>Every crafting material</h1>
     </div></header>
     <p class="static-intro">Every pelt, hide, plant and supply that goes into a
@@ -619,7 +619,7 @@ def recipes_index(data, parts):
     body = ['''
   <article class="static-detail">
     <header class="detail-head"><div>
-      <p class="detail-kicker">Red Dead Redemption 2</p>
+      <p class="detail-kicker">Red Dead Redemption 2 · Story mode</p>
       <h1>Every crafting recipe</h1>
     </div></header>
     <p class="static-intro">Every recipe Pearson, the Trapper and the Fence
