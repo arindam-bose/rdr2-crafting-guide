@@ -6,7 +6,7 @@ What to craft in Red Dead Redemption 2, what it needs, and what you already have
 
 **Open it: <https://arindambose.com/rdr2-crafting-guide/>**
 
-Current version: 1.0.16
+Current version: 1.0.17
 
 ![A pixel-art cowboy by a campfire at dusk](images/pixel-cowboy-campfire-at-dusk-960.jpg)
 
