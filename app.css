@@ -842,6 +842,16 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 }
 .sort .select { font-size: .82rem; padding: 7px 10px; }
 
+/* iOS zooms the page in on any field set smaller than 16px when it takes
+   focus, and leaves it zoomed after.  So on iOS alone (the same test as
+   the tab bar's inset) every field the keyboard or picker opens on is
+   16px; elsewhere they keep their sizes.  Not maximum-scale=1 on the
+   viewport: that stops Android's pinch zoom too.  :root, so it outranks
+   the sizes set further down the file without minding where it sits. */
+@supports (-webkit-touch-callout: none) {
+  :root :is(.search, .select, .paste textarea) { font-size: 16px; }
+}
+
 /* Rules between the toolbar's groups, so the category, the vendors,
    the progress chips and the sort read as four questions rather than
    one long row of controls: a single rule before each row of chips,
