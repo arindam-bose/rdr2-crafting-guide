@@ -768,9 +768,9 @@ the time, not edited afterwards.
 
 Settings is also where the personal layer can be moved. **Take it with you**
 says when this device was last backed up and how many changes have been made
-since. Export writes the whole ledger as a JSON file, named for the moment it
+since. Export writes the whole ledger as JSON, in a `.txt` file named for the moment it
 was taken on the reader's own clock and the device it came from —
-`rdr2_inventory_2026-10-05_18-36-09_firefox-android.json`. The date comes
+`rdr2_inventory_2026-10-05_18-36-09_firefox-android.txt`. The date comes
 first, so a folder of backups from several devices lists in the order they were
 taken; the time is hyphenated since Windows refuses a colon, and to the second
 so two backups on one day never overwrite each other. The device is the browser and system read from the
@@ -788,10 +788,12 @@ On a phone, the masthead's **Back up** (and **Send to an app** in Settings)
 hands the file to the system share menu instead of the downloads folder, so
 one more tap saves it to Google Drive, Dropbox or a message to yourself. A
 computer keeps the plain download, since its sync folders are already a
-step away. The shared copy is always `.txt`: Chrome only shares a short list
-of file types and JSON is not on it, and on Android `canShare()` approves a
-`.json` anyway, refusing only once `share()` is called. The text is the same
-JSON, and both restore inputs accept either extension. If the menu still
+step away. The file is `.txt` rather than `.json` because Chrome only shares
+a short list of file types and JSON is not on it (on Android `canShare()`
+even approves a `.json`, refusing only once `share()` is called); downloads
+are `.txt` too, so every device fills a backup folder with the same kind of
+file. Backups made before 1.0.21 are `.json`, and both restore inputs still
+accept them: the import reads the text inside, not the extension. If the menu still
 will not open, the file is downloaded and the toast names the error. Closing the share menu without picking an app does not
 count as a backup. A
 copy-to-clipboard button sits beside it, because `<a download>` is unreliable on

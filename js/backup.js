@@ -101,19 +101,27 @@ function fileStamp(d) {
 }
 
 /**
- * The backup's file name: the moment it was taken, then the device --
- * date first, so a folder of backups from several devices lists in the
- * order they were made.
+ * The backup as a file: named for the moment it was taken, then the
+ * device -- date first, so a folder of backups from several devices
+ * lists in the order they were made.
+ *
+ * A .txt, though the text is JSON: Chrome shares a short list of file
+ * types and .json is not on it -- on Android canShare() even says yes
+ * to a .json, the refusal only coming from share() itself -- so the
+ * share menu needs a .txt, and the download is one too, so every
+ * device fills a backup folder with the same kind of file.  Backups
+ * from before this were .json, and Bring it back still takes those.
  */
-function fileName(ext) {
+function backupFile() {
   const from = deviceSlug();
-  return `rdr2_inventory_${fileStamp(new Date())}${from ? `_${from}` : ''}.${ext}`;
+  const name = `rdr2_inventory_${fileStamp(new Date())}${from ? `_${from}` : ''}.txt`;
+  return new File([store.exportJSON(device())], name, { type: 'text/plain' });
 }
 
 /** Save everything as a file in the browser's downloads. */
 export function download() {
-  const name = fileName('json');
-  const blob = new Blob([store.exportJSON(device())], { type: 'application/json' });
+  const blob = backupFile();
+  const name = blob.name;
   const url = URL.createObjectURL(blob);
 
   const link = document.createElement('a');
@@ -134,15 +142,10 @@ export function download() {
  * is no share menu worth opening.  A phone only, the same rule as
  * Settings' share link: on a computer the download is already one
  * step from wherever the file should go.
- *
- * Always .txt: Chrome shares a short list of file types and .json is
- * not on it -- and on Android canShare() says yes to a .json anyway,
- * the refusal only coming from share() itself.  The text is the same
- * JSON, and Bring it back takes either.
  */
 function shareableFile() {
   if (!navigator.canShare || !matchMedia('(pointer: coarse)').matches) return null;
-  const file = new File([store.exportJSON(device())], fileName('txt'), { type: 'text/plain' });
+  const file = backupFile();
   return navigator.canShare({ files: [file] }) ? file : null;
 }
 
