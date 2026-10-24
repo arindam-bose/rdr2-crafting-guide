@@ -101,13 +101,18 @@ function fileStamp(d) {
 }
 
 /**
- * Save everything as a file named for the moment it was taken, then
- * the device: date first, so a folder of backups from several devices
- * lists in the order they were made.
+ * The backup's file name: the moment it was taken, then the device --
+ * date first, so a folder of backups from several devices lists in the
+ * order they were made.
  */
-export function download() {
+function fileName(ext) {
   const from = deviceSlug();
-  const name = `rdr2_inventory_${fileStamp(new Date())}${from ? `_${from}` : ''}.json`;
+  return `rdr2_inventory_${fileStamp(new Date())}${from ? `_${from}` : ''}.${ext}`;
+}
+
+/** Save everything as a file in the browser's downloads. */
+export function download() {
+  const name = fileName('json');
   const blob = new Blob([store.exportJSON(device())], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
 
@@ -121,6 +126,49 @@ export function download() {
 
   saved();
   toast(`Saved ${name}`);
+}
+
+/**
+ * The backup as a file the share menu will take, or null where there
+ * is no share menu worth opening.  A phone only, the same rule as
+ * Settings' share link: on a computer the download is already one
+ * step from wherever the file should go.  Chrome shares a short list of
+ * file types and .json is not on it, so there the same text goes out
+ * as .txt -- Bring it back takes either.
+ */
+function shareableFile() {
+  if (!navigator.canShare || !matchMedia('(pointer: coarse)').matches) return null;
+  const text = store.exportJSON(device());
+  for (const [ext, type] of [['json', 'application/json'], ['txt', 'text/plain']]) {
+    const file = new File([text], fileName(ext), { type });
+    if (navigator.canShare({ files: [file] })) return file;
+  }
+  return null;
+}
+
+/** Whether backUp() opens the share menu here rather than downloading. */
+export function shares() {
+  return shareableFile() !== null;
+}
+
+/**
+ * What Back up does: on a phone, hand the file to the share menu, so
+ * one tap more puts it in Drive, Dropbox or a message to yourself; a
+ * download everywhere else.  Must be called straight from a tap -- the
+ * share menu only opens for one.
+ */
+export async function backUp() {
+  const file = shareableFile();
+  if (!file) return download();
+  try {
+    await navigator.share({ files: [file] });
+  } catch (err) {
+    if (err.name === 'AbortError') return;      // closed the menu: nothing saved
+    console.error(err);
+    return download();
+  }
+  saved();
+  toast(`Sent ${file.name}`);
 }
 
 /**
@@ -201,7 +249,7 @@ export function remind() {
   } catch { /* no storage: remind every load rather than never */ }
 
   toast(`${plural(count, 'change is', 'changes are')} not in any backup yet.`,
-        { label: 'Back up', run: download, duration: 12000 });
+        { label: 'Back up', run: backUp, duration: 12000 });
 }
 
 let asked = false;

@@ -134,6 +134,7 @@ export function mount(root) {
           somewhere safe - clearing this site's data erases the original.</p>
         <p class="note" id="s-last"></p>
         <div class="panel-actions">
+          <button type="button" class="more-btn" id="s-send" hidden>Send to an app</button>
           <button type="button" class="more-btn" id="s-download">Download</button>
           <button type="button" class="ghost-btn" id="s-copy">Copy to clipboard</button>
         </div>
@@ -145,7 +146,7 @@ export function mount(root) {
           device. Nothing is written until you confirm.</p>
         <div class="panel-actions">
           <label class="ghost-btn file-btn">Upload a file
-            <input type="file" id="s-file" accept=".json,application/json" hidden>
+            <input type="file" id="s-file" accept=".json,.txt,application/json,text/plain" hidden>
           </label>
           <button type="button" class="ghost-btn" id="s-paste-toggle"
                   aria-expanded="false" aria-controls="s-paste-box">Paste instead</button>
@@ -298,8 +299,12 @@ export function mount(root) {
 
   // ---- the file itself ------------------------------------------------
 
-  // Both mark the backup taken, and the page hears it through the
-  // subscription below, the same as from the masthead button.
+  // All three mark the backup taken, and the page hears it through the
+  // subscription below, the same as from the masthead button.  Sending
+  // is the masthead's own path on a phone; Download stays beside it
+  // for a copy kept on the device.
+  $('#s-send').hidden = !backup.shares();
+  $('#s-send').addEventListener('click', backup.backUp);
   $('#s-download').addEventListener('click', backup.download);
 
   // ---- passing it on --------------------------------------------------

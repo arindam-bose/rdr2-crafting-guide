@@ -58,7 +58,7 @@ export function maybeShow() {
   const dialog = detailDialog({
     render: () => TEXT(hasData),
     onClick(event) {
-      if (event.target.closest('[data-backup]')) backup.download();
+      if (event.target.closest('[data-backup]')) backup.backUp();
     },
   });
   dialog.open('notice');

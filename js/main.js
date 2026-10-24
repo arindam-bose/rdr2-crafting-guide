@@ -220,7 +220,7 @@ async function start() {
     prefs.set(FIRST_NOTE_SEEN, new Date().toISOString());
     paintMode();
   });
-  backupBtn.addEventListener('click', backup.download);
+  backupBtn.addEventListener('click', backup.backUp);
 
   await db.open();
   await store.hydrate();
