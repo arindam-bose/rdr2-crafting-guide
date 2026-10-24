@@ -788,9 +788,11 @@ On a phone, the masthead's **Back up** (and **Send to an app** in Settings)
 hands the file to the system share menu instead of the downloads folder, so
 one more tap saves it to Google Drive, Dropbox or a message to yourself. A
 computer keeps the plain download, since its sync folders are already a
-step away. Chrome only shares a short list of file types and JSON is not on
-it, so there the same text goes out as `.txt`; both restore inputs accept
-either extension. Closing the share menu without picking an app does not
+step away. The shared copy is always `.txt`: Chrome only shares a short list
+of file types and JSON is not on it, and on Android `canShare()` approves a
+`.json` anyway, refusing only once `share()` is called. The text is the same
+JSON, and both restore inputs accept either extension. If the menu still
+will not open, the file is downloaded and the toast names the error. Closing the share menu without picking an app does not
 count as a backup. A
 copy-to-clipboard button sits beside it, because `<a download>` is unreliable on
 iOS, and a paste box sits beside the file picker for the same reason.
