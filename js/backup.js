@@ -126,24 +126,24 @@ export function download() {
 
   saved();
   toast(`Saved ${name}`);
+  return name;
 }
 
 /**
  * The backup as a file the share menu will take, or null where there
  * is no share menu worth opening.  A phone only, the same rule as
  * Settings' share link: on a computer the download is already one
- * step from wherever the file should go.  Chrome shares a short list of
- * file types and .json is not on it, so there the same text goes out
- * as .txt -- Bring it back takes either.
+ * step from wherever the file should go.
+ *
+ * Always .txt: Chrome shares a short list of file types and .json is
+ * not on it -- and on Android canShare() says yes to a .json anyway,
+ * the refusal only coming from share() itself.  The text is the same
+ * JSON, and Bring it back takes either.
  */
 function shareableFile() {
   if (!navigator.canShare || !matchMedia('(pointer: coarse)').matches) return null;
-  const text = store.exportJSON(device());
-  for (const [ext, type] of [['json', 'application/json'], ['txt', 'text/plain']]) {
-    const file = new File([text], fileName(ext), { type });
-    if (navigator.canShare({ files: [file] })) return file;
-  }
-  return null;
+  const file = new File([store.exportJSON(device())], fileName('txt'), { type: 'text/plain' });
+  return navigator.canShare({ files: [file] }) ? file : null;
 }
 
 /** Whether backUp() opens the share menu here rather than downloading. */
@@ -165,7 +165,9 @@ export async function backUp() {
   } catch (err) {
     if (err.name === 'AbortError') return;      // closed the menu: nothing saved
     console.error(err);
-    return download();
+    const name = download();
+    toast(`The share menu would not open (${err.name}), so ${name} was downloaded instead.`);
+    return;
   }
   saved();
   toast(`Sent ${file.name}`);
