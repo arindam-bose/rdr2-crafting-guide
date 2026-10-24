@@ -641,7 +641,7 @@ function restoreOffer() {
       <p class="note"><strong>Starting fresh on this device?</strong> If you
         have a backup file from before, load it and pick up where you left off.</p>
       <label class="ghost-btn file-btn">Restore from a backup
-        <input type="file" id="i-restore" accept=".json,application/json" hidden>
+        <input type="file" id="i-restore" accept=".json,.txt,application/json,text/plain" hidden>
       </label>
     </section>`;
 }

@@ -7,7 +7,7 @@ __pycache__/
 data/*.building
 
 # A local safety copy of the reference database, kept out of history.
-data/rdr2_bkp.db
+data/rdr2_bkp*.db
 
 # The cover art at full size (PNG, a few MB).  The page loads the two
 # JPEGs cut from it; this is kept only to cut them again.

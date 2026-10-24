@@ -782,7 +782,16 @@ behind "8 gathered - 1 crafted". The file also carries how each list was
 sorted (`"sorts": {"recipes": "materials:asc"}`), so the same person restoring
 on another device gets Materials, Recipes and Inventory back in the order they
 left them;
-the other preferences (theme, location) stay with the device. A
+the other preferences (theme, location) stay with the device.
+
+On a phone, the masthead's **Back up** (and **Send to an app** in Settings)
+hands the file to the system share menu instead of the downloads folder, so
+one more tap saves it to Google Drive, Dropbox or a message to yourself. A
+computer keeps the plain download, since its sync folders are already a
+step away. Chrome only shares a short list of file types and JSON is not on
+it, so there the same text goes out as `.txt`; both restore inputs accept
+either extension. Closing the share menu without picking an app does not
+count as a backup. A
 copy-to-clipboard button sits beside it, because `<a download>` is unreliable on
 iOS, and a paste box sits beside the file picker for the same reason.
 
