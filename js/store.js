@@ -257,7 +257,9 @@ export function undo(id) {
  * "Firefox on Android" label (see backup.js), there for a person
  * reading the file or the import preview; nothing reads it back.
  * `sorts` is how each list was ordered (see prefs.js), so a restore
- * on another device sets the lists out the same way.
+ * on another device sets the lists out the same way.  `mode` is
+ * Personalize or General, so a restore onto a fresh device -- which
+ * starts in General -- opens on the data it just brought back.
  */
 export function exportJSON(device = null) {
   return JSON.stringify({
@@ -266,11 +268,14 @@ export function exportJSON(device = null) {
     exported_at: new Date().toISOString(),
     device,
     reference_build: referenceBuild(),
+    mode: isPersonal() ? 'personal' : 'general',
     ledger: db.all('SELECT * FROM ledger ORDER BY id'),
     targets: db.all('SELECT * FROM targets ORDER BY recipe_id'),
     sorts: prefs.sorts(),
   }, null, 2);
 }
+
+const MODES = ['personal', 'general'];
 
 /** Which reference database this was recorded against. */
 function referenceBuild() {
@@ -410,6 +415,13 @@ export async function importJSON(text) {
   // opened, which from Settings is the next page you go to.
   const sorts = prefs.validSorts(data.sorts);
   if (sorts) prefs.replaceSorts(sorts);
+
+  // The mode the backup was taken in.  A file from before backups
+  // carried it goes by what hydrate() decides for a device with no
+  // mode stored: Personalize if there is anything in it.
+  chosen = MODES.includes(data.mode) ? data.mode
+         : isEmpty() ? 'general' : 'personal';
+  prefs.set(MODE_KEY, chosen);
 
   changed();
   return found;
