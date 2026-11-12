@@ -805,8 +805,13 @@ would double anything imported twice. One device is the source of truth. A file
 is inspected first — a `reason` the schema's CHECK would refuse is caught before
 the transaction rather than halfway through it, and rows naming materials this
 build does not know are reported rather than swallowed, since the ledger stores
-slugs with no foreign key. The sorts are replaced with the rest, once the data
-has landed; a backup from before they were carried leaves the device's own.
+slugs with no foreign key. The preview sets the file beside this device in a
+table, as the Money and Habit Trackers do: entries, crafted recipes, the last
+change (the newest ledger or recipe stamp, `latestChange()` against the file's own)
+and the backup, with the rows that differ tinted (`--diff-bg`, one per theme) and a
+warning when this device's changes are newer than the file's. The sorts are replaced
+with the rest, once the data has landed; a backup from before they were carried
+leaves the device's own.
 
 **Offline** says whether the guide is cached for use without a signal, and
 which release that copy is. **Check for updates** asks the server for `sw.js`

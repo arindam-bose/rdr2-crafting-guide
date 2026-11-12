@@ -370,9 +370,14 @@ export function inspectImport(text) {
       + ' back as wanted: Skip has been removed');
   }
 
+  // The newest stamp in the file, in the shape SQLite writes them, to set beside latestChange().
+  const stamps = [...rowsOf(ledger).map((r) => r.ts), ...rowsOf(targets).map((t) => t.updated_at)]
+    .filter(filled);
+
   return {
     fatal: badReason || malformed ? 'Some entries would be rejected by the database.' : null,
     exported_at: data.exported_at ?? null,
+    last_change: stamps.length ? stamps.reduce((a, b) => (b > a ? b : a)) : null,
     device: typeof data.device === 'string' ? data.device : null,
     ledger: ledger.length,
     made: rowsOf(targets).filter((t) => t.state === 'done').length,
@@ -515,6 +520,19 @@ export function changesSince(since) {
     count: row?.n ?? 0,
     oldest: row?.oldest ? new Date(`${row.oldest.replace(' ', 'T')}Z`) : null,
   };
+}
+
+/**
+ * When anything here last changed -- the newest ledger row or recipe mark -- as SQLite stamps
+ * it ("YYYY-MM-DD HH:MM:SS", UTC), or null with nothing at all.  Bring it back sets it beside
+ * the same stamp read from a file.
+ */
+export function latestChange() {
+  return db.one(`
+    SELECT MAX(at) AS at FROM (
+      SELECT MAX(ts) AS at FROM ledger
+      UNION ALL
+      SELECT MAX(updated_at) AS at FROM targets)`)?.at ?? null;
 }
 
 /**

@@ -12,10 +12,11 @@
 // masthead beside the name, and the Settings page reads both fields
 // for its "Tool version" line.  Bump it, and set `date`,
 // with every change that ships -- and always with a new rdr2.db,
-// which the offline copy otherwise keeps serving.
+// which the offline copy otherwise keeps serving.  README.md's
+// "Current version:" line names it too: change both together.
 // ============================================================
 
-self.APP_VERSION = { number: '1.0.23', date: '2026-10-24' };
+self.APP_VERSION = { number: '1.0.24', date: '2026-11-12' };
 
 // The release, beside the name, so anyone can say which one they
 // have.  No document in the service worker; the app loads this at the
