@@ -357,7 +357,10 @@ export function mount(root) {
     if (text) offer(text, 'pasted text');
   });
 
-  /** Say what the file holds, and what replacing would cost. */
+  /**
+   * Say what the file holds beside what this device has, and what replacing would cost: a
+   * table, the rows that differ tinted, as the Money and Habit Trackers do it.
+   */
   function offer(text, source) {
     const found = store.inspectImport(text);
     const now = store.stats();
@@ -370,18 +373,36 @@ export function mount(root) {
     }
 
     pending = text;
-    const when = found.exported_at
-      ? new Date(found.exported_at).toLocaleDateString()
-      : 'an unknown date';
+    const exported = found.exported_at
+      ? `Exported ${new Date(found.exported_at).toLocaleDateString()}${found.device ? ` from ${found.device}` : ''}`
+      : 'No export date';
+    const saved = backup.lastSaved();
+    const here = store.latestChange();
+    const there = found.last_change;
+    // Both stamps are SQLite's own shape, so they compare as text.
+    const newerHere = here !== null && (there === null || here > there);
+
+    const rows = [
+      ['Entries', now.entries.toLocaleString(), found.ledger.toLocaleString(), true],
+      ['Crafted recipes', now.made.toLocaleString(), found.made.toLocaleString(), true],
+      ['Last change', stampText(here), stampText(there), true],
+      // A backup and an export are different events, so this row is context, never a difference.
+      ['Backup', saved ? `Backed up ${saved.toLocaleDateString()}` : 'Never backed up', exported, false],
+    ];
 
     preview.innerHTML = `
       <div class="verdict">
-        <p><strong>${esc(source)}</strong> holds
-          ${plural(found.ledger, 'entry', 'entries')} and
-          ${plural(found.made, 'crafted recipe')},
-          exported ${esc(when)}${found.device ? ` from ${esc(found.device)}` : ''}.</p>
-        <p>This device has ${plural(now.entries, 'entry', 'entries')}
-          and ${plural(now.made, 'crafted recipe')}. All of it will be replaced.</p>
+        <p><strong>${esc(source)}</strong> holds a backup. Restoring it replaces
+          everything on this device.</p>
+        <table class="restore-compare">
+          <thead><tr><th></th><th scope="col">On this device</th><th scope="col">In the file</th></tr></thead>
+          <tbody>${rows.map(([name, a, b, compare]) => `
+            <tr${compare && a !== b ? ' class="differs"' : ''}>
+              <th scope="row">${esc(name)}</th><td>${esc(a)}</td><td>${esc(b)}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        ${newerHere ? '<p class="restore-warn">This device has newer changes than the file: replacing loses them.</p>' : ''}
         ${found.problems.length
           ? `<ul class="problems">${found.problems
               .map((w) => `<li>${esc(w)}</li>`).join('')}</ul>`
@@ -391,6 +412,11 @@ export function mount(root) {
           <button type="button" class="ghost-btn" id="s-cancel">Cancel</button>
         </div>
       </div>`;
+  }
+
+  /** A SQLite stamp ("YYYY-MM-DD HH:MM:SS", UTC) as the reader's own date and time. */
+  function stampText(stamp) {
+    return stamp ? new Date(`${stamp.replace(' ', 'T')}Z`).toLocaleString() : 'Nothing yet';
   }
 
   preview.addEventListener('click', async (event) => {

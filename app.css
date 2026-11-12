@@ -111,6 +111,7 @@
   --danger-text: var(--rdr-blood);
   --ok:          #46621f;
   --warn:        #7d5a12;
+  --diff-bg:     #e5c684;            /* a row that differs: amber, steeped into a buff box */
 
   /* Trapper, Pearson, Fence.  Two warm, one cool -- three warm stripes
      at 3px are hard to tell apart, so the Trapper keeps a blue, pulled
@@ -153,6 +154,7 @@
   --danger-text: #ec6a5a;            /* the raw red is 2.9:1 here */
   --ok:          #9cb86c;
   --warn:        #e0b155;
+  --diff-bg:     #68491a;
 
   --station-blue:   #93a8b8;
   --station-yellow: #ddb455;
@@ -2486,6 +2488,32 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 }
 .verdict p { margin: 0; }
 .verdict.bad { border-color: var(--danger); color: var(--ink); }
+
+/* Bring it back: this device and the file side by side; a row that differs is tinted. */
+.restore-compare {
+  width: 100%;
+  border-collapse: collapse;
+}
+.restore-compare th,
+.restore-compare td {
+  padding: 5px 6px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+.restore-compare thead th,
+.restore-compare tbody th {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  letter-spacing: .04em;
+  color: var(--ink-label);
+}
+.restore-compare thead th { font-size: .78rem; }
+.restore-compare tbody th { white-space: nowrap; }
+.restore-compare tr.differs > * { background: var(--diff-bg); }
+/* The label's ochre is too faint on the tint (3:1 on leather): ink it, as its values are. */
+.restore-compare tr.differs th { color: var(--ink); }
+.restore-warn { color: var(--danger-text); }
 
 .problems {
   margin: 0;
