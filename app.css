@@ -319,6 +319,27 @@ body > main { flex: 1 0 auto; }
   .brand-app  { font-size: .98rem; }
 }
 
+/* With Import beside Back up (js/import.js) the top bar holds one more
+   control, so on a phone the name takes that same smaller size while
+   both show, and on the narrowest one step smaller again -- keeping
+   the two lines' proportion, so the block stays squared off. */
+@media (max-width: 460px) {
+  .topbar:has(.backup-pair > .backup-btn:not([hidden]) + .backup-btn:not([hidden])) :is(h1, .brand-line, .brand) { gap: 8px; }
+  .topbar:has(.backup-pair > .backup-btn:not([hidden]) + .backup-btn:not([hidden])) .brand-mark { width: 30px; height: 30px; }
+  .topbar:has(.backup-pair > .backup-btn:not([hidden]) + .backup-btn:not([hidden])) .brand-game { font-size: .5rem; }
+  .topbar:has(.backup-pair > .backup-btn:not([hidden]) + .backup-btn:not([hidden])) .brand-app  { font-size: .98rem; }
+}
+@media (max-width: 349px) {
+  .topbar:has(.backup-pair > .backup-btn:not([hidden]) + .backup-btn:not([hidden])) :is(h1, .brand-line, .brand) { gap: 6px; }
+  .topbar:has(.backup-pair > .backup-btn:not([hidden]) + .backup-btn:not([hidden])) .brand-mark { width: 26px; height: 26px; }
+  .topbar:has(.backup-pair > .backup-btn:not([hidden]) + .backup-btn:not([hidden])) .brand-game { font-size: .42rem; }
+  .topbar:has(.backup-pair > .backup-btn:not([hidden]) + .backup-btn:not([hidden])) .brand-app  { font-size: .82rem; }
+  /* Even so, with Back up showing there is no room left for the
+     release beside the name -- it ran over "Guide" here before Import
+     came -- so it steps aside; Settings' About tile still names it. */
+  .topbar:has(#backup-btn:not([hidden])) .brand-version { display: none; }
+}
+
 /* The page's own name, under the menu. */
 .page-title {
   margin: 0;
@@ -416,9 +437,19 @@ body > main { flex: 1 0 auto; }
 .backup-btn[data-due="overdue"]::after { background: var(--danger); }
 .backup-btn[data-due] { color: var(--ink); }
 
-/* A rule between the two when both are showing: one is an action,
-   the other a setting. */
-.backup-btn:not([hidden]) + .mode-switch {
+/* Import, beside Back up: a label holding its file input, drawn the same.
+   After .file-btn's inline-block would win, so the shape is said again. */
+.backup-btn.import-btn { display: inline-flex; }
+
+.backup-pair {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A rule before the switch when either is showing: they are actions,
+   the switch a setting. */
+.backup-pair:has(> .backup-btn:not([hidden])) + .mode-switch {
   padding-left: 12px;
   border-left: 1px solid var(--line);
 }
@@ -451,7 +482,30 @@ body > main { flex: 1 0 auto; }
   }
   .backup-btn:hover svg { border-color: var(--ink-faint); }
   .backup-btn[data-due]::after { top: -5px; right: -10px; }
-  .backup-btn:not([hidden]) + .mode-switch { padding-left: 10px; }
+
+  /* Import and Back up side by side, each keeping its word: drawn
+     close, and nearer the switch, so the name beside them still fits.
+     The three words above (Import, Back up, Personalize) are what set
+     each control's width, so they are set tighter too -- the switch
+     no longer stands in a margin of its own word. */
+  .topbar-actions { gap: 6px; }
+  .backup-label,
+  .topbar .mode-switch .side { letter-spacing: .04em; }
+  .backup-pair { gap: 4px; }
+  .backup-pair .backup-btn svg { padding: 2px 7px; }
+  .backup-pair:has(> .backup-btn:not([hidden])) + .mode-switch { padding-left: 6px; }
+}
+
+/* Last updated (main.js): a quiet line under the masthead, in the same
+   column as the page, as the Money and Habit Trackers have it. */
+.status-strip { border-bottom: 1px solid var(--line); }
+.status-strip p {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 4px 16px;
+  font-size: .72rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
 }
 
 /* The one-time note on where the data lives: a panel with the accent
@@ -2351,8 +2405,66 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 .coffee-note { font-size: .74rem; color: var(--ink-faint); }
 .share-btn { text-decoration: none; }
 
-/* label-as-button, so the file input can stay hidden */
-.file-btn { display: inline-block; cursor: pointer; }
+/* label-as-button.  Its file input is out of sight but not hidden, so
+   Tab still reaches it and the label shows the focus ring; positioned,
+   so the input stays inside the button rather than widening the page. */
+.file-btn { position: relative; display: inline-block; cursor: pointer; }
+.file-btn input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.file-btn:has(input:focus-visible) {
+  outline: 2px solid var(--accent-text);
+  outline-offset: 2px;
+}
+
+/* A file dragged over the page (js/import.js): the whole window is
+   where to drop it.  Above everything but an open dialog. */
+.drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  pointer-events: none;
+}
+.drop-target {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 420px;
+  padding: 30px 26px;
+  text-align: center;
+  color: var(--ink);
+  background: var(--surface);
+  border: 2px dashed var(--accent-text);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.drop-target svg {
+  width: 34px;
+  height: 34px;
+  fill: none;
+  stroke: var(--accent-text);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.drop-target strong {
+  font-family: var(--font-heading);
+  font-weight: 400;
+  font-size: 1.15rem;
+  letter-spacing: .04em;
+}
+.drop-target .note { margin: 0; }
 
 .facts { margin: 0; display: flex; flex-direction: column; gap: 6px; }
 .facts > div {
@@ -2514,6 +2626,19 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 /* The label's ochre is too faint on the tint (3:1 on leather): ink it, as its values are. */
 .restore-compare tr.differs th { color: var(--ink); }
 .restore-warn { color: var(--danger-text); }
+
+/* In the Replace dialog on a phone the three columns share ~300px: the
+   row names may wrap ("Crafted / recipes") and the cells pad less, so
+   the file's column is never pushed out of sight. */
+@media (max-width: 460px) {
+  .detail .restore-compare tbody th { white-space: normal; }
+  .detail .restore-compare th,
+  .detail .restore-compare td { padding: 5px 4px; }
+}
+/* The narrowest phones: this dialog alone gives up some of its side margin. */
+@media (max-width: 360px) {
+  .detail-body:has(.restore-compare) { padding-inline: 12px; }
+}
 
 .problems {
   margin: 0;

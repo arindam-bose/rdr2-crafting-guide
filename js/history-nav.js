@@ -59,9 +59,14 @@
    * they were when it was left, before the pages after it counted on.
    */
   function arrived() {
-    here = read(HERE, here);
-    furthest = read(FURTHEST, furthest);
     const at = history.state?.at;
+    // A tab opened from a link can be handed a copy of the old tab's
+    // sessionStorage, counts and all.  A tab that has only this one
+    // entry, never numbered, is new: it counts from nothing, or Back
+    // would light up with nothing behind it.
+    const fresh = history.length === 1 && !Number.isInteger(at);
+    here = fresh ? -1 : read(HERE, here);
+    furthest = fresh ? -1 : read(FURTHEST, furthest);
     if (Number.isInteger(at)) {
       here = at;
     } else {

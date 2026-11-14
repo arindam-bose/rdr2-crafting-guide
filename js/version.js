@@ -16,7 +16,7 @@
 // "Current version:" line names it too: change both together.
 // ============================================================
 
-self.APP_VERSION = { number: '1.0.24', date: '2026-11-12' };
+self.APP_VERSION = { number: '2.0.1', date: '2026-11-13' };
 
 // The release, beside the name, so anyone can say which one they
 // have.  No document in the service worker; the app loads this at the

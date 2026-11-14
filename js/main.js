@@ -7,13 +7,14 @@
 // ============================================================
 
 import * as backup from './backup.js';
+import * as importer from './import.js';
 import * as db from './db.js';
 import * as nav from './nav.js';
 import * as notice from './notice.js';
 import * as prefs from './prefs.js';
 import * as store from './store.js';
 import * as theme from './theme.js';
-import { errorBox, plural } from './render.js';
+import { errorBox, plural, stampDate } from './render.js';
 import { toast, offerReload } from './toast.js';
 import * as materials from './views/materials.js';
 import * as inventory from './views/inventory.js';
@@ -39,6 +40,8 @@ const pageTitle = document.getElementById('page-title');
 const tabs = document.querySelector('.tabs');
 const modeToggle = document.getElementById('mode-toggle');
 const backupBtn = document.getElementById('backup-btn');
+const importBtn = document.getElementById('import-btn');
+const statusStrip = document.getElementById('status-strip');
 const firstNote = document.getElementById('first-note');
 
 // ------------------------------------------------------------
@@ -129,6 +132,9 @@ function paintMode() {
  * once it is overdue.  Its label says how much is unsaved.
  */
 function paintBackup() {
+  // Import beside it: in Personalize even with nothing logged, which is
+  // when a new device most wants it.
+  importBtn.hidden = !store.isPersonal();
   backupBtn.hidden = !store.isPersonal() || store.isEmpty();
   if (backupBtn.hidden) return;
 
@@ -141,6 +147,22 @@ function paintBackup() {
     : 'Back up: everything is in your last backup';
   backupBtn.title = label;
   backupBtn.setAttribute('aria-label', label);
+}
+
+/**
+ * The strip under the masthead: when what is logged here last changed
+ * -- the newest ledger row or recipe mark, the same stamp Bring it
+ * back's dialog sets beside a file's -- in Personalize, once there is
+ * something.  "Last updated 13 Nov 2026, 07:54 pm", as the Money and
+ * Habit Trackers say it.
+ */
+function paintStatus() {
+  const at = store.isPersonal() && !store.isEmpty() ? stampDate(store.latestChange()) : null;
+  statusStrip.hidden = at === null;
+  if (at === null) return;
+  statusStrip.firstElementChild.textContent = `Last updated ${at.toLocaleString(undefined, {
+    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  })}`;
 }
 
 // ------------------------------------------------------------
@@ -221,6 +243,8 @@ async function start() {
     paintMode();
   });
   backupBtn.addEventListener('click', backup.backUp);
+  document.getElementById('import-file').addEventListener('change', importer.onFileInput);
+  importer.listen();
 
   await db.open();
   await store.hydrate();
@@ -233,6 +257,7 @@ async function start() {
   store.subscribe(() => {
     paintMode();
     paintBackup();
+    paintStatus();
     current?.update?.();
     if (!store.isEmpty()) backup.keep();
   });
@@ -290,6 +315,7 @@ async function start() {
   notice.maybeShow();
 
   paintBackup();
+  paintStatus();
   if (!store.isEmpty()) backup.keep();
   // A moment after the page settles, so it is read rather than missed.
   setTimeout(backup.remind, 1500);

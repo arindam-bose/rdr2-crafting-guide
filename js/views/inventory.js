@@ -32,7 +32,7 @@
 // there says what it does.
 // ============================================================
 
-import * as backup from '../backup.js';
+import * as importer from '../import.js';
 import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { esc, empty, heldAt, nameWith, placeName, plural, qualityStars, icon } from '../render.js';
@@ -109,6 +109,15 @@ const SORTS = {
 
 window.addEventListener('beforeunload', (event) => {
   if (staged.size) event.preventDefault();
+});
+
+// A restore, from anywhere, replaces the stock these changes were
+// counted against: import.js asks first whenever there are any, says
+// they will be dropped, and drops them here before it writes.  The
+// page repaints off the restore's own store change.
+importer.onUnsaved({
+  count: () => staged.size,
+  discard: () => staged.clear(),
 });
 
 export function mount(root) {
@@ -414,15 +423,12 @@ export function mount(root) {
   }
 
   // The restore offer's file input is rebuilt with the sections, so it
-  // is listened for here, the same way the steppers are.  There is
-  // nothing on the device to lose -- the offer only shows with nothing
-  // logged and nothing staged -- so there is no confirming step: a file
-  // that reads cleanly is loaded, and one that does not says why.
-  sections.addEventListener('change', async (event) => {
-    if (event.target.id !== 'i-restore') return;
-    const file = event.target.files?.[0];
-    event.target.value = '';
-    if (file) await backup.restoreAndSay(await file.text());
+  // is listened for here, the same way the steppers are.  The way
+  // through is import.js's, as from anywhere else; with nothing on the
+  // device to lose -- the offer only shows with nothing logged and
+  // nothing staged -- it loads without the confirming dialog.
+  sections.addEventListener('change', (event) => {
+    if (event.target.id === 'i-restore') void importer.onFileInput(event);
   });
 
   root.querySelector('#i-discard').addEventListener('click', discard);
@@ -641,7 +647,7 @@ function restoreOffer() {
       <p class="note"><strong>Starting fresh on this device?</strong> If you
         have a backup file from before, load it and pick up where you left off.</p>
       <label class="ghost-btn file-btn">Restore from a backup
-        <input type="file" id="i-restore" accept=".json,.txt,application/json,text/plain" hidden>
+        <input type="file" id="i-restore" accept="${importer.ACCEPT}">
       </label>
     </section>`;
 }

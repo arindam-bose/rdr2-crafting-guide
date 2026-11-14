@@ -35,6 +35,20 @@ export function esc(value) {
   }[c]));
 }
 
+/**
+ * A SQLite stamp as a Date.  SQLite writes `datetime('now')` in UTC with
+ * no zone marker, and a browser reads a bare "YYYY-MM-DD HH:MM:SS" as
+ * local time, so the zone is said here, once, for every reader of a
+ * stamp: the ledger, the Last updated strip, the restore dialog.  Null
+ * for anything that is not one -- a hand-edited backup, say -- rather
+ * than an Invalid Date that prints as such.
+ */
+export function stampDate(stamp) {
+  if (!stamp) return null;
+  const at = new Date(`${String(stamp).replace(' ', 'T')}Z`);
+  return Number.isNaN(at.getTime()) ? null : at;
+}
+
 /** The stamp of stars itself: grey for Perfect, gold for Legendary. */
 function stars(quality, label) {
   const named = label

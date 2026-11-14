@@ -11,6 +11,7 @@
 //     render: (id) => html | null,   // null: the thing is gone, close
 //     onClick: (event, id) => {},    // anything but the close button
 //     route: 'materials',            // this dialog is part of the address
+//     onClose: () => {},             // however it shut: close button, Esc, backdrop
 //   });
 //   detail.focus(id); detail.refresh(); detail.destroy();
 //
@@ -33,7 +34,7 @@ import * as nav from './nav.js';
 // after whichever came first in the page.
 let dialogs = 0;
 
-export function detailDialog({ render, onClick = () => {}, route = null }) {
+export function detailDialog({ render, onClick = () => {}, route = null, onClose = () => {} }) {
   // On <body>, not inside the view: the view is an aria-live region,
   // and every refresh of an open dialog would be read out again.
   const dialog = document.createElement('dialog');
@@ -85,6 +86,7 @@ export function detailDialog({ render, onClick = () => {}, route = null }) {
     current = null;
     body.innerHTML = '';
     if (!leaving && route) nav.closed(route);
+    onClose();
   });
 
   dialog.addEventListener('click', async (event) => {
