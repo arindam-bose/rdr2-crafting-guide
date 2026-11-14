@@ -811,7 +811,13 @@ time, as in the Money and Habit Trackers: of several dropped, the first is read
 and the toast says the rest were not. A file that will not load says why in a
 toast and changes nothing; on an empty device, with nothing to lose, a good one
 loads straight away; otherwise the **Replace your data?** dialog asks first.
-Every file input is out of sight but not `hidden`, so the keyboard reaches it. On a phone, with Import,
+Every file input is out of sight but not `hidden`, so the keyboard reaches it.
+
+Under the masthead, in Personalize once anything is logged, a strip says **Last updated**
+and when, as the Money and Habit Trackers do: the newest ledger row or recipe mark
+(`latestChange()`, the same stamp the Replace dialog sets beside a file's), on the reader's
+own clock. It follows every write and restore; an undo deletes its row, so the time steps back
+to the change before -- it says when the data was last added to. On a phone, with Import,
 Back up and the switch all in the masthead, the three are drawn closer and their words set
 tighter, and the name takes the smaller size it otherwise keeps for the narrowest phones;
 below 350px the release number beside it steps aside (Settings still names it). The dialog's

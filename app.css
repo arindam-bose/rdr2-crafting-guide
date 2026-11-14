@@ -496,6 +496,18 @@ body > main { flex: 1 0 auto; }
   .backup-pair:has(> .backup-btn:not([hidden])) + .mode-switch { padding-left: 6px; }
 }
 
+/* Last updated (main.js): a quiet line under the masthead, in the same
+   column as the page, as the Money and Habit Trackers have it. */
+.status-strip { border-bottom: 1px solid var(--line); }
+.status-strip p {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 4px 16px;
+  font-size: .72rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+}
+
 /* The one-time note on where the data lives: a panel with the accent
    down its edge, in the same column as the page under it. */
 .first-note {

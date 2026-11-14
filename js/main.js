@@ -41,6 +41,7 @@ const tabs = document.querySelector('.tabs');
 const modeToggle = document.getElementById('mode-toggle');
 const backupBtn = document.getElementById('backup-btn');
 const importBtn = document.getElementById('import-btn');
+const statusStrip = document.getElementById('status-strip');
 const firstNote = document.getElementById('first-note');
 
 // ------------------------------------------------------------
@@ -148,6 +149,24 @@ function paintBackup() {
   backupBtn.setAttribute('aria-label', label);
 }
 
+/**
+ * The strip under the masthead: when what is logged here last changed
+ * -- the newest ledger row or recipe mark, the same stamp Bring it
+ * back's dialog sets beside a file's -- in Personalize, once there is
+ * something.  "Last updated 13 Nov 2026, 07:54 pm", as the Money and
+ * Habit Trackers say it.
+ */
+function paintStatus() {
+  const stamp = store.isPersonal() && !store.isEmpty() ? store.latestChange() : null;
+  statusStrip.hidden = stamp === null;
+  if (stamp === null) return;
+  // SQLite's stamp is UTC, "YYYY-MM-DD HH:MM:SS": read as such, shown on the reader's own clock.
+  const at = new Date(`${stamp.replace(' ', 'T')}Z`);
+  statusStrip.firstElementChild.textContent = `Last updated ${at.toLocaleString(undefined, {
+    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  })}`;
+}
+
 // ------------------------------------------------------------
 // routing
 // ------------------------------------------------------------
@@ -240,6 +259,7 @@ async function start() {
   store.subscribe(() => {
     paintMode();
     paintBackup();
+    paintStatus();
     current?.update?.();
     if (!store.isEmpty()) backup.keep();
   });
@@ -297,6 +317,7 @@ async function start() {
   notice.maybeShow();
 
   paintBackup();
+  paintStatus();
   if (!store.isEmpty()) backup.keep();
   // A moment after the page settles, so it is read rather than missed.
   setTimeout(backup.remind, 1500);
