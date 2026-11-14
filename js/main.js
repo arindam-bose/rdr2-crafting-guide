@@ -153,7 +153,7 @@ function paintBackup() {
  * The strip under the masthead: when what is logged here last changed
  * -- the newest ledger row or recipe mark, the same stamp Bring it
  * back's dialog sets beside a file's -- in Personalize, once there is
- * something.  "Last updated 13 Nov 2026, 07:54 pm", as the Money and
+ * something.  "Last updated Friday, 13 Nov 2026, 07:54 pm", as the Money and
  * Habit Trackers say it.
  */
 function paintStatus() {
@@ -161,7 +161,7 @@ function paintStatus() {
   statusStrip.hidden = at === null;
   if (at === null) return;
   statusStrip.firstElementChild.textContent = `Last updated ${at.toLocaleString(undefined, {
-    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   })}`;
 }
 
