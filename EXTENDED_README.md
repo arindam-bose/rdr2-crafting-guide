@@ -281,6 +281,9 @@ hand.
       theme.js            parchment or leather, remembered per device
       main.js             boot and hash routing
       backup.js           backups: download, restore, and when one is due
+      import.js           bringing a backup back from anywhere: the masthead's
+                          Import, a dropped file, Settings, Inventory; the
+                          Replace your data? dialog and the drop overlay
       device.js           which browser on which system, for backups' names
                           and the install steps
       install.js          the browser's install prompt, kept for Settings
@@ -799,13 +802,28 @@ count as a backup. A
 copy-to-clipboard button sits beside it, because `<a download>` is unreliable on
 iOS, and a paste box sits beside the file picker for the same reason.
 
+Bringing a backup back has four ways in and one way through, `js/import.js`:
+**Import** in the masthead (in Personalize, data or not, so a new device can
+start from it), a file dropped anywhere on any page in either mode (an overlay
+says where it will go while one is dragged over), Settings' **Bring it back**
+(a file or pasted text), and Inventory's offer on an empty device. One file at a
+time, as in the Money and Habit Trackers: of several dropped, the first is read
+and the toast says the rest were not. A file that will not load says why in a
+toast and changes nothing; on an empty device, with nothing to lose, a good one
+loads straight away; otherwise the **Replace your data?** dialog asks first.
+Every file input is out of sight but not `hidden`, so the keyboard reaches it. On a phone, with Import,
+Back up and the switch all in the masthead, the three are drawn closer and their words set
+tighter, and the name takes the smaller size it otherwise keeps for the narrowest phones;
+below 350px the release number beside it steps aside (Settings still names it). The dialog's
+table lets its row names wrap there, so the file's column is never pushed out of sight.
+
 Import **replaces** rather than merges, and says so before it writes: a ledger
 id counts up per device, so two devices' rows cannot be told apart and merging
 would double anything imported twice. One device is the source of truth. A file
 is inspected first — a `reason` the schema's CHECK would refuse is caught before
 the transaction rather than halfway through it, and rows naming materials this
 build does not know are reported rather than swallowed, since the ledger stores
-slugs with no foreign key. The preview sets the file beside this device in a
+slugs with no foreign key. The dialog sets the file beside this device in a
 table, as the Money and Habit Trackers do: entries, crafted recipes, the last
 change (the newest ledger or recipe stamp, `latestChange()` against the file's own)
 and the backup, with the rows that differ tinted (`--diff-bg`, one per theme) and a

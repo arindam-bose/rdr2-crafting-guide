@@ -7,6 +7,7 @@
 // ============================================================
 
 import * as backup from './backup.js';
+import * as importer from './import.js';
 import * as db from './db.js';
 import * as nav from './nav.js';
 import * as notice from './notice.js';
@@ -39,6 +40,7 @@ const pageTitle = document.getElementById('page-title');
 const tabs = document.querySelector('.tabs');
 const modeToggle = document.getElementById('mode-toggle');
 const backupBtn = document.getElementById('backup-btn');
+const importBtn = document.getElementById('import-btn');
 const firstNote = document.getElementById('first-note');
 
 // ------------------------------------------------------------
@@ -129,6 +131,9 @@ function paintMode() {
  * once it is overdue.  Its label says how much is unsaved.
  */
 function paintBackup() {
+  // Import beside it: in Personalize even with nothing logged, which is
+  // when a new device most wants it.
+  importBtn.hidden = !store.isPersonal();
   backupBtn.hidden = !store.isPersonal() || store.isEmpty();
   if (backupBtn.hidden) return;
 
@@ -221,6 +226,8 @@ async function start() {
     paintMode();
   });
   backupBtn.addEventListener('click', backup.backUp);
+  document.getElementById('import-file').addEventListener('change', importer.onFileInput);
+  importer.listen();
 
   await db.open();
   await store.hydrate();

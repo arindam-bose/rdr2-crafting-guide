@@ -6,7 +6,7 @@ What to craft in Red Dead Redemption 2, what it needs, and what you already have
 
 **Open it: <https://arindambose.com/rdr2-crafting-guide/>**
 
-Current version: 1.0.24
+Current version: 1.0.25
 
 ![A pixel-art cowboy by a campfire at dusk](images/pixel-cowboy-campfire-at-dusk-960.jpg)
 
@@ -79,8 +79,9 @@ and then, and keep the file somewhere safe.
    they are never ticked off, but in Personalize each says how many you can make
    from your Satchel.
 5. **Keep a backup.** **Back up** at the top saves everything to one file, and
-   a dot on it says when one is due. To restore, use **Bring it back** in
-   Settings.
+   a dot on it says when one is due. To restore, use **Import** beside it (in
+   Personalize), drop the file anywhere on the page, or use **Bring it back**
+   in Settings. One file at a time; you're asked before anything is replaced.
 
 **Install it:** open **Settings → On your home screen**. Where your browser
 allows it, that tile has an **Install** button; elsewhere it gives your

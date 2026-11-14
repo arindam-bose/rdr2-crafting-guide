@@ -214,20 +214,22 @@ export async function restore(text) {
 /**
  * restore(), saying how it went: how many entries came in and anything
  * odd in the file, or why it would not load -- in which case nothing on
- * the device has changed.  Settings and Inventory's restore offer both
- * come through here, so they say it the same way.  True if it loaded.
+ * the device has changed.  Every way of bringing a backup back comes
+ * through here (see import.js), so they all say it the same way; `note`
+ * is added to the end.  True if it loaded.
  */
-export async function restoreAndSay(text) {
+export async function restoreAndSay(text, note = '') {
   let found;
   try {
     found = await restore(text);
   } catch (err) {
     console.error(err);
-    toast(`That backup could not be loaded: ${err?.message ?? err}`);
+    toast(`That backup could not be loaded: ${err?.message ?? err}${note ? ` ${note}` : ''}`);
     return false;
   }
   toast(`Restored ${plural(found.ledger, 'entry', 'entries')}.`
-    + (found.problems.length ? ` Note: ${found.problems.join('; ')}.` : ''));
+    + (found.problems.length ? ` Note: ${found.problems.join('; ')}.` : '')
+    + (note ? ` ${note}` : ''));
   return true;
 }
 

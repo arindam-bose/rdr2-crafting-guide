@@ -89,6 +89,20 @@ try {
       <span class="brand-version" id="brand-version"></span>
     </h1>
     <div class="topbar-actions">
+      <!-- The two backup buttons, side by side; on a phone, once both show,
+           they share one word above them (app.css), as the switch does. -->
+      <div class="backup-pair">
+      <!-- A backup back in, from any page: in Personalize, data or not, so
+           a new device can start from one.  A dropped file goes the same
+           way (js/import.js), in either mode. -->
+      <label class="backup-btn import-btn file-btn" id="import-btn" hidden
+             title="Import: restore from a backup file. You can also drop the file anywhere on the page.">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m-4.5 4.5L12 4l4.5 4.5M5 19.5h14"/></svg>
+        <span class="backup-label">Import</span>
+        <input type="file" id="import-file" accept=".json,.txt,application/json,text/plain"
+               aria-label="Import: restore from a backup file">
+      </label>
+
       <!-- One tap to a backup file, from any page.  Shown in Personalize
            once there is something to back up; main.js adds the dot when
            one is due. -->
@@ -96,6 +110,7 @@ try {
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 19.5h14"/></svg>
         <span class="backup-label">Back up</span>
       </button>
+      </div>
 
       <!-- Both words always showing, the one in force drawn in ink: the
            same switch the recipe dialog uses, so the two read alike. -->
@@ -137,7 +152,8 @@ try {
       without a signal. The flip side: clearing this browser's site data
       erases it. Once you have logged something, <strong>Back up</strong>
       at the top saves a copy - take one now and then, and keep it
-      somewhere safe.</p>
+      somewhere safe. <strong>Import</strong> beside it brings one back, or
+      drop the file anywhere on the page.</p>
     <button type="button" class="ghost-btn" id="first-note-ok">Got it</button>
   </div>
 </aside>

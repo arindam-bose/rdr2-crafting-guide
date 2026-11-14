@@ -77,6 +77,7 @@ const SHELL = [
   'js/file-protocol.js',
   'js/main.js',
   'js/backup.js',
+  'js/import.js',
   'js/device.js',
   'js/install.js',
   'js/db.js',

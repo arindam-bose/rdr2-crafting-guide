@@ -16,6 +16,7 @@ import * as store from '../store.js';
 import * as theme from '../theme.js';
 import { esc, plural, facts } from '../render.js';
 import * as backup from '../backup.js';
+import * as importer from '../import.js';
 import * as install from '../install.js';
 import { toast, offerReload } from '../toast.js';
 import { ledgerDialog } from './ledger.js';
@@ -143,10 +144,11 @@ export function mount(root) {
       <section class="panel">
         <h3>Bring it back</h3>
         <p class="note">Reading a file <strong>replaces</strong> what is on this
-          device. Nothing is written until you confirm.</p>
+          device. Nothing is written until you confirm. In Personalize, Import at
+          the top does the same from any page, or drop the file anywhere.</p>
         <div class="panel-actions">
           <label class="ghost-btn file-btn">Upload a file
-            <input type="file" id="s-file" accept=".json,.txt,application/json,text/plain" hidden>
+            <input type="file" id="s-file" accept="${importer.ACCEPT}">
           </label>
           <button type="button" class="ghost-btn" id="s-paste-toggle"
                   aria-expanded="false" aria-controls="s-paste-box">Paste instead</button>
@@ -156,7 +158,6 @@ export function mount(root) {
                     placeholder="Paste the contents of an export…"></textarea>
           <button type="button" class="ghost-btn" id="s-read">Read this</button>
         </div>
-        <div id="s-preview"></div>
       </section>
 
       <section class="panel">
@@ -242,7 +243,6 @@ export function mount(root) {
     </div>`;
 
   const $ = (sel) => root.querySelector(sel);
-  const preview = $('#s-preview');
   const ledger = ledgerDialog();
   const about = aboutDialog();
   const howTo = howToDialog();
@@ -273,7 +273,6 @@ export function mount(root) {
     else if (event.target.closest('[data-howto]')) howTo.open();
     else if (event.target.closest('[data-stats]')) stats.open();
   });
-  let pending = null;          // text waiting for a confirmed import
 
   // ---- the home screen ------------------------------------------------
 
@@ -334,12 +333,8 @@ export function mount(root) {
   });
   $('#s-copy').addEventListener('click', backup.copy);
 
-  $('#s-file').addEventListener('change', async (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    offer(await file.text(), file.name);
-    event.target.value = '';            // so the same file can be picked twice
-  });
+  // The same way through as the masthead's Import and a dropped file: import.js.
+  $('#s-file').addEventListener('change', importer.onFileInput);
 
   // A button beside Upload a file rather than a disclosure under it, so
   // the tile's controls stay on one line, level with its neighbours'.
@@ -352,84 +347,11 @@ export function mount(root) {
   pasteToggle.addEventListener('click', () =>
     showPaste(pasteToggle.getAttribute('aria-expanded') !== 'true'));
 
-  $('#s-read').addEventListener('click', () => {
+  $('#s-read').addEventListener('click', async () => {
     const text = $('#s-paste').value.trim();
-    if (text) offer(text, 'pasted text');
-  });
-
-  /**
-   * Say what the file holds beside what this device has, and what replacing would cost: a
-   * table, the rows that differ tinted, as the Money and Habit Trackers do it.
-   */
-  function offer(text, source) {
-    const found = store.inspectImport(text);
-    const now = store.stats();
-
-    if (found.fatal) {
-      pending = null;
-      preview.innerHTML = `<div class="verdict bad">
-        <p>${esc(found.fatal)}</p></div>`;
-      return;
-    }
-
-    pending = text;
-    const exported = found.exported_at
-      ? `Exported ${new Date(found.exported_at).toLocaleDateString()}${found.device ? ` from ${found.device}` : ''}`
-      : 'No export date';
-    const saved = backup.lastSaved();
-    const here = store.latestChange();
-    const there = found.last_change;
-    // Both stamps are SQLite's own shape, so they compare as text.
-    const newerHere = here !== null && (there === null || here > there);
-
-    const rows = [
-      ['Entries', now.entries.toLocaleString(), found.ledger.toLocaleString(), true],
-      ['Crafted recipes', now.made.toLocaleString(), found.made.toLocaleString(), true],
-      ['Last change', stampText(here), stampText(there), true],
-      // A backup and an export are different events, so this row is context, never a difference.
-      ['Backup', saved ? `Backed up ${saved.toLocaleDateString()}` : 'Never backed up', exported, false],
-    ];
-
-    preview.innerHTML = `
-      <div class="verdict">
-        <p><strong>${esc(source)}</strong> holds a backup. Restoring it replaces
-          everything on this device.</p>
-        <table class="restore-compare">
-          <thead><tr><th></th><th scope="col">On this device</th><th scope="col">In the file</th></tr></thead>
-          <tbody>${rows.map(([name, a, b, compare]) => `
-            <tr${compare && a !== b ? ' class="differs"' : ''}>
-              <th scope="row">${esc(name)}</th><td>${esc(a)}</td><td>${esc(b)}</td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
-        ${newerHere ? '<p class="restore-warn">This device has newer changes than the file: replacing loses them.</p>' : ''}
-        ${found.problems.length
-          ? `<ul class="problems">${found.problems
-              .map((w) => `<li>${esc(w)}</li>`).join('')}</ul>`
-          : ''}
-        <div class="panel-actions">
-          <button type="button" class="more-btn" id="s-confirm">Replace my data</button>
-          <button type="button" class="ghost-btn" id="s-cancel">Cancel</button>
-        </div>
-      </div>`;
-  }
-
-  /** A SQLite stamp ("YYYY-MM-DD HH:MM:SS", UTC) as the reader's own date and time. */
-  function stampText(stamp) {
-    return stamp ? new Date(`${stamp.replace(' ', 'T')}Z`).toLocaleString() : 'Nothing yet';
-  }
-
-  preview.addEventListener('click', async (event) => {
-    if (event.target.id === 's-cancel') {
-      pending = null;
-      preview.innerHTML = '';
-    } else if (event.target.id === 's-confirm' && pending) {
-      if (!(await backup.restoreAndSay(pending))) return;
-      pending = null;
-      preview.innerHTML = '';
-      $('#s-paste').value = '';
-      showPaste(false);
-    }
+    if (!text || !(await importer.offer(text, 'Pasted text'))) return;
+    $('#s-paste').value = '';
+    showPaste(false);
   });
 
   // ---- appearance -----------------------------------------------------
