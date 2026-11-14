@@ -12,7 +12,7 @@
 
 import * as queries from '../queries.js';
 import * as store from '../store.js';
-import { detailHead, empty, esc, pager, PAGE } from '../render.js';
+import { detailHead, empty, esc, pager, PAGE, stampDate } from '../render.js';
 import { detailDialog } from '../dialog.js';
 
 // Plainer words than the schema's, which are written for the CHECK
@@ -92,14 +92,10 @@ function entry(e) {
     </div>`;
 }
 
-/**
- * SQLite writes `datetime('now')` in UTC with no zone marker, and a
- * browser reads a bare "YYYY-MM-DD HH:MM:SS" as local time.  Say so
- * explicitly, or every entry is off by your offset.
- */
+/** When an entry was made, on the reader's own clock (see stampDate). */
 function when(ts) {
-  const at = new Date(`${String(ts).replace(' ', 'T')}Z`);
-  if (Number.isNaN(at.getTime())) return String(ts);
+  const at = stampDate(ts);
+  if (!at) return String(ts);
 
   return at.toLocaleString(undefined, {
     day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',

@@ -14,7 +14,7 @@ import * as notice from './notice.js';
 import * as prefs from './prefs.js';
 import * as store from './store.js';
 import * as theme from './theme.js';
-import { errorBox, plural } from './render.js';
+import { errorBox, plural, stampDate } from './render.js';
 import { toast, offerReload } from './toast.js';
 import * as materials from './views/materials.js';
 import * as inventory from './views/inventory.js';
@@ -157,11 +157,9 @@ function paintBackup() {
  * Habit Trackers say it.
  */
 function paintStatus() {
-  const stamp = store.isPersonal() && !store.isEmpty() ? store.latestChange() : null;
-  statusStrip.hidden = stamp === null;
-  if (stamp === null) return;
-  // SQLite's stamp is UTC, "YYYY-MM-DD HH:MM:SS": read as such, shown on the reader's own clock.
-  const at = new Date(`${stamp.replace(' ', 'T')}Z`);
+  const at = store.isPersonal() && !store.isEmpty() ? stampDate(store.latestChange()) : null;
+  statusStrip.hidden = at === null;
+  if (at === null) return;
   statusStrip.firstElementChild.textContent = `Last updated ${at.toLocaleString(undefined, {
     day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   })}`;

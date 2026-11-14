@@ -149,9 +149,14 @@ function shareableFile() {
   return navigator.canShare({ files: [file] }) ? file : null;
 }
 
-/** Whether backUp() opens the share menu here rather than downloading. */
+/**
+ * Whether backUp() opens the share menu here rather than downloading.
+ * Asked with an empty file of the same kind, not the backup itself:
+ * the answer turns on the type, and Settings asks every time it opens.
+ */
 export function shares() {
-  return shareableFile() !== null;
+  if (!navigator.canShare || !matchMedia('(pointer: coarse)').matches) return false;
+  return navigator.canShare({ files: [new File([''], 'probe.txt', { type: 'text/plain' })] });
 }
 
 /**

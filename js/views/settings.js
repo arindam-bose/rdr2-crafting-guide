@@ -95,6 +95,21 @@ function released(day) {
 const CACHE_PREFIX = 'rdr2-crafting-v';
 
 /** The release the offline copy holds, from its cache's name, or null. */
+/**
+ * Whether release `a` comes after `b`, figure by figure ("1.0.10" after
+ * "1.0.9"): a cached copy is only an update when it is newer than the
+ * page running, never just different from it.
+ */
+function newer(a, b) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d) return d > 0;
+  }
+  return false;
+}
+
 async function cachedRelease() {
   if (!('caches' in self)) return null;
   const name = (await caches.keys()).find((n) => n.startsWith(CACHE_PREFIX));
@@ -404,7 +419,9 @@ export function mount(root) {
     const incoming = registration.installing ?? registration.waiting;
     if (!incoming) {
       const cached = await cachedRelease();
-      if (cached && number && cached !== number) return offerReload(cached);
+      // Only a newer copy: an older one left behind (a worker that never
+      // took over, a page loaded past it) is not something to go back to.
+      if (cached && number && newer(cached, number)) return offerReload(cached);
       return toast(number
         ? `You have the latest version (v${number}).`
         : 'You have the latest version.');

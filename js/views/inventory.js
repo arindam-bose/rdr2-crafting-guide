@@ -111,6 +111,15 @@ window.addEventListener('beforeunload', (event) => {
   if (staged.size) event.preventDefault();
 });
 
+// A restore, from anywhere, replaces the stock these changes were
+// counted against: import.js asks first whenever there are any, says
+// they will be dropped, and drops them here before it writes.  The
+// page repaints off the restore's own store change.
+importer.onUnsaved({
+  count: () => staged.size,
+  discard: () => staged.clear(),
+});
+
 export function mount(root) {
   const locations = queries.locations();
   const categories = toolbar.categoryOptions(queries.bodyParts(), { plants: true });
