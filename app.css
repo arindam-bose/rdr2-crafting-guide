@@ -414,14 +414,11 @@ body > main { flex: 1 0 auto; }
 }
 .backup-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
 .backup-btn[hidden] { display: none; }
-.backup-btn svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.backup-btn .icon {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  vertical-align: 0;
 }
 .backup-btn[data-due]::after {
   content: "";
@@ -471,16 +468,11 @@ body > main { flex: 1 0 auto; }
     letter-spacing: .12em;
     white-space: nowrap;
   }
-  .backup-btn svg {
+  .backup-btn .icon {
     order: 1;
-    box-sizing: content-box;
-    width: 14px;
-    height: 14px;
-    padding: 2px 10px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
+    width: 20px;
+    height: 20px;
   }
-  .backup-btn:hover svg { border-color: var(--ink-faint); }
   .backup-btn[data-due]::after { top: -5px; right: -10px; }
 
   /* Import and Back up side by side, each keeping its word: drawn
@@ -492,7 +484,6 @@ body > main { flex: 1 0 auto; }
   .backup-label,
   .topbar .mode-switch .side { letter-spacing: .04em; }
   .backup-pair { gap: 4px; }
-  .backup-pair .backup-btn svg { padding: 2px 7px; }
   .backup-pair:has(> .backup-btn:not([hidden])) + .mode-switch { padding-left: 6px; }
 }
 
@@ -855,6 +846,18 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
    is parchment's inverse but leather's plain one. */
 .icon-coffee { background-image: url('images/icons/parchment/coffee-inverse.png'); }
 :root[data-theme="leather"] .icon-coffee { background-image: url('images/icons/leather/coffee.png'); }
+
+/* Download and upload: Back up and Import on the masthead, Download
+   and Upload a file on Settings.  Every one sits on a pale button, so
+   both take the inverse cut, as the station icons do. */
+.icon-download { background-image: url('images/icons/parchment/download-inverse.svg'); }
+.icon-upload   { background-image: url('images/icons/parchment/upload-inverse.svg'); }
+:root[data-theme="leather"] .icon-download { background-image: url('images/icons/leather/download-inverse.svg'); }
+:root[data-theme="leather"] .icon-upload   { background-image: url('images/icons/leather/upload-inverse.svg'); }
+
+/* A text button with a medallion before its word, on Settings. */
+:is(.more-btn, .ghost-btn, .file-btn).icon-btn { display: inline-flex; align-items: center; }
+.icon-btn .icon { vertical-align: 0; }
 
 /* A pressed chip or a chosen tab turns its label over -- pale on
    parchment, dark on leather -- and the medallion's disc follows the

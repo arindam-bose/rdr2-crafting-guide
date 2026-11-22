@@ -97,7 +97,7 @@ try {
            way (js/import.js), in either mode. -->
       <label class="backup-btn import-btn file-btn" id="import-btn" hidden
              title="Import: restore from a backup file. You can also drop the file anywhere on the page.">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4m-4.5 4.5L12 4l4.5 4.5M5 19.5h14"/></svg>
+        <span class="icon icon-upload" aria-hidden="true"></span>
         <span class="backup-label">Import</span>
         <input type="file" id="import-file" accept=".json,.txt,application/json,text/plain"
                aria-label="Import: restore from a backup file">
@@ -107,7 +107,7 @@ try {
            once there is something to back up; main.js adds the dot when
            one is due. -->
       <button type="button" class="backup-btn" id="backup-btn" hidden>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 19.5h14"/></svg>
+        <span class="icon icon-download" aria-hidden="true"></span>
         <span class="backup-label">Back up</span>
       </button>
       </div>

@@ -151,7 +151,8 @@ export function mount(root) {
         <p class="note" id="s-last"></p>
         <div class="panel-actions">
           <button type="button" class="more-btn" id="s-send" hidden>Send to an app</button>
-          <button type="button" class="more-btn" id="s-download">Download</button>
+          <button type="button" class="more-btn icon-btn" id="s-download"><span
+            class="icon icon-download" aria-hidden="true"></span>Download</button>
           <button type="button" class="ghost-btn" id="s-copy">Copy to clipboard</button>
         </div>
       </section>
@@ -162,7 +163,8 @@ export function mount(root) {
           device. Nothing is written until you confirm. In Personalize, Import at
           the top does the same from any page, or drop the file anywhere.</p>
         <div class="panel-actions">
-          <label class="ghost-btn file-btn">Upload a file
+          <label class="ghost-btn file-btn icon-btn"><span
+            class="icon icon-upload" aria-hidden="true"></span>Upload a file
             <input type="file" id="s-file" accept="${importer.ACCEPT}">
           </label>
           <button type="button" class="ghost-btn" id="s-paste-toggle"
