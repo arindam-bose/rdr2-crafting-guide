@@ -68,7 +68,7 @@
   --rdr-white:  #fffeff;
   /* From a second RDR2 palette, for what wants a red quieter than the
      key art's: https://www.color-hex.com/color-palette/35394 */
-  --rdr-wine:   #7e1921;
+  --rdr-wine:   #d41936;
 
   --font-body:    "FB Remington", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-display: "Marston", "Haettenschweiler", "Arial Narrow", sans-serif;
@@ -2455,11 +2455,10 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 
 
 /* Support the guide: the one tile lit like a lamp -- a wash of the
-   accent and the accent down its edge -- and the one filled button on
+   accent, edged like every other tile -- and the one filled button on
    the page, the Save button's amber, so it is warm without shouting. */
 .panel.support {
   background: color-mix(in srgb, var(--accent) 9%, var(--surface));
-  border-left: 3px solid var(--accent-text);
 }
 .coffee-btn {
   display: inline-flex;

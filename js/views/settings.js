@@ -223,7 +223,7 @@ export function mount(root) {
         <h3>Support the guide</h3>
         <p class="note">The guide is free, with no ads and no accounts,
           and what you log never leaves this browser - it will stay that
-          way. If it saved you a ride back to Valentine, a coffee keeps it
+          way. If it saved you a ride back to Saint Denis, a coffee keeps it
           going - and so does passing it on to a friend who plays RDR2.</p>
         <div class="panel-actions">
           <a class="coffee-btn" href="https://buymeacoffee.com/arindambose"
