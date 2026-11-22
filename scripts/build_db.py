@@ -41,7 +41,7 @@ import pandas as pd
 # --------------------------------------------------------------------------
 
 # Bumped when the shape of the generated database changes.
-SCHEMA_VERSION = "5"
+SCHEMA_VERSION = "6"
 
 # ordinal warmth scale, which a clothing description states in words.
 # Keyed on the phrase itself rather than the full sentence around it, so
@@ -156,7 +156,8 @@ CREATE TABLE recipes (
     price_cents  INTEGER NOT NULL DEFAULT 0,
     description  TEXT,
     warmth_rank  INTEGER,            -- what the description says, as a number
-    repeatable   INTEGER NOT NULL DEFAULT 0 CHECK (repeatable IN (0,1))
+    repeatable   INTEGER NOT NULL DEFAULT 0 CHECK (repeatable IN (0,1)),
+    link         TEXT                -- its wiki page, where the workbook has one
 );
 
 -- A recipe asks for its ingredients in slots.  Rows sharing a slot are

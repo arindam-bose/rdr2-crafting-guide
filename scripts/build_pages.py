@@ -134,12 +134,18 @@ def quality_label(quality):
     return f'<span class="stars stars-{esc(quality.lower())}" aria-hidden="true"></span>{esc(quality)}'
 
 
-def web_link(url, text):
-    """Only a web address becomes a link, as in render.js."""
+def web_link(url, text, about=None):
+    """Only a web address becomes a link, as in render.js: the arrow out
+    of a box after it, held to the last word, and said aloud too."""
     if not re.match(r'^https?://', url or '', re.I):
         return esc(text)
-    return (f'<a class="xlink" href="{esc(url)}" target="_blank" rel="noopener noreferrer" '
-            f'title="{esc(text)} on the Red Dead wiki">{esc(text)}</a>')
+    words = text or ''
+    cut = words.rfind(' ') + 1
+    return (f'<a class="xlink weblink" href="{esc(url)}" target="_blank" rel="noopener noreferrer" '
+            f'title="{esc(about or text)} on the Red Dead wiki">{esc(words[:cut])}'
+            f'<span class="weblink-tail">{esc(words[cut:])}'
+            f'<span class="ext-icon" aria-hidden="true"></span></span>'
+            f'<span class="sr-only"> (opens in a new tab)</span></a>')
 
 
 def page_link(kind, id_, text, root):
@@ -537,11 +543,11 @@ def recipe_page(r, data, parts):
         if r['set_name']:
             intro += f' Part of {r["set_name"]}.'
 
-    facts = ([('Type', esc(r['category'])),
+    facts = ([('Type', web_link(r['link'], r['category'], r['name'])),
               ('Made at', f'{icon("campfire")}{esc(r["station"])}'),
               ('Recipe cost', r['price_cents'] and money(r['price_cents']))]
              if campfire else
-             [('Type', esc(r['category'])),
+             [('Type', web_link(r['link'], r['category'], r['name'])),
               ('Vendor', f'{icon(STATION_ICON.get(r["station_id"]))}{esc(r["station"])}'),
               ('Set', esc(r['set_name'])),
               ('Price', r['price_cents'] and money(r['price_cents']))])

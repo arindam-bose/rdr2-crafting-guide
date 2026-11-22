@@ -183,7 +183,7 @@ export function recipeList() {
       GROUP BY   ri.recipe_id, ri.slot
     )
     SELECT     r.id, r.name, r.category, r.price_cents, r.description,
-               r.repeatable,
+               r.repeatable, r.link,
                st.id   AS station_id,
                st.name AS station,
                st.color,

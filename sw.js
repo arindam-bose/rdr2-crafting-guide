@@ -41,6 +41,7 @@ function themeIcons() {
       both.map((name) => `images/icons/${theme}/${name}.png`)),
     'images/icons/parchment/coffee-inverse.png',
     'images/icons/leather/coffee.png',
+    'images/icons/external-link.svg',   // a mask, the same in both themes
   ];
 }
 

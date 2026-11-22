@@ -22,7 +22,7 @@ import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { esc, empty, nameWith, pager, plural, qualityStars, stationColour,
          stationIcon, stationLabel, stationMark, detailHead, detailDock, detailSection, placeName, traits, crossLink,
-         doneMark, markIcon, money, PAGE } from '../render.js';
+         doneMark, markIcon, money, webLink, PAGE } from '../render.js';
 import * as nav from '../nav.js';
 import * as toolbar from './toolbar.js';
 import { toast } from '../toast.js';
@@ -482,7 +482,7 @@ function recipeDetail(r, personal) {
   return `
     ${detailHead('Recipe', r.name, personal ? craftedSwitch(r) : '')}
     ${traits([
-      ['Type', esc(r.category)],
+      ['Type', webLink(r.link, r.category, r.name)],
       ['Vendor', stationLabel(r.station_id, r.station)],
       ['Set', esc(r.set_name)],
       ['Price', r.price_cents && money(r.price_cents)],
@@ -506,7 +506,7 @@ function campfireDetail(r, personal) {
   return `
     ${detailHead('Campfire recipe', r.name)}
     ${traits([
-      ['Type', esc(r.category)],
+      ['Type', webLink(r.link, r.category, r.name)],
       ['Made at', stationLabel(r.station_id, r.station)],
       ['Recipe cost', r.price_cents && money(r.price_cents)],
     ])}

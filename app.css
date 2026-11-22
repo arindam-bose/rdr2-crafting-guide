@@ -1275,6 +1275,40 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   text-decoration-color: currentColor;
 }
 
+/* A link off the site -- a wiki page, in a new tab -- carries the
+   arrow out of a box after its name.  Drawn as a mask over
+   currentColor -- a file, not a data: URL, which the pages' CSP
+   refuses as an image -- so it takes the link's colour in either theme and
+   comes up to the accent with it.  The tail (last word and arrow)
+   does not wrap, so the arrow never sits alone on a line. */
+.weblink-tail { white-space: nowrap; }
+.ext-icon {
+  display: inline-block;
+  width: .72em;
+  height: .72em;
+  margin-left: .28em;
+  vertical-align: .02em;
+  background-color: currentColor;
+  opacity: .7;
+  -webkit-mask: url("images/icons/external-link.svg") center / contain no-repeat;
+          mask: url("images/icons/external-link.svg") center / contain no-repeat;
+}
+.weblink:hover .ext-icon,
+.weblink:focus-visible .ext-icon { opacity: 1; }
+
+/* Said to a screen reader, not shown. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Buttons dressed as links: "and 6 more" on a card, "Ledger entries"
    on Settings, Undo in the toast.  Buttons, not anchors: there is no
    address for "this list, opened", and an <a href="#"> would put one
