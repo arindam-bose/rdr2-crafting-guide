@@ -47,12 +47,12 @@ export function categoryFilter(id) {
  * A row of chips.  `attr` is the data attribute they carry, which
  * is also the key the wiring writes on the view's state.  A chip
  * with an `icon` -- one of the merchant stations -- draws it before
- * the label; the rest, "All" included, draw none.  The chip whose
- * value is `current` starts pressed; an empty value stands for none
- * chosen (null), as wirePicker writes it.
+ * the label; the rest draw none.  The chip whose value is `current`
+ * starts pressed.  All is not one of them: it has a group of its own
+ * (allChip), as it stands over every row.
  *
  *   chipRow('m-stations', 'station',
- *           [{ value: '', label: 'All' }, …], state.station)
+ *           [{ value: 'pearson', label: 'Pearson', icon: … }, …], state.station)
  */
 export function chipRow(id, attr, chips, current = null) {
   return `
@@ -61,6 +61,18 @@ export function chipRow(id, attr, chips, current = null) {
         <button class="chip" data-${esc(attr)}="${esc(c.value)}"
                 aria-pressed="${(c.value || null) === current}"
           >${icon(c.icon)}${esc(c.label)}</button>`).join('')}
+    </div>`;
+}
+
+/**
+ * The All chip that leads a toolbar's filter groups, in a group of its
+ * own -- drawn with a double rule before it (app.css), since it stands
+ * over every group after it rather than beside them.
+ */
+export function allChip(id) {
+  return `
+    <div class="chips chips-all" id="${esc(id)}">
+      <button class="chip" data-all="all" aria-pressed="true">All</button>
     </div>`;
 }
 
@@ -198,20 +210,6 @@ function wireClear(input) {
   });
 
   sync();
-}
-
-/** Pick exactly one.  An empty value means "no filter". */
-export function wirePicker(el, attr, state, onChange) {
-  el.addEventListener('click', (event) => {
-    const chip = event.target.closest('.chip');
-    if (!chip) return;
-
-    state[attr] = chip.dataset[attr] || null;
-    for (const c of el.children) {
-      c.setAttribute('aria-pressed', String(c === chip));
-    }
-    onChange();
-  });
 }
 
 /** Make `value` the chosen tab, on screen and in the state. */
@@ -356,6 +354,41 @@ export function wireToggles(el, attr, state, onChange, off = 'all') {
     }
     onChange();
   });
+}
+
+/**
+ * All, and the groups of chips it stands over -- the vendors, then
+ * Still needed / Done or Ready / Crafted.  Each group is a radio that
+ * can be switched off (wireToggles); All switches off every group.
+ * `groups` are { el, attr, off }, `off` being the group's value with
+ * nothing chosen.
+ *
+ * Returns paint(), for the view's update() to call after it has hidden
+ * whatever means nothing in the current mode or tab.  It presses each
+ * chip from the state, so the groups can never disagree whichever was
+ * tapped; presses All while no group on screen narrows anything; and
+ * hides All when every group is hidden, as there is nothing for it to
+ * stand over.
+ */
+export function wireFilterChips(allEl, groups, state, onChange) {
+  for (const g of groups) wireToggles(g.el, g.attr, state, onChange, g.off);
+  allEl.addEventListener('click', (event) => {
+    if (!event.target.closest('.chip')) return;
+    for (const g of groups) state[g.attr] = g.off;
+    onChange();
+  });
+
+  return function paint() {
+    const shown = groups.filter((g) => !g.el.hidden);
+    allEl.hidden = !shown.length;
+    allEl.firstElementChild.setAttribute('aria-pressed',
+      String(shown.every((g) => state[g.attr] === g.off)));
+    for (const g of groups) {
+      for (const c of g.el.children) {
+        c.setAttribute('aria-pressed', String(c.dataset[g.attr] === state[g.attr]));
+      }
+    }
+  };
 }
 
 /**

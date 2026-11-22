@@ -925,8 +925,9 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 /* Rules between the toolbar's groups, so the category, the vendors,
    the progress chips and the sort read as four questions rather than
    one long row of controls: a single rule before each row of chips,
-   and a double one before the sort, which orders the list rather than
-   filtering it.  A row of chips that is hidden (Still needed and Done
+   and a double one before All, which stands over the chip groups
+   after it rather than beside them, and before the sort, which orders
+   the list rather than filtering it.  A row of chips that is hidden (Still needed and Done
    in General) takes its rule with it.  Drawn rather than typed: a box
    sits at a fixed height and centres itself on the row, where a glyph
    would ride the text baseline and change size with the font.
@@ -944,6 +945,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   background: var(--line);
   margin-right: 2px;
 }
+.toolbar > .chips-all::before,
 .sort::before {
   width: 4px;
   background: none;

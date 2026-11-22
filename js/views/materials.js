@@ -100,7 +100,7 @@ export function mount(root) {
     <div class="toolbar">
       ${toolbar.searchBox('m-search', 'Search a material or animal…')}
       ${toolbar.categoryFilter('m-part')}
-      ${toolbar.chipRow('m-all', 'all', [{ value: 'all', label: 'All' }])}
+      ${toolbar.allChip('m-all')}
       ${toolbar.chipRow('m-stations', 'station',
         stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
         state.station)}
@@ -139,29 +139,10 @@ export function mount(root) {
   toolbar.wireSearch(searchInput, state, refilter, query);
   toolbar.wireSort(root, 'm', SORTS, state, refilter, 'materials');
   const markRules = toolbar.wireRules(root.querySelector('.toolbar'));
-  toolbar.wireToggles(stationChips, 'station', state, refilter, null);
-  toolbar.wireToggles(showChips, 'show', state, refilter);
-  allChips.addEventListener('click', (event) => {
-    if (!event.target.closest('.chip')) return;
-    state.station = null;
-    state.show = 'all';
-    refilter();
-  });
-
-  // All is pressed while neither group narrows anything -- the state
-  // groups only count in Personalize, where they are on screen.  Every
-  // chip is painted from the state here, so the three groups can never
-  // disagree, whichever of them was tapped.
-  function paintChips(personal) {
-    const none = !state.station && (state.show === 'all' || !personal);
-    allChips.firstElementChild.setAttribute('aria-pressed', String(none));
-    for (const c of stationChips.children) {
-      c.setAttribute('aria-pressed', String(c.dataset.station === state.station));
-    }
-    for (const c of showChips.children) {
-      c.setAttribute('aria-pressed', String(c.dataset.show === state.show));
-    }
-  }
+  const paintChips = toolbar.wireFilterChips(allChips, [
+    { el: stationChips, attr: 'station', off: null },
+    { el: showChips, attr: 'show', off: 'all' },
+  ], state, refilter);
 
   // A category belongs to one tab, so choosing one takes you to the
   // tab its materials are on rather than leaving you on an empty one.
@@ -211,7 +192,7 @@ export function mount(root) {
                                        part: state.part, show: state.show, group: state.group });
     const personal = store.isPersonal();
     showChips.hidden = !personal;
-    paintChips(personal);
+    paintChips();
     markRules();
 
     lastCards = group(queries.materials({ personal }), queries.materialUsage(),

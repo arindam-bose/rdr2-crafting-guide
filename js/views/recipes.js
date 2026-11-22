@@ -92,10 +92,10 @@ export function mount(root) {
     <div class="toolbar">
       ${toolbar.searchBox('r-search', 'Search a recipe, set or material…')}
       ${toolbar.categoryFilter('r-category')}
-      ${toolbar.chipRow('r-stations', 'station', [
-        { value: '', label: 'All' },
-        ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
-      ], state.station)}
+      ${toolbar.allChip('r-all')}
+      ${toolbar.chipRow('r-stations', 'station',
+        stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
+        state.station)}
       ${toolbar.chipRow('r-show', 'show', [
         { value: 'ready', label: 'Ready to craft' },
         { value: 'done', label: 'Crafted' },
@@ -112,6 +112,7 @@ export function mount(root) {
   const count = root.querySelector('#r-count');
   const showChips = root.querySelector('#r-show');
   const stationChips = root.querySelector('#r-stations');
+  const allChips = root.querySelector('#r-all');
   const categorySelect = root.querySelector('#r-category');
   const kindTabs = root.querySelector('#r-kinds');
   const pagerBox = root.querySelector('#r-pager');
@@ -129,8 +130,10 @@ export function mount(root) {
   toolbar.wireSearch(searchInput, state, refilter, query);
   toolbar.wireSort(root, 'r', SORTS, state, refilter, 'recipes');
   const markRules = toolbar.wireRules(root.querySelector('.toolbar'));
-  toolbar.wirePicker(root.querySelector('#r-stations'), 'station', state, refilter);
-  toolbar.wireToggles(showChips, 'show', state, refilter);
+  const paintChips = toolbar.wireFilterChips(allChips, [
+    { el: stationChips, attr: 'station', off: null },
+    { el: showChips, attr: 'show', off: 'all' },
+  ], state, refilter);
 
   categorySelect.addEventListener('change', (event) => {
     state.category = event.target.value;
@@ -197,6 +200,7 @@ export function mount(root) {
     // Vendors and progress mean nothing at your own fire.
     stationChips.hidden = !vendor;
     showChips.hidden = !personal || !vendor;
+    paintChips();
     markRules();
 
     const ingredients = groupBy(queries.recipeIngredients(), (i) => i.recipe_id);
