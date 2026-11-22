@@ -66,6 +66,9 @@
   --rdr-blood:  #b90303;
   --rdr-black:  #020002;
   --rdr-white:  #fffeff;
+  /* From a second RDR2 palette, for what wants a red quieter than the
+     key art's: https://www.color-hex.com/color-palette/35394 */
+  --rdr-wine:   #7e1921;
 
   --font-body:    "FB Remington", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-display: "Marston", "Haettenschweiler", "Arial Narrow", sans-serif;
@@ -109,6 +112,8 @@
   --ink-label:   #7a4c00;            /* ochre, dark enough for a ledger row */
   --danger:      var(--rdr-red);
   --danger-text: var(--rdr-blood);
+  --erase-text:  var(--rdr-wine);
+  --erase-wash:  14%;
   --ok:          #46621f;
   --warn:        #7d5a12;
   --diff-bg:     #e5c684;            /* a row that differs: amber, steeped into a buff box */
@@ -152,6 +157,8 @@
                                 ground any of these labels sits on */
   --danger:      var(--rdr-red);
   --danger-text: #ec6a5a;            /* the raw red is 2.9:1 here */
+  --erase-text:  color-mix(in srgb, var(--rdr-wine) 45%, #f2e9d6);  /* ~5:1; the raw wine is 1.4:1 */
+  --erase-wash:  30%;                /* 14% is lost on the dark leather */
   --ok:          #9cb86c;
   --warn:        #e0b155;
   --diff-bg:     #68491a;
@@ -2319,25 +2326,21 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 }
 .panel.danger { border-color: color-mix(in srgb, var(--danger) 55%, var(--line)); }
 
-/* Erase my data, in the game's own red: the one button on the page
-   that cannot be undone reads as that before it is pressed, the same
-   in both themes.  White lettering, and the medallion's pale cut (from
-   the parchment set, in both themes) so the disc stands off the red
-   rather than sinking into it.  Darkens to blood red on hover, as the
-   Erase that confirms it does. */
+/* Erase my data: the RDR2 wine carried onto its button -- a wash of
+   it over the surface, a wine edge and wine lettering -- so the one
+   button that cannot be undone reads as that before it is pressed,
+   without the solid red of the Erase that confirms it.  Each theme
+   sets how strong the wash is and how light the lettering, so both
+   stay readable. */
 .erase-btn {
-  color: var(--rdr-white);
-  background: var(--rdr-red);
-  border-color: var(--rdr-red);
+  color: var(--erase-text);
+  background: color-mix(in srgb, var(--rdr-wine) var(--erase-wash), var(--surface));
+  border-color: color-mix(in srgb, var(--rdr-wine) 70%, var(--line));
 }
 .erase-btn:hover {
-  color: var(--rdr-white);
-  background: var(--rdr-blood);
-  border-color: var(--rdr-blood);
-}
-.erase-btn .icon-erase,
-:root[data-theme="leather"] .erase-btn .icon-erase {
-  background-image: url('images/icons/parchment/erase.svg');
+  color: var(--erase-text);
+  background: color-mix(in srgb, var(--rdr-wine) calc(var(--erase-wash) + 10%), var(--surface));
+  border-color: var(--rdr-wine);
 }
 
 /* The words beside a pair of buttons -- Settings' erase confirmation. */
