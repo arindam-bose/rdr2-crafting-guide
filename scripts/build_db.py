@@ -41,7 +41,7 @@ import pandas as pd
 # --------------------------------------------------------------------------
 
 # Bumped when the shape of the generated database changes.
-SCHEMA_VERSION = "6"
+SCHEMA_VERSION = "7"
 
 # ordinal warmth scale, which a clothing description states in words.
 # Keyed on the phrase itself rather than the full sentence around it, so
@@ -134,7 +134,8 @@ CREATE TABLE ingredient_animals (
 CREATE TABLE plants (
     id    TEXT PRIMARY KEY,          -- plant-desert-sage
     name  TEXT NOT NULL UNIQUE,
-    link  TEXT                       -- the plant's wiki page
+    link  TEXT,                      -- the plant's wiki page
+    type  TEXT                       -- Berry, Herb, Flower, Mushroom, Root, Other
 );
 
 CREATE TABLE ingredient_plants (
@@ -408,6 +409,15 @@ def check(db, warnings):
     for (pid,) in q("""SELECT id FROM plants
                        WHERE id NOT IN (SELECT plant_id FROM ingredient_plants)"""):
         warnings.append(f"plant {pid} is picked for no ingredient")
+    for (pid,) in q("SELECT id FROM plants WHERE type IS NULL ORDER BY id"):
+        warnings.append(f"plant {pid} has no type")
+    # The search pages file a plant ingredient under its plants' type, so
+    # the plants behind one ingredient -- the three Sages -- must agree.
+    for iid, types in q("""SELECT ip.ingredient_id, group_concat(DISTINCT p.type)
+                            FROM ingredient_plants ip JOIN plants p ON p.id = ip.plant_id
+                            GROUP BY ip.ingredient_id
+                            HAVING COUNT(DISTINCT p.type) > 1"""):
+        warnings.append(f"plant ingredient {iid} comes from plants of types {types}")
     for (iid,) in q("""SELECT id FROM ingredients WHERE source_type = 'plant'
                        AND id NOT IN (SELECT ingredient_id FROM ingredient_plants)"""):
         warnings.append(f"plant ingredient {iid} has no plant: no link")
