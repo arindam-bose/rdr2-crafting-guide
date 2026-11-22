@@ -94,6 +94,11 @@ function released(day) {
 // sw.js names its cache after the release it holds.
 const CACHE_PREFIX = 'rdr2-crafting-v';
 
+// Erase my data, as the page first draws it and as it comes back once
+// a confirm is answered or cancelled: one copy, so the two cannot drift.
+const RESET_BUTTON = `<button type="button" class="ghost-btn icon-btn" id="s-reset"><span
+  class="icon icon-erase" aria-hidden="true"></span>Erase my data</button>`;
+
 /** The release the offline copy holds, from its cache's name, or null. */
 /**
  * Whether release `a` comes after `b`, figure by figure ("1.0.10" after
@@ -192,7 +197,7 @@ export function mount(root) {
           marked. The reference data is untouched. This cannot be undone -
           download a copy first.</p>
         <div class="panel-actions" id="s-danger">
-          <button type="button" class="ghost-btn" id="s-reset">Erase my data</button>
+          ${RESET_BUTTON}
         </div>
       </section>
 
@@ -443,8 +448,11 @@ export function mount(root) {
   navigator.serviceWorker?.addEventListener('message', onWorker);
 
   // Erasing asks twice, in place, rather than through a dialog box.
+  // Read from the button, not the target: a tap on Erase my data's
+  // icon lands on the icon.
   $('#s-danger').addEventListener('click', async (event) => {
-    if (event.target.id === 's-reset') {
+    const id = event.target.closest('button')?.id;
+    if (id === 's-reset') {
       // Erase takes the recipe marks as well as the ledger, so the
       // question counts both.
       const { entries, made } = store.stats();
@@ -455,9 +463,9 @@ export function mount(root) {
         <span class="state-label">Erase ${what}?</span>
         <button type="button" class="ghost-btn" id="s-reset-no">Keep it</button>
         <button type="button" class="more-btn danger-btn" id="s-reset-yes">Erase</button>`;
-    } else if (event.target.id === 's-reset-no') {
+    } else if (id === 's-reset-no') {
       resetDanger();
-    } else if (event.target.id === 's-reset-yes') {
+    } else if (id === 's-reset-yes') {
       try {
         await store.reset();
         toast('Erased.');
@@ -470,8 +478,7 @@ export function mount(root) {
   });
 
   function resetDanger() {
-    $('#s-danger').innerHTML =
-      '<button type="button" class="ghost-btn" id="s-reset">Erase my data</button>';
+    $('#s-danger').innerHTML = RESET_BUTTON;
   }
 
   // ---- what the page reports -------------------------------------------

@@ -43,7 +43,7 @@ function themeIcons() {
     'images/icons/leather/coffee.png',
     'images/icons/external-link.svg',   // a mask, the same in both themes
     ...['parchment', 'leather'].flatMap((theme) =>
-      ['download-inverse', 'upload-inverse'].map((name) => `images/icons/${theme}/${name}.svg`)),
+      ['download-inverse', 'upload-inverse', 'erase-inverse'].map((name) => `images/icons/${theme}/${name}.svg`)),
   ];
 }
 

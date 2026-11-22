@@ -848,12 +848,15 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 :root[data-theme="leather"] .icon-coffee { background-image: url('images/icons/leather/coffee.png'); }
 
 /* Download and upload: Back up and Import on the masthead, Download
-   and Upload a file on Settings.  Every one sits on a pale button, so
-   both take the inverse cut, as the station icons do. */
+   and Upload a file on Settings; erase on Erase my data.  Every one
+   sits on a pale button, so all take the inverse cut, as the station
+   icons do. */
 .icon-download { background-image: url('images/icons/parchment/download-inverse.svg'); }
 .icon-upload   { background-image: url('images/icons/parchment/upload-inverse.svg'); }
 :root[data-theme="leather"] .icon-download { background-image: url('images/icons/leather/download-inverse.svg'); }
 :root[data-theme="leather"] .icon-upload   { background-image: url('images/icons/leather/upload-inverse.svg'); }
+.icon-erase    { background-image: url('images/icons/parchment/erase-inverse.svg'); }
+:root[data-theme="leather"] .icon-erase    { background-image: url('images/icons/leather/erase-inverse.svg'); }
 
 /* A text button with a medallion before its word, on Settings. */
 :is(.more-btn, .ghost-btn, .file-btn).icon-btn { display: inline-flex; align-items: center; }
