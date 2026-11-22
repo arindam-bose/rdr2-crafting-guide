@@ -341,14 +341,16 @@ export function elsewhere(tabs, current, counts) {
 
 /**
  * Narrow to a subset, where tapping the pressed chip goes back to
- * everything.  `state[attr]` is the chip's value, or 'all'.
+ * everything.  `state[attr]` is the chip's value, or `off` -- 'all'
+ * unless the caller says otherwise (a station is null when none is
+ * chosen).
  */
-export function wireToggles(el, attr, state, onChange) {
+export function wireToggles(el, attr, state, onChange, off = 'all') {
   el.addEventListener('click', (event) => {
     const chip = event.target.closest('.chip');
     if (!chip) return;
 
-    state[attr] = state[attr] === chip.dataset[attr] ? 'all' : chip.dataset[attr];
+    state[attr] = state[attr] === chip.dataset[attr] ? off : chip.dataset[attr];
     for (const c of el.children) {
       c.setAttribute('aria-pressed', String(c.dataset[attr] === state[attr]));
     }
