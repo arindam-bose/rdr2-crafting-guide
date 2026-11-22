@@ -2319,6 +2319,23 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 }
 .panel.danger { border-color: color-mix(in srgb, var(--danger) 55%, var(--line)); }
 
+/* Erase my data: the panel's red carried onto its button -- a wash of
+   it over the surface, a redder edge and red lettering -- so the one
+   button that cannot be undone reads as that before it is pressed.
+   Mixed into each theme's own surface, so it is a tint on parchment
+   and an ember on leather, never the solid red of the Erase that
+   confirms it. */
+.erase-btn {
+  color: var(--danger-text);
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+  border-color: color-mix(in srgb, var(--danger) 60%, var(--line));
+}
+.erase-btn:hover {
+  color: var(--danger-text);
+  background: color-mix(in srgb, var(--danger) 20%, var(--surface));
+  border-color: var(--danger);
+}
+
 /* The words beside a pair of buttons -- Settings' erase confirmation. */
 .state-label {
   flex: 1;

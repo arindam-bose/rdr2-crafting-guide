@@ -96,7 +96,7 @@ const CACHE_PREFIX = 'rdr2-crafting-v';
 
 // Erase my data, as the page first draws it and as it comes back once
 // a confirm is answered or cancelled: one copy, so the two cannot drift.
-const RESET_BUTTON = `<button type="button" class="ghost-btn icon-btn" id="s-reset"><span
+const RESET_BUTTON = `<button type="button" class="ghost-btn icon-btn erase-btn" id="s-reset"><span
   class="icon icon-erase" aria-hidden="true"></span>Erase my data</button>`;
 
 /** The release the offline copy holds, from its cache's name, or null. */
