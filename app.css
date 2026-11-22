@@ -376,7 +376,10 @@ body > main { flex: 1 0 auto; }
   background: var(--accent-text);
 }
 
-@media (max-width: 460px) {
+/* From 630px down, with the backup buttons below: past that the full
+   words and boxes crowd the name on a small tablet or a phone held
+   sideways. */
+@media (max-width: 630px) {
   /* Under .topbar, to outrank the switch's own rule further down. */
   .topbar .mode-switch {
     flex-direction: column;
@@ -463,8 +466,9 @@ body > main { flex: 1 0 auto; }
 /* On a phone, the same shape as the mode switch beside it: the word
    small above, and the arrow in an outline the size of the switch's
    track, so the pair reads as two of a kind rather than a box and a
-   pill.  The due dot stays at the top right, just past the word. */
-@media (max-width: 460px) {
+   pill.  The due dot stays at the top right, just past the word.
+   630px, with the switch above. */
+@media (max-width: 630px) {
   .backup-btn {
     flex-direction: column;
     gap: 3px;
