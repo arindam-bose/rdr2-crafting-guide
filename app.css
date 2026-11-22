@@ -2319,21 +2319,25 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 }
 .panel.danger { border-color: color-mix(in srgb, var(--danger) 55%, var(--line)); }
 
-/* Erase my data: the panel's red carried onto its button -- a wash of
-   it over the surface, a redder edge and red lettering -- so the one
-   button that cannot be undone reads as that before it is pressed.
-   Mixed into each theme's own surface, so it is a tint on parchment
-   and an ember on leather, never the solid red of the Erase that
-   confirms it. */
+/* Erase my data, in the game's own red: the one button on the page
+   that cannot be undone reads as that before it is pressed, the same
+   in both themes.  White lettering, and the medallion's pale cut (from
+   the parchment set, in both themes) so the disc stands off the red
+   rather than sinking into it.  Darkens to blood red on hover, as the
+   Erase that confirms it does. */
 .erase-btn {
-  color: var(--danger-text);
-  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
-  border-color: color-mix(in srgb, var(--danger) 60%, var(--line));
+  color: var(--rdr-white);
+  background: var(--rdr-red);
+  border-color: var(--rdr-red);
 }
 .erase-btn:hover {
-  color: var(--danger-text);
-  background: color-mix(in srgb, var(--danger) 20%, var(--surface));
-  border-color: var(--danger);
+  color: var(--rdr-white);
+  background: var(--rdr-blood);
+  border-color: var(--rdr-blood);
+}
+.erase-btn .icon-erase,
+:root[data-theme="leather"] .erase-btn .icon-erase {
+  background-image: url('images/icons/parchment/erase.svg');
 }
 
 /* The words beside a pair of buttons -- Settings' erase confirmation. */

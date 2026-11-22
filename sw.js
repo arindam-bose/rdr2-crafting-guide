@@ -44,6 +44,7 @@ function themeIcons() {
     'images/icons/external-link.svg',   // a mask, the same in both themes
     ...['parchment', 'leather'].flatMap((theme) =>
       ['download-inverse', 'upload-inverse', 'erase-inverse'].map((name) => `images/icons/${theme}/${name}.svg`)),
+    'images/icons/parchment/erase.svg',  // on the red Erase my data, in both themes
   ];
 }
 
