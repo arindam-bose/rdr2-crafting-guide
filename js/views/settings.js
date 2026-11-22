@@ -168,7 +168,7 @@ export function mount(root) {
           device. Nothing is written until you confirm. In Personalize, Import at
           the top does the same from any page, or drop the file anywhere.</p>
         <div class="panel-actions">
-          <label class="ghost-btn file-btn icon-btn"><span
+          <label class="more-btn file-btn icon-btn"><span
             class="icon icon-upload" aria-hidden="true"></span>Upload a file
             <input type="file" id="s-file" accept="${importer.ACCEPT}">
           </label>
