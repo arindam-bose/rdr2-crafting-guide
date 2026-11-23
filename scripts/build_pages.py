@@ -181,7 +181,14 @@ def buff_line(line):
             f'<span class="value">{esc(line[at + 1:].strip())}</span>')
 
 
+# The categories named in the plural, since each is worn as a pair:
+# one of them is "a pair of boots", never "a boots".
+PAIRS = {'boots', 'chaps', 'gloves'}
+
+
 def a_or_an(word):
+    if word.lower() in PAIRS:
+        return f'a pair of {word}'
     return f'{"an" if word[:1].lower() in "aeiou" else "a"} {word}'
 
 
