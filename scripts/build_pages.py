@@ -589,19 +589,19 @@ def recipe_page(r, data, parts):
 
 def az_section(title, tiles, long_names=False):
     """
-    One group of an index page -- Animal Materials, Trapper -- as a
-    tile per category, each holding its items A-Z.  `tiles` is
-    [(category, [link html, ...]), ...] in the order they should
-    flow; the count beside the group's title is all of them together.
+    One group of an index page -- Animal Materials, Trapper -- as one
+    newspaper flow of columns, each category (Pelt, Hat) a small
+    heading over its items A-Z.  `tiles` is [(category, [link html,
+    ...]), ...] in the order they should run; the count beside the
+    group's title is all of them together.
     """
     total = sum(len(items) for _, items in tiles)
-    kind = 'az-tiles long' if long_names else 'az-tiles'
+    kind = 'az-flow long' if long_names else 'az-flow'
     body = ''.join(
-        f'\n        <section class="az-tile">'
-        f'\n          <h3 class="list-label">{esc(category)} <span class="count">{len(items)}</span></h3>'
-        f'\n          <ul class="az-list">'
-        + ''.join(f'\n            <li>{link}</li>' for link in items)
-        + '\n          </ul>\n        </section>'
+        f'\n        <h3 class="az-head">{esc(category)} <span class="count">{len(items)}</span></h3>'
+        f'\n        <ul class="az-list">'
+        + ''.join(f'\n          <li>{link}</li>' for link in items)
+        + '\n        </ul>'
         for category, items in tiles)
     return (f'\n    <section class="detail-section">\n'
             f'      <h2 class="list-label">{esc(title)} <span class="count">{total}</span></h2>\n'

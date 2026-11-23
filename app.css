@@ -2809,36 +2809,36 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 
 /* The A-Z pages take the app's own full width rather than a reading
    column -- they are scanned, not read.  Each group (Animal Materials,
-   Trapper) is a flow of tiles, one per category (Pelt, Hat), as many
-   columns as fit, each tile kept whole so a category never splits
-   across two columns: a one-item tile (Eye, Fat) sits small beside a
-   long one (Pelt, Provision) instead of taking a row of its own.
+   Trapper) is one newspaper flow of columns, as many as fit, with each
+   category (Pelt, Hat) a small heading over its names: no boxes, so a
+   one-item category is a heading and a line.  A heading never ends a
+   column, and is drawn a little apart from the list above it.
    A column is as wide as the longest name it may hold -- a material
    runs to 33 characters and its stars, a recipe to 42 -- in ch, a
    character of the typewriter face, so it keeps up with its size. */
 .static-page.static-wide { max-width: 1400px; }
 
-.az-tiles {
+.az-flow {
   columns: 37ch;
-  column-gap: 14px;
+  column-gap: 28px;
 }
-.az-tiles.long { columns: 43ch; }
-.az-tile {
+.az-flow.long { columns: 43ch; }
+.az-head {
+  margin: 14px 0 4px;
+  font-size: .78rem;
+  color: var(--ink-name);
+  break-after: avoid;
   break-inside: avoid;
-  margin: 0 0 14px;
-  padding: 12px 14px 10px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
 }
-.az-tile .list-label { margin: 0 0 6px; font-size: .82rem; }
+.az-head:first-child { margin-top: 0; }
+.az-head .count { margin-left: 4px; color: var(--ink-faint); }
 .az-list {
   margin: 0;
   padding: 0;
   list-style: none;
   font-size: .9rem;
 }
-.az-list li { padding: 3px 0; white-space: nowrap; }
+.az-list li { padding: 3px 0; break-inside: avoid; white-space: nowrap; }
 /* A phone has one column and less than the longest recipe's width, so
    there a name too long for the screen wraps rather than runs off it. */
 @media (max-width: 480px) { .az-list li { white-space: normal; } }
