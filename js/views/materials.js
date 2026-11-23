@@ -109,6 +109,7 @@ export function mount(root) {
         { value: 'done', label: 'Done' },
       ], state.show)}
       ${toolbar.sortControl('m', SORTS, 'Sort materials by', state.sort)}
+      ${toolbar.clearFilters('m-clear')}
       <span class="count" id="m-count"></span>
     </div>
     ${toolbar.tabRow('m-groups', 'group', GROUPS, { selected: state.group })}
@@ -139,6 +140,13 @@ export function mount(root) {
   toolbar.wireSearch(searchInput, state, refilter, query);
   toolbar.wireSort(root, 'm', SORTS, state, refilter, 'materials');
   const markRules = toolbar.wireRules(root.querySelector('.toolbar'));
+  const clearButton = root.querySelector('#m-clear');
+  toolbar.wireClearFilters(clearButton, searchInput, () => {
+    state.part = '';
+    state.station = null;
+    state.show = 'all';
+  });
+
   const paintChips = toolbar.wireFilterChips(allChips, [
     { el: stationChips, attr: 'station', off: null },
     { el: showChips, attr: 'show', off: 'all' },
@@ -193,6 +201,9 @@ export function mount(root) {
     const personal = store.isPersonal();
     showChips.hidden = !personal;
     paintChips();
+    // Still needed and Done only narrow in Personalize, where they show.
+    clearButton.hidden = !(state.search || state.part || state.station
+                           || (personal && state.show !== 'all'));
     markRules();
 
     lastCards = group(queries.materials({ personal }), queries.materialUsage(),

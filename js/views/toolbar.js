@@ -32,6 +32,15 @@ export function searchBox(id, placeholder) {
 }
 
 /**
+ * "Clear filters", after the sort: everything that narrows the list,
+ * undone in one tap.  Hidden until something does narrow it.
+ */
+export function clearFilters(id) {
+  return `
+    <button type="button" class="clear-filters" id="${esc(id)}" hidden>Clear filters</button>`;
+}
+
+/**
  * The category dropdown, under the word that heads the filters.  Its
  * options are filled later, by fillCategories, from what the other
  * filters leave.
@@ -210,6 +219,21 @@ function wireClear(input) {
   });
 
   sync();
+}
+
+/**
+ * Clear filters: `reset()` puts the view's own filters back -- the
+ * category, the vendor and state chips -- then the search box is
+ * emptied through a real `input` event, as its × does, so the search
+ * state, the × and the refilter all follow from the one listener.
+ * The sort and the tab stay: they arrange the list, not narrow it.
+ */
+export function wireClearFilters(button, input, reset) {
+  button.addEventListener('click', () => {
+    reset();
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
 }
 
 /** Make `value` the chosen tab, on screen and in the state. */

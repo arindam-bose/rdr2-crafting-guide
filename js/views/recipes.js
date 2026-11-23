@@ -101,6 +101,7 @@ export function mount(root) {
         { value: 'done', label: 'Crafted' },
       ], state.show)}
       ${toolbar.sortControl('r', SORTS, 'Sort recipes by', state.sort)}
+      ${toolbar.clearFilters('r-clear')}
       <span class="count" id="r-count"></span>
     </div>
     ${toolbar.tabRow('r-kinds', 'kind', KINDS, { selected: state.kind })}
@@ -130,6 +131,13 @@ export function mount(root) {
   toolbar.wireSearch(searchInput, state, refilter, query);
   toolbar.wireSort(root, 'r', SORTS, state, refilter, 'recipes');
   const markRules = toolbar.wireRules(root.querySelector('.toolbar'));
+  const clearButton = root.querySelector('#r-clear');
+  toolbar.wireClearFilters(clearButton, searchInput, () => {
+    state.category = '';
+    state.station = null;
+    state.show = 'all';
+  });
+
   const paintChips = toolbar.wireFilterChips(allChips, [
     { el: stationChips, attr: 'station', off: null },
     { el: showChips, attr: 'show', off: 'all' },
@@ -201,6 +209,11 @@ export function mount(root) {
     stationChips.hidden = !vendor;
     showChips.hidden = !personal || !vendor;
     paintChips();
+    // The chips only narrow where they show: vendor recipes, and the
+    // state chips in Personalize only.
+    clearButton.hidden = !(state.search || state.category
+                           || (vendor && state.station)
+                           || (personal && vendor && state.show !== 'all'));
     markRules();
 
     const ingredients = groupBy(queries.recipeIngredients(), (i) => i.recipe_id);

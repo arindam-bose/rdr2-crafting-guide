@@ -976,7 +976,8 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 /* The direction says what it does, rather than an arrow you have
    to work out: "Most first", "A-Z", "Legendary first". */
-.sort-dir {
+.sort-dir,
+.clear-filters {
   padding: 7px 11px;
   font: inherit;
   font-size: .82rem;
@@ -987,7 +988,9 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   cursor: pointer;
   white-space: nowrap;
 }
-.sort-dir:hover { color: var(--ink); border-color: var(--ink-faint); }
+.sort-dir:hover,
+.clear-filters:hover { color: var(--ink); border-color: var(--ink-faint); }
+.clear-filters[hidden] { display: none; }
 
 /* Filters and sort read from the left; the count alone is pushed right. */
 .count { font-size: .8rem; color: var(--ink-faint); margin-left: auto; }
@@ -3019,7 +3022,7 @@ h3,
 .detail-head h2, .detail-head h1,
 .chip,
 .segmented button,
-.craft-btn, .ghost-btn, .more-btn, .danger-btn, .sort-dir, .savebar button,
+.craft-btn, .ghost-btn, .more-btn, .danger-btn, .sort-dir, .clear-filters, .savebar button,
 .coffee-btn,
 .badge,
 .list-label,
