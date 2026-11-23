@@ -2826,6 +2826,20 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
   column-gap: 28px;
 }
 .az-flow.long { columns: 43ch; }
+/* A group's own heading (Animal Materials, Trapper) stands well above
+   its categories' (Pelt, Hat), and a rule parts one group from the
+   next -- none over the first, which the page's intro already heads. */
+.az-group + .az-group {
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.az-group > .list-label {
+  margin-bottom: 12px;
+  font-size: 1.12rem;
+  letter-spacing: .05em;
+}
+.az-group > .list-label .count { font-size: .8rem; }
+
 .az-head {
   margin: 14px 0 4px;
   font-size: .78rem;

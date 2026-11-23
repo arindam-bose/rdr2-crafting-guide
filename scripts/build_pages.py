@@ -610,7 +610,7 @@ def az_section(title, tiles, long_names=False):
         + ''.join(f'\n          <li>{link}</li>' for link in items)
         + '\n        </ul>'
         for category, items in tiles)
-    return (f'\n    <section class="detail-section">\n'
+    return (f'\n    <section class="detail-section az-group">\n'
             f'      <h2 class="list-label">{esc(title)} <span class="count">{total}</span></h2>\n'
             f'      <div class="{kind}">{body}\n      </div>\n    </section>')
 
