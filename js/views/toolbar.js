@@ -234,6 +234,9 @@ export function wireClearFilters(button, input, reset) {
     reset();
     input.value = '';
     input.dispatchEvent(new Event('input', { bubbles: true }));
+    // The button hides itself now nothing is set; focus goes to the
+    // search box, as the × sends it, rather than falling to the page.
+    input.focus();
   });
 }
 

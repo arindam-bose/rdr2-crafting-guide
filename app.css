@@ -361,7 +361,7 @@ body > main { flex: 1 0 auto; }
 /* The masthead switch: the same two-sided control as the recipe
    dialog's, in the accent rather than the green, since it sets what
    the whole app is showing rather than whether one thing is wanted.
-   On a narrow phone there is no room for both words, so only the one
+   From 630px down there is no room for both words, so only the one
    in force stays, set small above the track the way the game's name
    sits above the guide's -- the switch still says which mode is on. */
 .mode-switch[aria-checked="true"]  .side.on,
@@ -407,9 +407,9 @@ body > main { flex: 1 0 auto; }
 /* Filled in the same shade as Settings' Download (.more-btn), so the
    backup buttons read alike wherever they are, but quiet otherwise, so
    they never compete with the title; the dot in its corner is what
-   speaks up -- amber once a backup is due,
-   red once it is overdue.  A phone drops the word and keeps the arrow,
-   the same way the mode switch drops its words. */
+   speaks up -- amber once a backup is due, red once it is overdue.
+   Narrow, each sets its word small above its medallion, as the mode
+   switch sets its word above the track (below). */
 .backup-btn {
   position: relative;
   display: inline-flex;
@@ -463,11 +463,10 @@ body > main { flex: 1 0 auto; }
   border-left: 1px solid var(--line);
 }
 
-/* On a phone, the same shape as the mode switch beside it: the word
-   small above, and the arrow in an outline the size of the switch's
-   track, so the pair reads as two of a kind rather than a box and a
-   pill.  The due dot stays at the top right, just past the word.
-   630px, with the switch above. */
+/* From 630px down, with the switch above: the same shape as the mode
+   switch beside it -- the word small above, the upload or download
+   medallion below, no box -- so the three read as one kind of
+   control.  The due dot stays at the top right, just past the word. */
 @media (max-width: 630px) {
   .backup-btn {
     flex-direction: column;
@@ -2814,8 +2813,8 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
    column -- they are scanned, not read.  Each group (Animal Materials,
    Trapper) is one newspaper flow of columns, as many as fit, with each
    category (Pelt, Hat) a small heading over its names: no boxes, so a
-   one-item category is a heading and a line.  A heading never ends a
-   column, and is drawn a little apart from the list above it.
+   one-item category is a heading and a line.  The heading sits inside
+   its first name's item (build_pages.py), so it never ends a column.
    A column is as wide as the longest name it may hold -- a material
    runs to 33 characters and its stars, a recipe to 42 -- in ch, a
    character of the typewriter face, so it keeps up with its size. */
@@ -2841,13 +2840,12 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 .az-group > .list-label .count { font-size: .8rem; }
 
 .az-head {
-  margin: 14px 0 4px;
+  margin: 0 0 7px;
   font-size: .78rem;
   color: var(--ink-name);
-  break-after: avoid;
-  break-inside: avoid;
 }
-.az-head:first-child { margin-top: 0; }
+/* Space before each category but the first. */
+.az-list + .az-list { margin-top: 14px; }
 .az-head .count { margin-left: 4px; color: var(--ink-faint); }
 .az-list {
   margin: 0;

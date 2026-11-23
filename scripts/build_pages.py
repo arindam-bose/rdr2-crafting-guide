@@ -604,10 +604,18 @@ def az_section(title, tiles, long_names=False):
     """
     total = sum(len(items) for _, items in tiles)
     kind = 'az-flow long' if long_names else 'az-flow'
+    # The heading rides in its first item: a list item never splits
+    # across columns, so the heading can never be left at the foot of
+    # one with its names starting the next -- which break-after alone
+    # does not promise (Firefox ignores it in columns).
     body = ''.join(
-        f'\n        <h3 class="az-head">{esc(category)} <span class="count">{len(items)}</span></h3>'
         f'\n        <ul class="az-list">'
-        + ''.join(f'\n          <li>{link}</li>' for link in items)
+        + ''.join(
+            f'\n          <li>'
+            + (f'<h3 class="az-head">{esc(category)} <span class="count">{len(items)}</span></h3>'
+               if n == 0 else '')
+            + f'{link}</li>'
+            for n, link in enumerate(items))
         + '\n        </ul>'
         for category, items in tiles)
     return (f'\n    <section class="detail-section az-group">\n'

@@ -233,7 +233,10 @@ export function mount(root) {
     const counts = toolbar.countTabs(groupTabs, 'group', GROUPS, matched, groupOf);
 
     const cards = matched.filter((m) => groupOf(m) === state.group);
-    cards.sort(toolbar.comparator(SORTS, state));
+    // With a vendor chosen, its state is that vendor's alone -- for the
+    // done tick and the Still needed sort as for the Done filter.
+    const compare = toolbar.comparator(SORTS, state);
+    cards.sort((a, b) => compare(scoped(a, state), scoped(b, state)));
     toolbar.paintDir(dirButton, SORTS, state);
 
     // The empty message goes where the cards would have been, as on
@@ -241,7 +244,7 @@ export function mount(root) {
     gallery.innerHTML = cards.length
       ? cards.slice(0, state.shown).map((m) => materialCard(m, {
           personal, expanded: state.expanded.has(m.ingredient_id),
-          done: personal && tracked(m) && !outstanding(m),
+          done: personal && tracked(scoped(m, state)) && !outstanding(scoped(m, state)),
         })).join('')
       : empty(emptyMessage(state, personal, counts));
     pagerBox.innerHTML = pager(state.shown, cards.length);
@@ -258,10 +261,11 @@ export function mount(root) {
 function emptyMessage(state, personal, counts) {
   const elsewhere = toolbar.elsewhere(GROUPS, state.group, counts);
   if (elsewhere) return elsewhere;
-  if (state.show === 'done' && personal) return 'Nothing is finished with yet.';
-  if (state.show === 'short' && personal && !state.search && !state.station && !state.part) {
-    return 'Every recipe is done. Go buy a hat.';
-  }
+  // Said only when nothing else narrows the list: Trapper + Done empty
+  // is not "nothing is finished" when Pearson's things are.
+  const narrowed = state.search || state.station || state.part;
+  if (personal && !narrowed && state.show === 'done') return 'Nothing is finished with yet.';
+  if (personal && !narrowed && state.show === 'short') return 'Every recipe is done. Go buy a hat.';
   return 'Nothing matches those filters.';
 }
 
@@ -282,10 +286,15 @@ function startsWord(name, term) {
 // Everything but the category, which update() offers and narrows by.
 // A chosen vendor narrows the demands the state is judged on, as well
 // as the cards: Done with Pearson is done for Pearson.
-function matches(card, state, personal) {
-  const at = state.station
+/** The card as the chosen vendor sees it: its demands alone. */
+function scoped(card, state) {
+  return state.station
     ? { ...card, demands: card.demands.filter((d) => d.station_id === state.station) }
     : card;
+}
+
+function matches(card, state, personal) {
+  const at = scoped(card, state);
   if (state.station && !at.demands.length) return false;
 
   // Done: you have enough of it, or nothing is asking for it any more.
