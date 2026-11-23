@@ -150,7 +150,16 @@ export function mount(root) {
   const paintChips = toolbar.wireFilterChips(allChips, [
     { el: stationChips, attr: 'station', off: null },
     { el: showChips, attr: 'show', off: 'all' },
-  ], state, refilter);
+  ], state, () => {
+    // A vendor or state chip that leaves the chosen category with
+    // nothing in it lets the category go (update() checks), so the
+    // menu never holds a pick it no longer offers.  A search does not:
+    // a half-typed word can match nothing for a keystroke, and the
+    // category should still be there when the word is finished.
+    chipsChanged = true;
+    refilter();
+  });
+  let chipsChanged = false;
 
   // A category belongs to one tab, so choosing one takes you to the
   // tab its materials are on rather than leaving you on an empty one.
@@ -213,8 +222,10 @@ export function mount(root) {
     // choosing one moves you to its tab anyway -- and the cards are
     // the same list narrowed to the one chosen.
     const loose = lastCards.filter((m) => matches(m, state, personal));
-    toolbar.fillCategories(partSelect, categories,
-                           new Set(loose.map(categoryOf)), state.part);
+    const present = new Set(loose.map(categoryOf));
+    if (chipsChanged && state.part && !present.has(state.part)) state.part = '';
+    chipsChanged = false;
+    toolbar.fillCategories(partSelect, categories, present, state.part);
     const matched = state.part
       ? loose.filter((m) => categoryOf(m) === state.part)
       : loose;

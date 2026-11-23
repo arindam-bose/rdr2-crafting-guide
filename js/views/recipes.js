@@ -141,7 +141,16 @@ export function mount(root) {
   const paintChips = toolbar.wireFilterChips(allChips, [
     { el: stationChips, attr: 'station', off: null },
     { el: showChips, attr: 'show', off: 'all' },
-  ], state, refilter);
+  ], state, () => {
+    // A vendor or state chip that leaves the chosen category with
+    // nothing in it lets the category go (update() checks), so the
+    // menu never holds a pick it no longer offers.  A search does not:
+    // a half-typed word can match nothing for a keystroke, and the
+    // category should still be there when the word is finished.
+    chipsChanged = true;
+    refilter();
+  });
+  let chipsChanged = false;
 
   categorySelect.addEventListener('change', (event) => {
     state.category = event.target.value;
@@ -229,9 +238,10 @@ export function mount(root) {
     // offer are what that lets through on this tab, and the matches
     // are the same list narrowed to the one chosen.
     const loose = all.filter((r) => matches(r, state, personal, plantNames));
-    toolbar.fillCategories(categorySelect, categoryOptions[state.kind],
-      new Set(loose.filter((r) => kindOf(r) === state.kind).map((r) => r.category)),
-      state.category);
+    const present = new Set(loose.filter((r) => kindOf(r) === state.kind).map((r) => r.category));
+    if (chipsChanged && state.category && !present.has(state.category)) state.category = '';
+    chipsChanged = false;
+    toolbar.fillCategories(categorySelect, categoryOptions[state.kind], present, state.category);
     const matched = state.category
       ? loose.filter((r) => r.category === state.category)
       : loose;
