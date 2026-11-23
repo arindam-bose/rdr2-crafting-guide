@@ -32,12 +32,13 @@ export function searchBox(id, placeholder) {
 }
 
 /**
- * "Clear filters", after the sort: everything that narrows the list,
+ * Clear, after the sort: everything that narrows the list,
  * undone in one tap.  Hidden until something does narrow it.
  */
 export function clearFilters(id) {
   return `
-    <button type="button" class="clear-filters" id="${esc(id)}" hidden>Clear filters</button>`;
+    <button type="button" class="clear-filters" id="${esc(id)}" hidden
+            aria-label="Clear filters" title="Clear the search, category and chips">Clear</button>`;
 }
 
 /**
@@ -222,7 +223,7 @@ function wireClear(input) {
 }
 
 /**
- * Clear filters: `reset()` puts the view's own filters back -- the
+ * Clear: `reset()` puts the view's own filters back -- the
  * category, the vendor and state chips -- then the search box is
  * emptied through a real `input` event, as its × does, so the search
  * state, the × and the refilter all follow from the one listener.
