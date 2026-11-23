@@ -15,13 +15,14 @@ import { detailHead, detailSection, facts, plural, icon, stationIcon,
          stationColour, money, tallyRow } from '../render.js';
 import { detailDialog } from '../dialog.js';
 
-// recipes.category is stored singular -- "Boot", not "Boots" -- so the
-// Recipes page filter reads as one kind of thing.  A tally here is a
-// count of several, so this dialog pluralises on the way out instead;
+// recipes.category is mostly stored singular -- "Hat", not "Hats" -- so
+// the Recipes page filter reads as one kind of thing; the things worn
+// as a pair (Boots, Chaps, Gloves) are the exception.  A tally here is
+// a count of several, so this dialog pluralises on the way out instead;
 // irregular ones (a word ending in a consonant then "y") are listed,
-// everything else just takes an "s".  A category already plural (a
-// campfire one, such as "Hunting Accessories", though byCategory does
-// not show those today) is left alone rather than doubled up.
+// everything else just takes an "s".  A category already plural (Boots,
+// or a campfire one such as "Hunting Accessories") is left alone rather
+// than doubled up.
 const CATEGORY_PLURAL = {
   Accessory: 'Accessories',
 };

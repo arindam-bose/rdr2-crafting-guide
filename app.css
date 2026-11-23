@@ -66,6 +66,9 @@
   --rdr-blood:  #b90303;
   --rdr-black:  #020002;
   --rdr-white:  #fffeff;
+  /* From a second RDR2 palette, for what wants a red quieter than the
+     key art's: https://www.color-hex.com/color-palette/35394 */
+  --rdr-wine:   #d41936;
 
   --font-body:    "FB Remington", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-display: "Marston", "Haettenschweiler", "Arial Narrow", sans-serif;
@@ -109,6 +112,8 @@
   --ink-label:   #7a4c00;            /* ochre, dark enough for a ledger row */
   --danger:      var(--rdr-red);
   --danger-text: var(--rdr-blood);
+  --erase-text:  var(--rdr-wine);
+  --erase-wash:  14%;
   --ok:          #46621f;
   --warn:        #7d5a12;
   --diff-bg:     #e5c684;            /* a row that differs: amber, steeped into a buff box */
@@ -152,6 +157,8 @@
                                 ground any of these labels sits on */
   --danger:      var(--rdr-red);
   --danger-text: #ec6a5a;            /* the raw red is 2.9:1 here */
+  --erase-text:  color-mix(in srgb, var(--rdr-wine) 45%, #f2e9d6);  /* ~5:1; the raw wine is 1.4:1 */
+  --erase-wash:  30%;                /* 14% is lost on the dark leather */
   --ok:          #9cb86c;
   --warn:        #e0b155;
   --diff-bg:     #68491a;
@@ -354,7 +361,7 @@ body > main { flex: 1 0 auto; }
 /* The masthead switch: the same two-sided control as the recipe
    dialog's, in the accent rather than the green, since it sets what
    the whole app is showing rather than whether one thing is wanted.
-   On a narrow phone there is no room for both words, so only the one
+   From 630px down there is no room for both words, so only the one
    in force stays, set small above the track the way the game's name
    sits above the guide's -- the switch still says which mode is on. */
 .mode-switch[aria-checked="true"]  .side.on,
@@ -369,7 +376,10 @@ body > main { flex: 1 0 auto; }
   background: var(--accent-text);
 }
 
-@media (max-width: 460px) {
+/* From 630px down, with the backup buttons below: past that the full
+   words and boxes crowd the name on a small tablet or a phone held
+   sideways. */
+@media (max-width: 630px) {
   /* Under .topbar, to outrank the switch's own rule further down. */
   .topbar .mode-switch {
     flex-direction: column;
@@ -394,10 +404,12 @@ body > main { flex: 1 0 auto; }
   gap: 10px;
 }
 
-/* A quiet outline at rest, so it never competes with the title; the
-   dot in its corner is what speaks up -- amber once a backup is due,
-   red once it is overdue.  A phone drops the word and keeps the arrow,
-   the same way the mode switch drops its words. */
+/* Filled in the same shade as Settings' Download (.more-btn), so the
+   backup buttons read alike wherever they are, but quiet otherwise, so
+   they never compete with the title; the dot in its corner is what
+   speaks up -- amber once a backup is due, red once it is overdue.
+   Narrow, each sets its word small above its medallion, as the mode
+   switch sets its word above the track (below). */
 .backup-btn {
   position: relative;
   display: inline-flex;
@@ -407,21 +419,18 @@ body > main { flex: 1 0 auto; }
   font: inherit;
   font-size: .76rem;
   color: var(--ink-dim);
-  background: none;
+  background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
 .backup-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
 .backup-btn[hidden] { display: none; }
-.backup-btn svg {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.backup-btn .icon {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  vertical-align: 0;
 }
 .backup-btn[data-due]::after {
   content: "";
@@ -454,15 +463,16 @@ body > main { flex: 1 0 auto; }
   border-left: 1px solid var(--line);
 }
 
-/* On a phone, the same shape as the mode switch beside it: the word
-   small above, and the arrow in an outline the size of the switch's
-   track, so the pair reads as two of a kind rather than a box and a
-   pill.  The due dot stays at the top right, just past the word. */
-@media (max-width: 460px) {
+/* From 630px down, with the switch above: the same shape as the mode
+   switch beside it -- the word small above, the upload or download
+   medallion below, no box -- so the three read as one kind of
+   control.  The due dot stays at the top right, just past the word. */
+@media (max-width: 630px) {
   .backup-btn {
     flex-direction: column;
     gap: 3px;
     padding: 2px 0;
+    background: none;           /* no box here to fill: a word over a medallion */
     border: 0;
   }
   .backup-label {
@@ -471,16 +481,11 @@ body > main { flex: 1 0 auto; }
     letter-spacing: .12em;
     white-space: nowrap;
   }
-  .backup-btn svg {
+  .backup-btn .icon {
     order: 1;
-    box-sizing: content-box;
-    width: 14px;
-    height: 14px;
-    padding: 2px 10px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
+    width: 20px;
+    height: 20px;
   }
-  .backup-btn:hover svg { border-color: var(--ink-faint); }
   .backup-btn[data-due]::after { top: -5px; right: -10px; }
 
   /* Import and Back up side by side, each keeping its word: drawn
@@ -492,7 +497,6 @@ body > main { flex: 1 0 auto; }
   .backup-label,
   .topbar .mode-switch .side { letter-spacing: .04em; }
   .backup-pair { gap: 4px; }
-  .backup-pair .backup-btn svg { padding: 2px 7px; }
   .backup-pair:has(> .backup-btn:not([hidden])) + .mode-switch { padding-left: 6px; }
 }
 
@@ -856,6 +860,21 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .icon-coffee { background-image: url('images/icons/parchment/coffee-inverse.png'); }
 :root[data-theme="leather"] .icon-coffee { background-image: url('images/icons/leather/coffee.png'); }
 
+/* Download and upload: Back up and Import on the masthead, Download
+   and Upload a file on Settings; erase on Erase my data.  Every one
+   sits on a pale button, so all take the inverse cut, as the station
+   icons do. */
+.icon-download { background-image: url('images/icons/parchment/download-inverse.svg'); }
+.icon-upload   { background-image: url('images/icons/parchment/upload-inverse.svg'); }
+:root[data-theme="leather"] .icon-download { background-image: url('images/icons/leather/download-inverse.svg'); }
+:root[data-theme="leather"] .icon-upload   { background-image: url('images/icons/leather/upload-inverse.svg'); }
+.icon-erase    { background-image: url('images/icons/parchment/erase-inverse.svg'); }
+:root[data-theme="leather"] .icon-erase    { background-image: url('images/icons/leather/erase-inverse.svg'); }
+
+/* A text button with a medallion before its word, on Settings. */
+:is(.more-btn, .ghost-btn, .file-btn).icon-btn { display: inline-flex; align-items: center; }
+.icon-btn .icon { vertical-align: 0; }
+
 /* A pressed chip or a chosen tab turns its label over -- pale on
    parchment, dark on leather -- and the medallion's disc follows the
    label, so the other colourway takes its place. */
@@ -925,8 +944,9 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 /* Rules between the toolbar's groups, so the category, the vendors,
    the progress chips and the sort read as four questions rather than
    one long row of controls: a single rule before each row of chips,
-   and a double one before the sort, which orders the list rather than
-   filtering it.  A row of chips that is hidden (Still needed and Done
+   and a double one before All, which stands over the chip groups
+   after it rather than beside them, and before the sort, which orders
+   the list rather than filtering it.  A row of chips that is hidden (Still needed and Done
    in General) takes its rule with it.  Drawn rather than typed: a box
    sits at a fixed height and centres itself on the row, where a glyph
    would ride the text baseline and change size with the font.
@@ -944,6 +964,7 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   background: var(--line);
   margin-right: 2px;
 }
+.toolbar > .chips-all::before,
 .sort::before {
   width: 4px;
   background: none;
@@ -954,7 +975,8 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 
 /* The direction says what it does, rather than an arrow you have
    to work out: "Most first", "A-Z", "Legendary first". */
-.sort-dir {
+.sort-dir,
+.clear-filters {
   padding: 7px 11px;
   font: inherit;
   font-size: .82rem;
@@ -965,7 +987,9 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
   cursor: pointer;
   white-space: nowrap;
 }
-.sort-dir:hover { color: var(--ink); border-color: var(--ink-faint); }
+.sort-dir:hover,
+.clear-filters:hover { color: var(--ink); border-color: var(--ink-faint); }
+.clear-filters[hidden] { display: none; }
 
 /* Filters and sort read from the left; the count alone is pushed right. */
 .count { font-size: .8rem; color: var(--ink-faint); margin-left: auto; }
@@ -1273,6 +1297,40 @@ main { padding: 16px; max-width: 1400px; margin: 0 auto; }
 .xlink:focus-visible {
   color: var(--accent-text);
   text-decoration-color: currentColor;
+}
+
+/* A link off the site -- a wiki page, in a new tab -- carries the
+   arrow out of a box after its name.  Drawn as a mask over
+   currentColor -- a file, not a data: URL, which the pages' CSP
+   refuses as an image -- so it takes the link's colour in either theme and
+   comes up to the accent with it.  The tail (last word and arrow)
+   does not wrap, so the arrow never sits alone on a line. */
+.weblink-tail { white-space: nowrap; }
+.ext-icon {
+  display: inline-block;
+  width: .72em;
+  height: .72em;
+  margin-left: .28em;
+  vertical-align: .02em;
+  background-color: currentColor;
+  opacity: .7;
+  -webkit-mask: url("images/icons/external-link.svg") center / contain no-repeat;
+          mask: url("images/icons/external-link.svg") center / contain no-repeat;
+}
+.weblink:hover .ext-icon,
+.weblink:focus-visible .ext-icon { opacity: 1; }
+
+/* Said to a screen reader, not shown. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Buttons dressed as links: "and 6 more" on a card, "Ledger entries"
@@ -2274,6 +2332,23 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 }
 .panel.danger { border-color: color-mix(in srgb, var(--danger) 55%, var(--line)); }
 
+/* Erase my data: the RDR2 wine carried onto its button -- a wash of
+   it over the surface, a wine edge and wine lettering -- so the one
+   button that cannot be undone reads as that before it is pressed,
+   without the solid red of the Erase that confirms it.  Each theme
+   sets how strong the wash is and how light the lettering, so both
+   stay readable. */
+.erase-btn {
+  color: var(--erase-text);
+  background: color-mix(in srgb, var(--rdr-wine) var(--erase-wash), var(--surface));
+  border-color: color-mix(in srgb, var(--rdr-wine) 70%, var(--line));
+}
+.erase-btn:hover {
+  color: var(--erase-text);
+  background: color-mix(in srgb, var(--rdr-wine) calc(var(--erase-wash) + 10%), var(--surface));
+  border-color: var(--rdr-wine);
+}
+
 /* The words beside a pair of buttons -- Settings' erase confirmation. */
 .state-label {
   flex: 1;
@@ -2382,11 +2457,10 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 
 
 /* Support the guide: the one tile lit like a lamp -- a wash of the
-   accent and the accent down its edge -- and the one filled button on
+   accent, edged like every other tile -- and the one filled button on
    the page, the Save button's amber, so it is warm without shouting. */
 .panel.support {
   background: color-mix(in srgb, var(--accent) 9%, var(--surface));
-  border-left: 3px solid var(--accent-text);
 }
 .coffee-btn {
   display: inline-flex;
@@ -2735,23 +2809,50 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 .static-cta { margin: 20px 0 0; }
 .static-cta .more-btn { text-decoration: none; }
 
-/* The A-Z lists take the app's own full width rather than a reading
-   column -- they are scanned, not read -- with as many columns as fit
-   and every name on one line with its stars.  Each column is as wide
-   as the longest name in its list: a material runs to 33 characters
-   and its stars, a recipe to 42.  In ch, a character of the
-   typewriter face, so the columns keep up with its size. */
+/* The A-Z pages take the app's own full width rather than a reading
+   column -- they are scanned, not read.  Each group (Animal Materials,
+   Trapper) is one newspaper flow of columns, as many as fit, with each
+   category (Pelt, Hat) a small heading over its names: no boxes, so a
+   one-item category is a heading and a line.  The heading sits inside
+   its first name's item (build_pages.py), so it never ends a column.
+   A column is as wide as the longest name it may hold -- a material
+   runs to 33 characters and its stars, a recipe to 42 -- in ch, a
+   character of the typewriter face, so it keeps up with its size. */
 .static-page.static-wide { max-width: 1400px; }
 
+.az-flow {
+  columns: 37ch;
+  column-gap: 28px;
+}
+.az-flow.long { columns: 43ch; }
+/* A group's own heading (Animal Materials, Trapper) stands well above
+   its categories' (Pelt, Hat), and a rule parts one group from the
+   next -- none over the first, which the page's intro already heads. */
+.az-group + .az-group {
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.az-group > .list-label {
+  margin-bottom: 12px;
+  font-size: 1.12rem;
+  letter-spacing: .05em;
+}
+.az-group > .list-label .count { font-size: .8rem; }
+
+.az-head {
+  margin: 0 0 7px;
+  font-size: .78rem;
+  color: var(--ink-name);
+}
+/* Space before each category but the first. */
+.az-list + .az-list { margin-top: 14px; }
+.az-head .count { margin-left: 4px; color: var(--ink-faint); }
 .az-list {
   margin: 0;
   padding: 0;
   list-style: none;
-  columns: 37ch;
-  column-gap: 28px;
   font-size: .9rem;
 }
-.az-list.long { columns: 43ch; }
 .az-list li { padding: 3px 0; break-inside: avoid; white-space: nowrap; }
 /* A phone has one column and less than the longest recipe's width, so
    there a name too long for the screen wraps rather than runs off it. */
@@ -2933,7 +3034,7 @@ h3,
 .detail-head h2, .detail-head h1,
 .chip,
 .segmented button,
-.craft-btn, .ghost-btn, .more-btn, .danger-btn, .sort-dir, .savebar button,
+.craft-btn, .ghost-btn, .more-btn, .danger-btn, .sort-dir, .clear-filters, .savebar button,
 .coffee-btn,
 .badge,
 .list-label,

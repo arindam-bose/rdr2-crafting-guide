@@ -22,7 +22,7 @@ import * as queries from '../queries.js';
 import * as store from '../store.js';
 import { esc, empty, nameWith, pager, plural, qualityStars, stationColour,
          stationIcon, stationLabel, stationMark, detailHead, detailDock, detailSection, placeName, traits, crossLink,
-         doneMark, markIcon, money, PAGE } from '../render.js';
+         doneMark, markIcon, money, webLink, PAGE } from '../render.js';
 import * as nav from '../nav.js';
 import * as toolbar from './toolbar.js';
 import { toast } from '../toast.js';
@@ -92,15 +92,16 @@ export function mount(root) {
     <div class="toolbar">
       ${toolbar.searchBox('r-search', 'Search a recipe, set or material…')}
       ${toolbar.categoryFilter('r-category')}
-      ${toolbar.chipRow('r-stations', 'station', [
-        { value: '', label: 'All' },
-        ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
-      ], state.station)}
+      ${toolbar.allChip('r-all')}
+      ${toolbar.chipRow('r-stations', 'station',
+        stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
+        state.station)}
       ${toolbar.chipRow('r-show', 'show', [
         { value: 'ready', label: 'Ready to craft' },
         { value: 'done', label: 'Crafted' },
       ], state.show)}
       ${toolbar.sortControl('r', SORTS, 'Sort recipes by', state.sort)}
+      ${toolbar.clearFilters('r-clear')}
       <span class="count" id="r-count"></span>
     </div>
     ${toolbar.tabRow('r-kinds', 'kind', KINDS, { selected: state.kind })}
@@ -112,6 +113,7 @@ export function mount(root) {
   const count = root.querySelector('#r-count');
   const showChips = root.querySelector('#r-show');
   const stationChips = root.querySelector('#r-stations');
+  const allChips = root.querySelector('#r-all');
   const categorySelect = root.querySelector('#r-category');
   const kindTabs = root.querySelector('#r-kinds');
   const pagerBox = root.querySelector('#r-pager');
@@ -129,8 +131,26 @@ export function mount(root) {
   toolbar.wireSearch(searchInput, state, refilter, query);
   toolbar.wireSort(root, 'r', SORTS, state, refilter, 'recipes');
   const markRules = toolbar.wireRules(root.querySelector('.toolbar'));
-  toolbar.wirePicker(root.querySelector('#r-stations'), 'station', state, refilter);
-  toolbar.wireToggles(showChips, 'show', state, refilter);
+  const clearButton = root.querySelector('#r-clear');
+  toolbar.wireClearFilters(clearButton, searchInput, () => {
+    state.category = '';
+    state.station = null;
+    state.show = 'all';
+  });
+
+  const paintChips = toolbar.wireFilterChips(allChips, [
+    { el: stationChips, attr: 'station', off: null },
+    { el: showChips, attr: 'show', off: 'all' },
+  ], state, () => {
+    // A vendor or state chip that leaves the chosen category with
+    // nothing in it lets the category go (update() checks), so the
+    // menu never holds a pick it no longer offers.  A search does not:
+    // a half-typed word can match nothing for a keystroke, and the
+    // category should still be there when the word is finished.
+    chipsChanged = true;
+    refilter();
+  });
+  let chipsChanged = false;
 
   categorySelect.addEventListener('change', (event) => {
     state.category = event.target.value;
@@ -197,6 +217,12 @@ export function mount(root) {
     // Vendors and progress mean nothing at your own fire.
     stationChips.hidden = !vendor;
     showChips.hidden = !personal || !vendor;
+    paintChips();
+    // The chips only narrow where they show: vendor recipes, and the
+    // state chips in Personalize only.
+    clearButton.hidden = !(state.search || state.category
+                           || (vendor && state.station)
+                           || (personal && vendor && state.show !== 'all'));
     markRules();
 
     const ingredients = groupBy(queries.recipeIngredients(), (i) => i.recipe_id);
@@ -212,9 +238,10 @@ export function mount(root) {
     // offer are what that lets through on this tab, and the matches
     // are the same list narrowed to the one chosen.
     const loose = all.filter((r) => matches(r, state, personal, plantNames));
-    toolbar.fillCategories(categorySelect, categoryOptions[state.kind],
-      new Set(loose.filter((r) => kindOf(r) === state.kind).map((r) => r.category)),
-      state.category);
+    const present = new Set(loose.filter((r) => kindOf(r) === state.kind).map((r) => r.category));
+    if (chipsChanged && state.category && !present.has(state.category)) state.category = '';
+    chipsChanged = false;
+    toolbar.fillCategories(categorySelect, categoryOptions[state.kind], present, state.category);
     const matched = state.category
       ? loose.filter((r) => r.category === state.category)
       : loose;
@@ -482,7 +509,7 @@ function recipeDetail(r, personal) {
   return `
     ${detailHead('Recipe', r.name, personal ? craftedSwitch(r) : '')}
     ${traits([
-      ['Type', esc(r.category)],
+      ['Type', webLink(r.link, r.category, r.name)],
       ['Vendor', stationLabel(r.station_id, r.station)],
       ['Set', esc(r.set_name)],
       ['Price', r.price_cents && money(r.price_cents)],
@@ -506,7 +533,7 @@ function campfireDetail(r, personal) {
   return `
     ${detailHead('Campfire recipe', r.name)}
     ${traits([
-      ['Type', esc(r.category)],
+      ['Type', webLink(r.link, r.category, r.name)],
       ['Made at', stationLabel(r.station_id, r.station)],
       ['Recipe cost', r.price_cents && money(r.price_cents)],
     ])}

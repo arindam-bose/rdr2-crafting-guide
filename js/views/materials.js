@@ -10,9 +10,17 @@
 // detour.  Each tab carries the count that matches the current
 // filters, so what is on the others is never a surprise.
 //
+// The filters are three groups of chips: All | Pearson, Trapper,
+// Fence | Still needed, Done.  Each group is a radio that can be
+// switched off -- tap the pressed chip and that group lets everything
+// through -- and All switches off both, showing every material there
+// is, finished with or not.  A vendor and a state together ask the
+// state of that vendor alone: Trapper with Still needed is what the
+// Trapper still wants, whatever Pearson thinks of it.
+//
 // A material used only at the campfire is never needed and never
-// done: nothing asks for a set amount of it.  It shows under All,
-// with what you hold in the Satchel, and nowhere else.
+// done: nothing asks for a set amount of it.  It shows when no state
+// is chosen, with what you hold in the Satchel, and nowhere else.
 //
 // A view exports mount(root) and gets back { update, destroy }.
 // The chrome is built once; a store change refills the groups
@@ -92,15 +100,16 @@ export function mount(root) {
     <div class="toolbar">
       ${toolbar.searchBox('m-search', 'Search a material or animal…')}
       ${toolbar.categoryFilter('m-part')}
-      ${toolbar.chipRow('m-stations', 'station', [
-        { value: '', label: 'All' },
-        ...stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
-      ], state.station)}
+      ${toolbar.allChip('m-all')}
+      ${toolbar.chipRow('m-stations', 'station',
+        stations.map((s) => ({ value: s.id, label: s.name, icon: stationIcon(s.id) })),
+        state.station)}
       ${toolbar.chipRow('m-show', 'show', [
         { value: 'short', label: 'Still needed' },
         { value: 'done', label: 'Done' },
       ], state.show)}
       ${toolbar.sortControl('m', SORTS, 'Sort materials by', state.sort)}
+      ${toolbar.clearFilters('m-clear')}
       <span class="count" id="m-count"></span>
     </div>
     ${toolbar.tabRow('m-groups', 'group', GROUPS, { selected: state.group })}
@@ -109,6 +118,8 @@ export function mount(root) {
     <div id="m-pager"></div>`;
 
   const showChips = root.querySelector('#m-show');
+  const allChips = root.querySelector('#m-all');
+  const stationChips = root.querySelector('#m-stations');
   const count = root.querySelector('#m-count');
   const pagerBox = root.querySelector('#m-pager');
   const gallery = root.querySelector('#m-gallery');
@@ -129,8 +140,26 @@ export function mount(root) {
   toolbar.wireSearch(searchInput, state, refilter, query);
   toolbar.wireSort(root, 'm', SORTS, state, refilter, 'materials');
   const markRules = toolbar.wireRules(root.querySelector('.toolbar'));
-  toolbar.wirePicker(root.querySelector('#m-stations'), 'station', state, refilter);
-  toolbar.wireToggles(showChips, 'show', state, refilter);
+  const clearButton = root.querySelector('#m-clear');
+  toolbar.wireClearFilters(clearButton, searchInput, () => {
+    state.part = '';
+    state.station = null;
+    state.show = 'all';
+  });
+
+  const paintChips = toolbar.wireFilterChips(allChips, [
+    { el: stationChips, attr: 'station', off: null },
+    { el: showChips, attr: 'show', off: 'all' },
+  ], state, () => {
+    // A vendor or state chip that leaves the chosen category with
+    // nothing in it lets the category go (update() checks), so the
+    // menu never holds a pick it no longer offers.  A search does not:
+    // a half-typed word can match nothing for a keystroke, and the
+    // category should still be there when the word is finished.
+    chipsChanged = true;
+    refilter();
+  });
+  let chipsChanged = false;
 
   // A category belongs to one tab, so choosing one takes you to the
   // tab its materials are on rather than leaving you on an empty one.
@@ -180,6 +209,10 @@ export function mount(root) {
                                        part: state.part, show: state.show, group: state.group });
     const personal = store.isPersonal();
     showChips.hidden = !personal;
+    paintChips();
+    // Still needed and Done only narrow in Personalize, where they show.
+    clearButton.hidden = !(state.search || state.part || state.station
+                           || (personal && state.show !== 'all'));
     markRules();
 
     lastCards = group(queries.materials({ personal }), queries.materialUsage(),
@@ -189,8 +222,10 @@ export function mount(root) {
     // choosing one moves you to its tab anyway -- and the cards are
     // the same list narrowed to the one chosen.
     const loose = lastCards.filter((m) => matches(m, state, personal));
-    toolbar.fillCategories(partSelect, categories,
-                           new Set(loose.map(categoryOf)), state.part);
+    const present = new Set(loose.map(categoryOf));
+    if (chipsChanged && state.part && !present.has(state.part)) state.part = '';
+    chipsChanged = false;
+    toolbar.fillCategories(partSelect, categories, present, state.part);
     const matched = state.part
       ? loose.filter((m) => categoryOf(m) === state.part)
       : loose;
@@ -198,7 +233,10 @@ export function mount(root) {
     const counts = toolbar.countTabs(groupTabs, 'group', GROUPS, matched, groupOf);
 
     const cards = matched.filter((m) => groupOf(m) === state.group);
-    cards.sort(toolbar.comparator(SORTS, state));
+    // With a vendor chosen, its state is that vendor's alone -- for the
+    // done tick and the Still needed sort as for the Done filter.
+    const compare = toolbar.comparator(SORTS, state);
+    cards.sort((a, b) => compare(scoped(a, state), scoped(b, state)));
     toolbar.paintDir(dirButton, SORTS, state);
 
     // The empty message goes where the cards would have been, as on
@@ -206,7 +244,7 @@ export function mount(root) {
     gallery.innerHTML = cards.length
       ? cards.slice(0, state.shown).map((m) => materialCard(m, {
           personal, expanded: state.expanded.has(m.ingredient_id),
-          done: personal && tracked(m) && !outstanding(m),
+          done: personal && tracked(scoped(m, state)) && !outstanding(scoped(m, state)),
         })).join('')
       : empty(emptyMessage(state, personal, counts));
     pagerBox.innerHTML = pager(state.shown, cards.length);
@@ -223,11 +261,12 @@ export function mount(root) {
 function emptyMessage(state, personal, counts) {
   const elsewhere = toolbar.elsewhere(GROUPS, state.group, counts);
   if (elsewhere) return elsewhere;
-  if (state.show === 'done' && personal) return 'Nothing is finished with yet.';
-  if (state.search || state.station || state.part || state.show !== 'all') {
-    return 'Nothing matches those filters.';
-  }
-  return 'Every recipe is done. Go buy a hat.';
+  // Said only when nothing else narrows the list: Trapper + Done empty
+  // is not "nothing is finished" when Pearson's things are.
+  const narrowed = state.search || state.station || state.part;
+  if (personal && !narrowed && state.show === 'done') return 'Nothing is finished with yet.';
+  if (personal && !narrowed && state.show === 'short') return 'Every recipe is done. Go buy a hat.';
+  return 'Nothing matches those filters.';
 }
 
 
@@ -235,14 +274,8 @@ function emptyMessage(state, personal, counts) {
 const outstanding = (card) =>
   card.demands.some((d) => d.needed > 0 && d.have < d.needed);
 
-// Wanted at all: some recipe not yet made needs it.
-const live = (card) => card.demands.some((d) => d.needed > 0);
-
 // Worked towards at all: some vendor recipe uses it, wanted or not.
 const tracked = (card) => card.demands.some((d) => !d.campfire);
-
-// Used at your own fire, which never runs out of wanting it.
-const atCampfire = (card) => card.demands.some((d) => d.campfire);
 
 /** Whether `term` begins `name` or any word in it: "bear" in "Black Bear". */
 function startsWord(name, term) {
@@ -251,23 +284,25 @@ function startsWord(name, term) {
 }
 
 // Everything but the category, which update() offers and narrows by.
-function matches(card, state, personal) {
-  if (state.station && !card.demands.some(
-        (d) => d.station_id === state.station && (d.needed > 0 || !personal))) {
-    return false;
-  }
+// A chosen vendor narrows the demands the state is judged on, as well
+// as the cards: Done with Pearson is done for Pearson.
+/** The card as the chosen vendor sees it: its demands alone. */
+function scoped(card, state) {
+  return state.station
+    ? { ...card, demands: card.demands.filter((d) => d.station_id === state.station) }
+    : card;
+}
 
+function matches(card, state, personal) {
+  const at = scoped(card, state);
+  if (state.station && !at.demands.length) return false;
+
+  // Done: you have enough of it, or nothing is asking for it any more.
+  // Still needed: someone wants more than you hold.  Neither: all of
+  // it, finished with or not.
   if (personal) {
-    // Done: you have enough of it, or nothing is asking for it any
-    // more.  Everything else hides what you are finished with --
-    // unless the campfire still uses it, which it always will.  A
-    // search is a deliberate look-up by name, though, not a browse:
-    // Recipes never hides a crafted match from a search either, so a
-    // material you searched for should not vanish just because you
-    // finished with it since the last time you looked.
-    if (state.show === 'done' && (outstanding(card) || !tracked(card))) return false;
-    if (state.show === 'short' && !outstanding(card)) return false;
-    if (state.show === 'all' && !state.search && !live(card) && !atCampfire(card)) return false;
+    if (state.show === 'done' && (outstanding(at) || !tracked(at))) return false;
+    if (state.show === 'short' && !outstanding(at)) return false;
   }
 
   // The material's own name, and the animals it comes from -- nothing

@@ -94,6 +94,11 @@ function released(day) {
 // sw.js names its cache after the release it holds.
 const CACHE_PREFIX = 'rdr2-crafting-v';
 
+// Erase my data, as the page first draws it and as it comes back once
+// a confirm is answered or cancelled: one copy, so the two cannot drift.
+const RESET_BUTTON = `<button type="button" class="ghost-btn icon-btn erase-btn" id="s-reset"><span
+  class="icon icon-erase" aria-hidden="true"></span>Erase my data</button>`;
+
 /** The release the offline copy holds, from its cache's name, or null. */
 /**
  * Whether release `a` comes after `b`, figure by figure ("1.0.10" after
@@ -151,7 +156,8 @@ export function mount(root) {
         <p class="note" id="s-last"></p>
         <div class="panel-actions">
           <button type="button" class="more-btn" id="s-send" hidden>Send to an app</button>
-          <button type="button" class="more-btn" id="s-download">Download</button>
+          <button type="button" class="more-btn icon-btn" id="s-download"><span
+            class="icon icon-download" aria-hidden="true"></span>Download</button>
           <button type="button" class="ghost-btn" id="s-copy">Copy to clipboard</button>
         </div>
       </section>
@@ -162,7 +168,8 @@ export function mount(root) {
           device. Nothing is written until you confirm. In Personalize, Import at
           the top does the same from any page, or drop the file anywhere.</p>
         <div class="panel-actions">
-          <label class="ghost-btn file-btn">Upload a file
+          <label class="more-btn file-btn icon-btn"><span
+            class="icon icon-upload" aria-hidden="true"></span>Upload a file
             <input type="file" id="s-file" accept="${importer.ACCEPT}">
           </label>
           <button type="button" class="ghost-btn" id="s-paste-toggle"
@@ -190,7 +197,7 @@ export function mount(root) {
           marked. The reference data is untouched. This cannot be undone -
           download a copy first.</p>
         <div class="panel-actions" id="s-danger">
-          <button type="button" class="ghost-btn" id="s-reset">Erase my data</button>
+          ${RESET_BUTTON}
         </div>
       </section>
 
@@ -216,7 +223,7 @@ export function mount(root) {
         <h3>Support the guide</h3>
         <p class="note">The guide is free, with no ads and no accounts,
           and what you log never leaves this browser - it will stay that
-          way. If it saved you a ride back to Valentine, a coffee keeps it
+          way. If it saved you a ride back to Saint Denis, a coffee keeps it
           going - and so does passing it on to a friend who plays RDR2.</p>
         <div class="panel-actions">
           <a class="coffee-btn" href="https://buymeacoffee.com/arindambose"
@@ -441,8 +448,11 @@ export function mount(root) {
   navigator.serviceWorker?.addEventListener('message', onWorker);
 
   // Erasing asks twice, in place, rather than through a dialog box.
+  // Read from the button, not the target: a tap on Erase my data's
+  // icon lands on the icon.
   $('#s-danger').addEventListener('click', async (event) => {
-    if (event.target.id === 's-reset') {
+    const id = event.target.closest('button')?.id;
+    if (id === 's-reset') {
       // Erase takes the recipe marks as well as the ledger, so the
       // question counts both.
       const { entries, made } = store.stats();
@@ -453,9 +463,9 @@ export function mount(root) {
         <span class="state-label">Erase ${what}?</span>
         <button type="button" class="ghost-btn" id="s-reset-no">Keep it</button>
         <button type="button" class="more-btn danger-btn" id="s-reset-yes">Erase</button>`;
-    } else if (event.target.id === 's-reset-no') {
+    } else if (id === 's-reset-no') {
       resetDanger();
-    } else if (event.target.id === 's-reset-yes') {
+    } else if (id === 's-reset-yes') {
       try {
         await store.reset();
         toast('Erased.');
@@ -468,8 +478,7 @@ export function mount(root) {
   });
 
   function resetDanger() {
-    $('#s-danger').innerHTML =
-      '<button type="button" class="ghost-btn" id="s-reset">Erase my data</button>';
+    $('#s-danger').innerHTML = RESET_BUTTON;
   }
 
   // ---- what the page reports -------------------------------------------

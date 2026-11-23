@@ -6,7 +6,7 @@ What to craft in Red Dead Redemption 2, what it needs, and what you already have
 
 **Open it: <https://arindambose.com/rdr2-crafting-guide/>**
 
-Current version: 2.0.2
+Current version: 2.0.22
 
 ![A pixel-art cowboy by a campfire at dusk](images/pixel-cowboy-campfire-at-dusk-960.jpg)
 
@@ -123,7 +123,7 @@ RDR Lino Regular ([Web Fonts](http://www.onlinewebfonts.com), CC BY 4.0) and
 FB Remington ([DaFont](https://www.dafont.com/fb_remington.font)).
 
 Made with love by [Arindam Bose](https://arindambose.com/), powered by
-[Claude](https://claude.ai). If the guide saved you a ride back to Valentine,
+[Claude](https://claude.ai). If the guide saved you a ride back to Saint Denis,
 you can [buy me a coffee](https://buymeacoffee.com/arindambose).
 
 A fan-made tool, not affiliated with or endorsed by Rockstar Games or

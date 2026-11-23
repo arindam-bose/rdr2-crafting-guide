@@ -89,6 +89,11 @@ name, and `ingredient_plants` says which `plants` it is picked from, the way
 `ingredient_animals` does for a meat. Oleander Sage is kept apart: it is the
 poisonous one, and only the poison recipes take it.
 
+Each plant has a `type` (Berry, Flower, Herb, Mushroom, Root, Other), which
+the search pages group Plants by; the plants behind one ingredient must agree,
+and the build warns if they do not. A recipe may carry a `link` to its wiki
+page (the saddles, talismans and trinkets do), shown on its Type.
+
 **Personal** — `database/personal_schema.sql`, created at runtime in the same
 sql.js connection so the two can be joined without an `ATTACH`. It is an
 append-only `ledger`: current stock is `SUM(delta)`, an undo is a `DELETE`, and
@@ -196,9 +201,15 @@ relative; the one absolute address, for canonical links and the sitemap, is
 `SITE_URL` at the top of the script.
 
 A material's or recipe's page keeps a reading width. The two A–Z lists take
-the app's full width instead, in as many columns as fit, each as wide as the
-longest name in its list so every name stays on one line; only on a phone does
-the longest recipe wrap.
+the app's full width instead. Each is split into groups -- Animal Materials,
+Plants and Misc. Items; Pearson, the Trapper, the Fence and the Campfire --
+under a large heading, with a rule between groups. Inside a group the names
+run in one newspaper flow of columns, as many as fit, each as wide as the
+longest name so every name stays on one line, with each category (an animal
+material's part, a plant's type, a supply's kind, a recipe's category) as a
+small heading over its names. The heading rides in its first name's list item,
+so it can never be stranded at the foot of a column. Only on a phone does the
+longest recipe wrap.
 
 The service worker leaves these pages out of the offline cache. Offline, one
 that was never loaded redirects to its card in the app instead.
@@ -451,10 +462,11 @@ list, and above search results, sits why — *Logging is for Personalize* —
 with a button that turns it on, shown for as long as the page is in General. Turning it on shows the one-time note on where
 the data lives, the first moment it applies.
 
-The masthead switch shows both words on a wide screen. On a phone it shows
-only the one in force, small above the track, and the Back up button beside it
-takes the same shape — its word above an outline the size of the track — with
-a rule between them. The switch's tooltip names the mode it is in, then what a
+The masthead switch shows both words on a wide screen. From 630px down it
+shows only the one in force, small above the track, and Import and Back up
+beside it take the same shape — each word small above its upload or download
+medallion — with a rule between them and the switch. Wider, Import and Back up
+are filled buttons in the shade of Settings' Download. The switch's tooltip names the mode it is in, then what a
 tap does.
 
 ### The page around it
@@ -573,7 +585,9 @@ catches it. A material that comes off several animals (fat, the meats, Flight
 Feather) lists them instead, each with its own weapon or bait. A plant does the
 same: Sage, Currant and Ginseng list the plants they are picked from, and one
 picked from a single plant names it beside the title. Every animal's and every
-plant's name links to its page on the Red Dead wiki, in a new tab. Then every recipe with a Crafted / Not crafted
+plant's name links to its page on the Red Dead wiki, in a new tab, with an
+arrow out of a box after it so a link that leaves the guide says so; a recipe
+with a wiki page links it the same way from its Type. Then every recipe with a Crafted / Not crafted
 checkbox; the verdict, *You need to go hunting!* and its siblings; and, docked
 at the foot, each vendor's demand against what you hold where it draws from —
 the Fence names your Satchel. The dialog's own copy of the recipe list spells out `1x` too, unlike
@@ -654,11 +668,19 @@ at *that* station: a material two recipes want still shows for the other one.
 ### Filtering and sorting
 
 Both galleries share one toolbar: the search box on a row of its own, then a
-category dropdown headed **Filters**, the stations in the order Pearson,
-Trapper, Fence, the personal filters, and the sort, all left-aligned, with the
-count on the right. Inventory has the same search box, Filters and sort. A
-single rule separates each group of filters from the one before it, and a
-double rule sets off the sort, which orders the list rather than narrowing it.
+category dropdown headed **Filters**, then **All | Pearson, Trapper, Fence |
+the personal filters**, then the sort and **Clear**, all left-aligned, with
+the count on the right. Inventory has the same search box, Filters and sort. A
+single rule separates each group of chips from the one before it, and a double
+rule sets off All, which stands over the groups after it, and the sort, which
+orders the list rather than narrowing it. Each group of chips is a radio that
+can be switched off: tap the pressed chip and that group lets everything
+through. All switches off both groups, and is lit while neither narrows the
+list. Clear, shown only while something narrows the list, resets the search,
+the category and the chips at once; the sort and the tab stay. The category
+dropdown offers only the categories the other filters leave, and a vendor or
+progress chip that leaves the chosen category empty lets it go back to Every
+category (a search does not: a half-typed word should not lose it).
 A group that wraps to the start of a line drops its rule there: CSS cannot see
 a wrap, so `toolbar.wireRules` marks it `.line-start`, measuring with every
 rule showing so a group cannot flicker between the two.
@@ -673,7 +695,11 @@ search box takes the focus when you arrive on a page; on a phone it does not,
 since that would bring the keyboard up over the list.
 In personal mode Materials filters to **Still needed** or **Done** — a
 material whose recipes are all crafted moves to Done rather than
-vanishing — and Recipes to **Ready to craft** or **Crafted**.
+vanishing — and Recipes to **Ready to craft** or **Crafted**. With neither
+chosen, every material shows, finished with or not. With a vendor chosen,
+Still needed and Done ask that vendor alone, and a card's done tick and the
+Still needed sort follow suit: Trapper with Done is what the Trapper needs no
+more of, whatever Pearson thinks of it.
 
 Sorting is a field and a direction rather than a list of every combination:
 Materials by what is still needed, quality or name; Recipes by name or by how

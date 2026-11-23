@@ -19,14 +19,23 @@ export function crossLink(route, id, text) {
 }
 
 /**
- * A name that leads off the site -- an animal's wiki page -- in a new
- * tab, drawn like a cross-link.  Only a web address becomes a link: the
- * value comes from a spreadsheet, and a `javascript:` one would run.
+ * A name that leads off the site -- a wiki page -- in a new tab, drawn
+ * like a cross-link but with the arrow-out-of-a-box after it, so it is
+ * plain before the tap that this one leaves the tool.  The arrow is
+ * held to the last word, so a wrap never strands it on a line of its
+ * own.  Only a web address becomes a link: the value comes from a
+ * spreadsheet, and a `javascript:` one would run.  `about` is what the
+ * page is about, for the tooltip, when that is not the text itself --
+ * a recipe's Type names its category, but the page is the recipe's.
  */
-function webLink(url, text) {
+export function webLink(url, text, about = text) {
   if (!/^https?:\/\//i.test(url ?? '')) return esc(text);
-  return `<a class="xlink" href="${esc(url)}" target="_blank" rel="noopener noreferrer"
-            title="${esc(text)} on the Red Dead wiki">${esc(text)}</a>`;
+  const words = String(text ?? '');
+  const cut = words.lastIndexOf(' ') + 1;
+  return `<a class="xlink weblink" href="${esc(url)}" target="_blank" rel="noopener noreferrer"
+            title="${esc(about)} on the Red Dead wiki">${esc(words.slice(0, cut))}<span
+            class="weblink-tail">${esc(words.slice(cut))}<span class="ext-icon"
+            aria-hidden="true"></span></span><span class="sr-only"> (opens in a new tab)</span></a>`;
 }
 
 export function esc(value) {

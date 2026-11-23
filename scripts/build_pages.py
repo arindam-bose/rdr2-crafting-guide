@@ -134,12 +134,18 @@ def quality_label(quality):
     return f'<span class="stars stars-{esc(quality.lower())}" aria-hidden="true"></span>{esc(quality)}'
 
 
-def web_link(url, text):
-    """Only a web address becomes a link, as in render.js."""
+def web_link(url, text, about=None):
+    """Only a web address becomes a link, as in render.js: the arrow out
+    of a box after it, held to the last word, and said aloud too."""
     if not re.match(r'^https?://', url or '', re.I):
         return esc(text)
-    return (f'<a class="xlink" href="{esc(url)}" target="_blank" rel="noopener noreferrer" '
-            f'title="{esc(text)} on the Red Dead wiki">{esc(text)}</a>')
+    words = text or ''
+    cut = words.rfind(' ') + 1
+    return (f'<a class="xlink weblink" href="{esc(url)}" target="_blank" rel="noopener noreferrer" '
+            f'title="{esc(about or text)} on the Red Dead wiki">{esc(words[:cut])}'
+            f'<span class="weblink-tail">{esc(words[cut:])}'
+            f'<span class="ext-icon" aria-hidden="true"></span></span>'
+            f'<span class="sr-only"> (opens in a new tab)</span></a>')
 
 
 def page_link(kind, id_, text, root):
@@ -175,7 +181,14 @@ def buff_line(line):
             f'<span class="value">{esc(line[at + 1:].strip())}</span>')
 
 
+# The categories named in the plural, since each is worn as a pair:
+# one of them is "a pair of boots", never "a boots".
+PAIRS = {'boots', 'chaps', 'gloves'}
+
+
 def a_or_an(word):
+    if word.lower() in PAIRS:
+        return f'a pair of {word}'
     return f'{"an" if word[:1].lower() in "aeiou" else "a"} {word}'
 
 
@@ -221,7 +234,7 @@ def load(db_path):
             ORDER  BY a.name'''):
         data['animals'][a['ingredient_id']].append(a)
     for p in q('''
-            SELECT ip.ingredient_id, p.name, p.link
+            SELECT ip.ingredient_id, p.name, p.link, p.type
             FROM   ingredient_plants ip
             JOIN   plants p ON p.id = ip.plant_id
             ORDER  BY p.name'''):
@@ -537,11 +550,11 @@ def recipe_page(r, data, parts):
         if r['set_name']:
             intro += f' Part of {r["set_name"]}.'
 
-    facts = ([('Type', esc(r['category'])),
+    facts = ([('Type', web_link(r['link'], r['category'], r['name'])),
               ('Made at', f'{icon("campfire")}{esc(r["station"])}'),
               ('Recipe cost', r['price_cents'] and money(r['price_cents']))]
              if campfire else
-             [('Type', esc(r['category'])),
+             [('Type', web_link(r['link'], r['category'], r['name'])),
               ('Vendor', f'{icon(STATION_ICON.get(r["station_id"]))}{esc(r["station"])}'),
               ('Set', esc(r['set_name'])),
               ('Price', r['price_cents'] and money(r['price_cents']))])
@@ -581,12 +594,59 @@ def recipe_page(r, data, parts):
 # the A-Z lists
 # ------------------------------------------------------------
 
-def az_section(title, items, long_names=False):
-    links = ''.join(f'\n        <li>{link}</li>' for link in items)
-    kind = 'az-list long' if long_names else 'az-list'
-    return (f'\n    <section class="detail-section">\n'
-            f'      <h2 class="list-label">{esc(title)} <span class="count">{len(items)}</span></h2>\n'
-            f'      <ul class="{kind}">{links}\n      </ul>\n    </section>')
+def az_section(title, tiles, long_names=False):
+    """
+    One group of an index page -- Animal Materials, Trapper -- as one
+    newspaper flow of columns, each category (Pelt, Hat) a small
+    heading over its items A-Z.  `tiles` is [(category, [link html,
+    ...]), ...] in the order they should run; the count beside the
+    group's title is all of them together.
+    """
+    total = sum(len(items) for _, items in tiles)
+    kind = 'az-flow long' if long_names else 'az-flow'
+    # The heading rides in its first item: a list item never splits
+    # across columns, so the heading can never be left at the foot of
+    # one with its names starting the next -- which break-after alone
+    # does not promise (Firefox ignores it in columns).
+    body = ''.join(
+        f'\n        <ul class="az-list">'
+        + ''.join(
+            f'\n          <li>'
+            + (f'<h3 class="az-head">{esc(category)} <span class="count">{len(items)}</span></h3>'
+               if n == 0 else '')
+            + f'{link}</li>'
+            for n, link in enumerate(items))
+        + '\n        </ul>'
+        for category, items in tiles)
+    return (f'\n    <section class="detail-section az-group">\n'
+            f'      <h2 class="list-label">{esc(title)} <span class="count">{total}</span></h2>\n'
+            f'      <div class="{kind}">{body}\n      </div>\n    </section>')
+
+
+def by_category(rows, category_of, last=()):
+    """
+    `rows` dealt into their categories, A-Z by category -- any named in
+    `last` (Other) after the rest -- each keeping the rows' own order.
+    """
+    tiles = defaultdict(list)
+    for row in rows:
+        tiles[category_of(row)].append(row)
+    order = sorted(tiles, key=lambda c: (c in last, c.lower()))
+    return [(c, tiles[c]) for c in order]
+
+
+def material_category(m, data):
+    """
+    The tile a material sits in: an animal material's body part, a
+    plant's type (all its plants share one; build_db.py checks), a Misc.
+    Item's kind, as its dialog names it.
+    """
+    if m['source_type'] == 'animal':
+        return m['body_part'] or 'Other'
+    if m['source_type'] == 'plant':
+        plants = data['plants'].get(m['id'], [])
+        return (plants[0]['type'] if plants else None) or 'Other'
+    return KIND_LABEL[m['source_type']]
 
 
 def materials_index(data, parts):
@@ -599,11 +659,14 @@ def materials_index(data, parts):
     </div></header>
     <p class="static-intro">Every pelt, hide, plant and supply that goes into a
       crafting recipe in Red Dead Redemption 2, with what each one makes and
-      where it comes from.</p>''']
+      where it comes from - animal materials by part, plants by type.</p>''']
     for title, kinds in GROUPS:
-        items = [f'{page_link("materials", m["id"], m["name"], root)}{stars(m["quality"])}'
-                 for m in data['ingredients'] if m['source_type'] in kinds]
-        body.append(az_section(title, items))
+        rows = [m for m in data['ingredients'] if m['source_type'] in kinds]
+        tiles = by_category(rows, lambda m: material_category(m, data), last=('Other',))
+        body.append(az_section(title, [
+            (category, [f'{page_link("materials", m["id"], m["name"], root)}{stars(m["quality"])}'
+                        for m in ms])
+            for category, ms in tiles]))
     body.append('\n  </article>')
     return page(root=root, path='materials/',
                 title=f'Every RDR2 Crafting Material, A-Z · {SITE_NAME}',
@@ -624,13 +687,15 @@ def recipes_index(data, parts):
     </div></header>
     <p class="static-intro">Every recipe Pearson, the Trapper and the Fence
       craft in Red Dead Redemption 2, and every campfire recipe, with the
-      ingredients each one takes.</p>''']
+      ingredients each one takes - by vendor, then by what it is.</p>''']
     station_names = {r['station_id']: r['station'] for r in data['recipes']}
     for s in STATION_ORDER:
-        items = [page_link('recipes', r['id'], r['name'], root)
-                 for r in data['recipes'] if r['station_id'] == s]
-        if items:
-            body.append(az_section(station_names[s], items, long_names=True))
+        rows = [r for r in data['recipes'] if r['station_id'] == s]
+        if rows:
+            tiles = by_category(rows, lambda r: r['category'] or 'Other', last=('Other',))
+            body.append(az_section(station_names[s], [
+                (category, [page_link('recipes', r['id'], r['name'], root) for r in rs])
+                for category, rs in tiles], long_names=True))
     body.append('\n  </article>')
     return page(root=root, path='recipes/',
                 title=f'Every RDR2 Crafting Recipe, A-Z · {SITE_NAME}',
