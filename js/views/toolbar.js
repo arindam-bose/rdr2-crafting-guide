@@ -27,7 +27,8 @@ export function searchBox(id, placeholder) {
              placeholder="${esc(placeholder)}"
              autocomplete="off" spellcheck="false">
       <button type="button" class="search-clear detail-close" data-clear
-              tabindex="-1" aria-label="Clear search" hidden>&times;</button>
+              tabindex="-1" aria-label="Clear search" title="Clear search (Esc)"
+              aria-keyshortcuts="Escape" hidden>&times;</button>
     </div>`;
 }
 
@@ -217,6 +218,18 @@ function wireClear(input) {
     input.value = '';
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.focus();
+  });
+
+  // Esc does what the × does, through the same click.  Chrome, Edge and
+  // Safari clear a search box on Esc by themselves; Firefox does not,
+  // so the page does it in every browser and keeps the browser's own
+  // out of the way.  Ctrl+Del was the first thought, but in a text box
+  // it already deletes the next word, and neither a Mac nor a phone's
+  // keyboard has the key.  An empty box lets Esc go on its way.
+  input.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape' || !input.value) return;
+    event.preventDefault();
+    clear.click();
   });
 
   sync();
