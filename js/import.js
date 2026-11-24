@@ -17,7 +17,7 @@
 import * as backup from './backup.js';
 import * as store from './store.js';
 import { detailDialog } from './dialog.js';
-import { detailHead, esc, longStamp, plural, stampDate } from './render.js';
+import { detailHead, esc, longDay, longStamp, plural, stampDate } from './render.js';
 import { toast } from './toast.js';
 
 /** What the file input and a drop take: backups are .txt now, and older ones .json. */
@@ -87,8 +87,10 @@ function stampText(stamp) {
  */
 function compare({ source, found }) {
   const now = store.stats();
-  const exported = found.exported_at
-    ? `Exported ${new Date(found.exported_at).toLocaleDateString()}${found.device ? ` from ${found.device}` : ''}`
+  // A hand-edited date that won't read counts as none, rather than printing "Invalid Date".
+  const exportedAt = found.exported_at ? new Date(found.exported_at) : null;
+  const exported = exportedAt && !Number.isNaN(exportedAt.getTime())
+    ? `Exported ${longDay(exportedAt)}${found.device ? ` from ${found.device}` : ''}`
     : 'No export date';
   const saved = backup.lastSaved();
   const here = store.latestChange();
@@ -101,7 +103,7 @@ function compare({ source, found }) {
     ['Crafted recipes', now.made.toLocaleString(), found.made.toLocaleString(), true],
     ['Last change', stampText(here), stampText(there), true],
     // A backup and an export are different events, so this row is context, never a difference.
-    ['Backup', saved ? `Backed up ${saved.toLocaleDateString()}` : 'Never backed up', exported, false],
+    ['Backup', saved ? `Backed up ${longDay(saved)}` : 'Never backed up', exported, false],
   ];
 
   return `

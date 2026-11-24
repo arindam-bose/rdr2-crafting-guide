@@ -70,6 +70,12 @@ export function longStamp(at) {
   });
 }
 
+/** A day as "Sunday, Nov 8, 2026": longStamp without the time. */
+export function longDay(at) {
+  return at.toLocaleDateString(undefined,
+    { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 /** The stamp of stars itself: grey for Perfect, gold for Legendary. */
 function stars(quality, label) {
   const named = label
