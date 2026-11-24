@@ -283,7 +283,7 @@ hand.
       views/settings.js   backup and restore, reset, About with
                           the home-screen install, and the Support tile
       views/ledger.js     the history, as a dialog opened from Your stats
-      views/stats.js      Your stats, as a dialog opened from the About tile
+      views/stats.js      Your stats, as a dialog opened from the Stats tile
       views/guide.js      About and How to use, as dialogs from Settings
       views/toolbar.js    search, filters, chips, sort, the rules between
                           them and the pager, shared by Materials, Recipes
@@ -775,7 +775,7 @@ Satchel*, *with Pearson*.
 ### Settings and the ledger
 
 **Your stats** is a scoreboard over the same ledger and targets, opened as a
-dialog from the About tile in Settings: materials
+dialog from the Stats tile in Settings: materials
 held, recipes crafted against the 165 that can be, money
 spent crafting, and how many of the sixteen wearable outfits are complete —
 every piece in a set crafted, not just started. Below that, two breakdowns

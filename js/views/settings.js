@@ -133,15 +133,8 @@ export function mount(root) {
         <p class="note">
           <strong>General</strong> ignores all of it and shows the reference
           data whole - every recipe, every material, every quantity.</p>
-        <p class="note">
-          <strong>View your stats</strong> sums up your progress in
-          Personalize - recipes crafted, money spent, outfits completed -
-          and opens your ledger from there.<span id="s-stats-why"> Switch to
-          Personalize to use it.</span></p>
         <div class="panel-actions">
           <button type="button" class="ghost-btn" id="s-mode"></button>
-          <button type="button" class="ghost-btn" id="s-stats"
-                  aria-describedby="s-stats-why">View your stats</button>
         </div>
       </section>
 
@@ -205,6 +198,19 @@ export function mount(root) {
           download a copy first.</p>
         <div class="panel-actions" id="s-danger">
           ${RESET_BUTTON}
+        </div>
+      </section>
+
+      <section class="panel">
+        <h3>Stats</h3>
+        <p class="note">
+          <strong>View your stats</strong> sums up your progress in
+          Personalize - recipes crafted, money spent, outfits completed -
+          and opens your ledger from there.<span id="s-stats-why"> Switch to
+          Personalize to use it.</span></p>
+        <div class="panel-actions">
+          <button type="button" class="ghost-btn" id="s-stats"
+                  aria-describedby="s-stats-why">View your stats</button>
         </div>
       </section>
 
@@ -406,9 +412,9 @@ export function mount(root) {
   // The masthead switch repaints itself off the same store change.
   $('#s-mode').addEventListener('click', () => store.setPersonal(!store.isPersonal()));
 
-  // Your stats beside the switch: they count what you own, which General
-  // sets aside, so the button is off there until you switch back -- and
-  // the note above says so, in words, rather than leaving a faded button
+  // Your stats count what you own, which General sets aside, so the
+  // button is off there until you switch back -- and the note above
+  // says so, in words, rather than leaving a faded button
   // to explain itself.  aria-disabled rather than disabled, so the
   // keyboard still reaches it and a screen reader reads why.
   $('#s-stats').addEventListener('click', () => {
