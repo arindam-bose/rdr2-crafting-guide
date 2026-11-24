@@ -17,7 +17,7 @@
 import * as backup from './backup.js';
 import * as store from './store.js';
 import { detailDialog } from './dialog.js';
-import { detailHead, esc, plural, stampDate } from './render.js';
+import { detailHead, esc, longStamp, plural, stampDate } from './render.js';
 import { toast } from './toast.js';
 
 /** What the file input and a drop take: backups are .txt now, and older ones .json. */
@@ -77,7 +77,8 @@ function closeDialog() {
 /** A SQLite stamp as the reader's own date and time: "Nothing yet" with none, "Unknown" for one that won't read. */
 function stampText(stamp) {
   if (!stamp) return 'Nothing yet';
-  return stampDate(stamp)?.toLocaleString() ?? 'Unknown';
+  const at = stampDate(stamp);
+  return at ? longStamp(at) : 'Unknown';
 }
 
 /**

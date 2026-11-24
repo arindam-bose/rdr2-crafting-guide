@@ -14,7 +14,7 @@
 
 import * as store from '../store.js';
 import * as theme from '../theme.js';
-import { esc, plural, facts } from '../render.js';
+import { esc, plural, facts, longStamp } from '../render.js';
 import * as backup from '../backup.js';
 import * as importer from '../import.js';
 import * as install from '../install.js';
@@ -494,10 +494,7 @@ export function mount(root) {
     const last = backup.lastSaved();
     const { count } = backup.status();
     $('#s-last').textContent = (last
-      // "Sunday, Nov 8, 2026, 03:45 AM", as the masthead's Last updated says it.
-      ? `Last backed up ${last.toLocaleString(undefined, {
-        weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
-      })}.`
+      ? `Last backed up ${longStamp(last)}.`
       : 'Never backed up from this device.')
       + (count ? ` ${plural(count, 'change')} since.` : '');
 

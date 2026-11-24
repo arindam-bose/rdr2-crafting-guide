@@ -58,6 +58,18 @@ export function stampDate(stamp) {
   return Number.isNaN(at.getTime()) ? null : at;
 }
 
+/**
+ * A moment as "Sunday, Nov 8, 2026, 03:45 AM", in the reader's own order and
+ * clock: the Last updated strip, Settings' last backup and the restore
+ * dialog's Last change all say a time this way, as the Money and Habit
+ * Trackers do.
+ */
+export function longStamp(at) {
+  return at.toLocaleString(undefined, {
+    weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+}
+
 /** The stamp of stars itself: grey for Perfect, gold for Legendary. */
 function stars(quality, label) {
   const named = label
