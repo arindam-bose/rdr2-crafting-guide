@@ -225,9 +225,11 @@ function wireClear(input) {
   // so the page does it in every browser and keeps the browser's own
   // out of the way.  Ctrl+Del was the first thought, but in a text box
   // it already deletes the next word, and neither a Mac nor a phone's
-  // keyboard has the key.  An empty box lets Esc go on its way.
+  // keyboard has the key.  An empty box lets Esc go on its way, and so
+  // does an input method composing a word (Japanese, Chinese, Korean):
+  // that Esc only cancels the word, not the whole search.
   input.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape' || !input.value) return;
+    if (event.key !== 'Escape' || event.isComposing || !input.value) return;
     event.preventDefault();
     clear.click();
   });

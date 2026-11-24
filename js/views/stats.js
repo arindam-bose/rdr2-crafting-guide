@@ -2,8 +2,10 @@
 // Your stats — the scoreboard, as a dialog opened from Settings.
 //
 // Out of the Settings page and into a dialog of its own, opened
-// from the About tile: the page is for controls, and two long
-// tallies under them made it the tallest thing there.
+// by View your stats in the Personalize and General tile (off in
+// General, which sets what you own aside): the page is for
+// controls, and two long tallies under them made it the tallest
+// thing there.
 //
 // Read-only, and repainted on every store change while it is open,
 // so crafting with it up keeps the numbers true.  Its "Ledger

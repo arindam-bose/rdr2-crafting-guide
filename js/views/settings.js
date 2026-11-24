@@ -136,10 +136,12 @@ export function mount(root) {
         <p class="note">
           <strong>View your stats</strong> sums up your progress in
           Personalize - recipes crafted, money spent, outfits completed -
-          and opens your ledger from there.</p>
+          and opens your ledger from there.<span id="s-stats-why"> Switch to
+          Personalize to use it.</span></p>
         <div class="panel-actions">
           <button type="button" class="ghost-btn" id="s-mode"></button>
-          <button type="button" class="ghost-btn" id="s-stats">View your stats</button>
+          <button type="button" class="ghost-btn" id="s-stats"
+                  aria-describedby="s-stats-why">View your stats</button>
         </div>
       </section>
 
@@ -405,8 +407,13 @@ export function mount(root) {
   $('#s-mode').addEventListener('click', () => store.setPersonal(!store.isPersonal()));
 
   // Your stats beside the switch: they count what you own, which General
-  // sets aside, so the button is off there until you switch back.
-  $('#s-stats').addEventListener('click', () => stats.open());
+  // sets aside, so the button is off there until you switch back -- and
+  // the note above says so, in words, rather than leaving a faded button
+  // to explain itself.  aria-disabled rather than disabled, so the
+  // keyboard still reaches it and a screen reader reads why.
+  $('#s-stats').addEventListener('click', () => {
+    if (store.isPersonal()) stats.open();
+  });
 
   // A check asks the server for sw.js, and through it js/version.js:
   // a new release number is a new worker, which installs straight away
@@ -500,7 +507,8 @@ export function mount(root) {
 
     $('#s-mode').textContent = store.isPersonal()
       ? 'Switch to General' : 'Switch to Personalize';
-    $('#s-stats').disabled = !store.isPersonal();
+    $('#s-stats').setAttribute('aria-disabled', String(!store.isPersonal()));
+    $('#s-stats-why').hidden = store.isPersonal();
 
     reportOffline();
     reportKept();
