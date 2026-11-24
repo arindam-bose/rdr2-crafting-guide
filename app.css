@@ -1859,7 +1859,9 @@ ul.buff li::before {
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
-.ghost-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
+.ghost-btn:hover:not(:disabled) { color: var(--ink); border-color: var(--ink-faint); }
+/* View your stats in General: there is nothing of yours to count. */
+.ghost-btn:disabled { color: var(--ink-faint); opacity: .55; cursor: not-allowed; }
 
 /* ---------- inventory: entry, one location at a time ---------- */
 

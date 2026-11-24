@@ -133,8 +133,13 @@ export function mount(root) {
         <p class="note">
           <strong>General</strong> ignores all of it and shows the reference
           data whole - every recipe, every material, every quantity.</p>
+        <p class="note">
+          <strong>View your stats</strong> sums up your progress in
+          Personalize - recipes crafted, money spent, outfits completed -
+          and opens your ledger from there.</p>
         <div class="panel-actions">
           <button type="button" class="ghost-btn" id="s-mode"></button>
+          <button type="button" class="ghost-btn" id="s-stats">View your stats</button>
         </div>
       </section>
 
@@ -270,7 +275,7 @@ export function mount(root) {
   const howTo = howToDialog();
   const stats = statsDialog(ledger);
 
-  // The About tile: the two pages of words, your stats, the release this is, and
+  // The About tile: the two pages of words, the release this is, and
   // the cookie choice.  Nothing here moves with the store, so it is not
   // repainted on every update -- only when the cookie answer changes.
   // "Cookie settings" carries data-consent-open, which js/analytics.js
@@ -281,7 +286,6 @@ export function mount(root) {
     $('#s-about').innerHTML = facts([
       ['About this tool', '', 'about'],
       ['How to use this tool', '', 'howto'],
-      ['Your stats', '', 'stats'],
       ['Tool version', number ? `v${number}, updated ${released(date)}` : 'unknown'],
       ['Source code', 'On GitHub', '', 'https://github.com/arindam-bose/rdr2-crafting-guide'],
       ['Log Issues and request features', 'On GitHub', '', 'https://github.com/arindam-bose/rdr2-crafting-guide/issues'],
@@ -293,7 +297,6 @@ export function mount(root) {
   $('#s-about').addEventListener('click', (event) => {
     if (event.target.closest('[data-about]')) about.open();
     else if (event.target.closest('[data-howto]')) howTo.open();
-    else if (event.target.closest('[data-stats]')) stats.open();
   });
 
   // ---- the home screen ------------------------------------------------
@@ -401,6 +404,10 @@ export function mount(root) {
   // The masthead switch repaints itself off the same store change.
   $('#s-mode').addEventListener('click', () => store.setPersonal(!store.isPersonal()));
 
+  // Your stats beside the switch: they count what you own, which General
+  // sets aside, so the button is off there until you switch back.
+  $('#s-stats').addEventListener('click', () => stats.open());
+
   // A check asks the server for sw.js, and through it js/version.js:
   // a new release number is a new worker, which installs straight away
   // and says so when it is done (main.js offers the reload).  Each
@@ -493,6 +500,7 @@ export function mount(root) {
 
     $('#s-mode').textContent = store.isPersonal()
       ? 'Switch to General' : 'Switch to Personalize';
+    $('#s-stats').disabled = !store.isPersonal();
 
     reportOffline();
     reportKept();
