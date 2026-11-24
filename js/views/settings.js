@@ -494,7 +494,10 @@ export function mount(root) {
     const last = backup.lastSaved();
     const { count } = backup.status();
     $('#s-last').textContent = (last
-      ? `Last backed up ${last.toLocaleString()}.`
+      // "Sunday, Nov 8, 2026, 03:45 AM", as the masthead's Last updated says it.
+      ? `Last backed up ${last.toLocaleString(undefined, {
+        weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      })}.`
       : 'Never backed up from this device.')
       + (count ? ` ${plural(count, 'change')} since.` : '');
 
