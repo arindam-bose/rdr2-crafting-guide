@@ -74,11 +74,14 @@ function closeDialog() {
   dialog.focus(null);
 }
 
-/** A SQLite stamp as the reader's own date and time: "Nothing yet" with none, "Unknown" for one that won't read. */
-function stampText(stamp) {
+/**
+ * A SQLite stamp as the reader's own date and time: "Nothing yet" with none, "Unknown" for one that won't
+ * read.  To the minute, unless `seconds`: see the Last change row.
+ */
+function stampText(stamp, seconds = false) {
   if (!stamp) return 'Nothing yet';
   const at = stampDate(stamp);
-  return at ? longStamp(at) : 'Unknown';
+  return at ? longStamp(at, seconds) : 'Unknown';
 }
 
 /**
@@ -97,11 +100,14 @@ function compare({ source, found }) {
   const there = found.last_change;
   // Both stamps are SQLite's own shape, so they compare as text.
   const newerHere = here !== null && (there === null || here > there);
+  // The warning is worked out to the second, so a change made moments after the file was saved
+  // still warns; when the minute alone would make the two read the same, both show their seconds.
+  const sameMinute = Boolean(here && there && here !== there && here.slice(0, 16) === there.slice(0, 16));
 
   const rows = [
     ['Entries', now.entries.toLocaleString(), found.ledger.toLocaleString(), true],
     ['Crafted recipes', now.made.toLocaleString(), found.made.toLocaleString(), true],
-    ['Last change', stampText(here), stampText(there), true],
+    ['Last change', stampText(here, sameMinute), stampText(there, sameMinute), true],
     // A backup and an export are different events, so this row is context, never a difference.
     ['Backup', saved ? `Backed up ${longDay(saved)}` : 'Never backed up', exported, false],
   ];
