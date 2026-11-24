@@ -66,9 +66,6 @@
   --rdr-blood:  #b90303;
   --rdr-black:  #020002;
   --rdr-white:  #fffeff;
-  /* From a second RDR2 palette, for what wants a red quieter than the
-     key art's: https://www.color-hex.com/color-palette/35394 */
-  --rdr-wine:   #d41936;
 
   --font-body:    "FB Remington", ui-monospace, SFMono-Regular, Menlo, monospace;
   --font-display: "Marston", "Haettenschweiler", "Arial Narrow", sans-serif;
@@ -112,8 +109,9 @@
   --ink-label:   #7a4c00;            /* ochre, dark enough for a ledger row */
   --danger:      var(--rdr-red);
   --danger-text: var(--rdr-blood);
-  --erase-text:  var(--rdr-wine);
-  --erase-wash:  14%;
+  --erase-text:  var(--rdr-blood);   /* 4.6:1 on its 12% wash */
+  --erase-hover: color-mix(in srgb, var(--rdr-blood) 85%, var(--rdr-black));  /* 4.7:1 on the 22% hover wash */
+  --erase-wash:  12%;
   --ok:          #46621f;
   --warn:        #7d5a12;
   --diff-bg:     #e5c684;            /* a row that differs: amber, steeped into a buff box */
@@ -157,7 +155,8 @@
                                 ground any of these labels sits on */
   --danger:      var(--rdr-red);
   --danger-text: #ec6a5a;            /* the raw red is 2.9:1 here */
-  --erase-text:  color-mix(in srgb, var(--rdr-wine) 45%, #f2e9d6);  /* ~5:1; the raw wine is 1.4:1 */
+  --erase-text:  color-mix(in srgb, var(--rdr-blood) 35%, #f2e9d6);  /* 5.7:1; the raw blood is 1.9:1 */
+  --erase-hover: var(--erase-text);  /* still 5.3:1 on the hover wash */
   --erase-wash:  30%;                /* 14% is lost on the dark leather */
   --ok:          #9cb86c;
   --warn:        #e0b155;
@@ -2334,21 +2333,21 @@ body:has(> .history-nav) { padding-bottom: calc(var(--tabs-h) + var(--tabs-inset
 }
 .panel.danger { border-color: color-mix(in srgb, var(--danger) 55%, var(--line)); }
 
-/* Erase my data: the RDR2 wine carried onto its button -- a wash of
-   it over the surface, a wine edge and wine lettering -- so the one
+/* Erase my data: the key art's blood red carried onto its button -- a
+   wash of it over the surface, a blood edge and blood lettering -- so the one
    button that cannot be undone reads as that before it is pressed,
    without the solid red of the Erase that confirms it.  Each theme
-   sets how strong the wash is and how light the lettering, so both
-   stay readable. */
+   sets how strong the wash is and the lettering at rest and on hover,
+   so both stay readable. */
 .erase-btn {
   color: var(--erase-text);
-  background: color-mix(in srgb, var(--rdr-wine) var(--erase-wash), var(--surface));
-  border-color: color-mix(in srgb, var(--rdr-wine) 70%, var(--line));
+  background: color-mix(in srgb, var(--rdr-blood) var(--erase-wash), var(--surface));
+  border-color: color-mix(in srgb, var(--rdr-blood) 70%, var(--line));
 }
 .erase-btn:hover {
-  color: var(--erase-text);
-  background: color-mix(in srgb, var(--rdr-wine) calc(var(--erase-wash) + 10%), var(--surface));
-  border-color: var(--rdr-wine);
+  color: var(--erase-hover);
+  background: color-mix(in srgb, var(--rdr-blood) calc(var(--erase-wash) + 10%), var(--surface));
+  border-color: var(--rdr-blood);
 }
 
 /* The words beside a pair of buttons -- Settings' erase confirmation. */
