@@ -17,7 +17,7 @@
 import * as backup from './backup.js';
 import * as store from './store.js';
 import { detailDialog } from './dialog.js';
-import { detailHead, esc, plural, stampDate } from './render.js';
+import { detailHead, esc, longDay, longStamp, plural, stampDate } from './render.js';
 import { toast } from './toast.js';
 
 /** What the file input and a drop take: backups are .txt now, and older ones .json. */
@@ -74,10 +74,14 @@ function closeDialog() {
   dialog.focus(null);
 }
 
-/** A SQLite stamp as the reader's own date and time: "Nothing yet" with none, "Unknown" for one that won't read. */
-function stampText(stamp) {
+/**
+ * A SQLite stamp as the reader's own date and time: "Nothing yet" with none, "Unknown" for one that won't
+ * read.  To the minute, unless `seconds`: see the Last change row.
+ */
+function stampText(stamp, seconds = false) {
   if (!stamp) return 'Nothing yet';
-  return stampDate(stamp)?.toLocaleString() ?? 'Unknown';
+  const at = stampDate(stamp);
+  return at ? longStamp(at, seconds) : 'Unknown';
 }
 
 /**
@@ -86,21 +90,26 @@ function stampText(stamp) {
  */
 function compare({ source, found }) {
   const now = store.stats();
-  const exported = found.exported_at
-    ? `Exported ${new Date(found.exported_at).toLocaleDateString()}${found.device ? ` from ${found.device}` : ''}`
+  // A hand-edited date that won't read counts as none, rather than printing "Invalid Date".
+  const exportedAt = found.exported_at ? new Date(found.exported_at) : null;
+  const exported = exportedAt && !Number.isNaN(exportedAt.getTime())
+    ? `Exported ${longDay(exportedAt)}${found.device ? ` from ${found.device}` : ''}`
     : 'No export date';
   const saved = backup.lastSaved();
   const here = store.latestChange();
   const there = found.last_change;
   // Both stamps are SQLite's own shape, so they compare as text.
   const newerHere = here !== null && (there === null || here > there);
+  // The warning is worked out to the second, so a change made moments after the file was saved
+  // still warns; when the minute alone would make the two read the same, both show their seconds.
+  const sameMinute = Boolean(here && there && here !== there && here.slice(0, 16) === there.slice(0, 16));
 
   const rows = [
     ['Entries', now.entries.toLocaleString(), found.ledger.toLocaleString(), true],
     ['Crafted recipes', now.made.toLocaleString(), found.made.toLocaleString(), true],
-    ['Last change', stampText(here), stampText(there), true],
+    ['Last change', stampText(here, sameMinute), stampText(there, sameMinute), true],
     // A backup and an export are different events, so this row is context, never a difference.
-    ['Backup', saved ? `Backed up ${saved.toLocaleDateString()}` : 'Never backed up', exported, false],
+    ['Backup', saved ? `Backed up ${longDay(saved)}` : 'Never backed up', exported, false],
   ];
 
   return `

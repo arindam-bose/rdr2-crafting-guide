@@ -111,9 +111,10 @@ const HOW_TO = `
         A dot appears on it when a backup is due, and turns red when it is
         overdue. To bring a file back, use <strong>Bring it back</strong> in
         Settings, or the restore button on an empty Inventory page.</p>
-      <p><strong>Your stats</strong>, in Settings' About tile, shows your
-        progress, and <strong>Ledger entries</strong> there opens the full
-        history of everything you have logged.</p>
+      <p><strong>View your stats</strong>, in Settings' Personalize and
+        General tile, shows your progress in Personalize. In it,
+        <strong>Ledger entries</strong> opens the full history of everything
+        you have logged.</p>
     </div>`)}`;
 
 /** A dialog of fixed words.  Returns { open, destroy }, like the ledger's. */

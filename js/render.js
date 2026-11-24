@@ -58,6 +58,25 @@ export function stampDate(stamp) {
   return Number.isNaN(at.getTime()) ? null : at;
 }
 
+/**
+ * A moment as "Sunday, Nov 8, 2026, 03:45 AM" (and its seconds, when asked), in the reader's own order and
+ * clock: the Last updated strip, Settings' last backup and the restore
+ * dialog's Last change all say a time this way, as the Money and Habit
+ * Trackers do.
+ */
+export function longStamp(at, seconds = false) {
+  return at.toLocaleString(undefined, {
+    weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    ...(seconds ? { second: '2-digit' } : {}),
+  });
+}
+
+/** A day as "Sunday, Nov 8, 2026": longStamp without the time. */
+export function longDay(at) {
+  return at.toLocaleDateString(undefined,
+    { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 /** The stamp of stars itself: grey for Perfect, gold for Legendary. */
 function stars(quality, label) {
   const named = label
