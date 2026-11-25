@@ -6,7 +6,7 @@ What to craft in Red Dead Redemption 2, what it needs, and what you already have
 
 **Open it: <https://arindambose.com/rdr2-crafting-guide/>**
 
-Current version: 3.0.0
+Current version: 3.0.1
 
 ![A pixel-art cowboy by a campfire at dusk](images/pixel-cowboy-campfire-at-dusk-960.jpg)
 
@@ -100,7 +100,7 @@ It is a static site with no build step. From the repository root:
 then open <http://localhost:8000>. It has to be served over HTTP, not opened as
 a file.
 
-The [extended README](EXTENDED_README.md) covers the rest: the privacy policy
+The [extended README](README_EXTENDED.md) covers the rest: the privacy policy
 in detail, how the database and the search pages are built, hosting, the
 design, and every screen.
 
